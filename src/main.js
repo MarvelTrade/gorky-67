@@ -8,6 +8,7 @@ import { UIScene } from './scenes/UIScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
 import { platform } from './platform/platform.js';
 import { initLang } from './i18n/index.js';
+import { sfx } from './systems/Sfx.js';
 
 function startGame() {
   const game = new Phaser.Game({
@@ -30,7 +31,12 @@ function startGame() {
     scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, GameOverScene],
   });
 
-  if (import.meta.env.DEV) window.__game = game;
+  sfx.init(game);
+
+  if (import.meta.env.DEV) {
+    window.__game = game;
+    import('./dev/bot.js').then((m) => m.installBot(game));
+  }
 
   // Звук на паузу при уходе со вкладки
   document.addEventListener('visibilitychange', () => {

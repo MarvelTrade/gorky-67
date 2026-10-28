@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
-import { PLAYER, CONTROLS } from '../config.js';
+import { PLAYER, CONTROLS, FX } from '../config.js';
+import { sfx } from '../systems/Sfx.js';
 import { DEPTH } from '../depth.js';
 
 // Вертолёт игрока. Управление:
@@ -92,12 +93,14 @@ export class Player {
   }
 
   // Урон с неуязвимостью после попадания, чтобы толпа не сжигала HP за кадр
-  takeDamage(amount) {
+  // cause — кто ударил (для замеров причины смерти)
+  takeDamage(amount, cause) {
     if (this.invuln > 0 || !this.alive) return;
     this.hp = Math.max(0, this.hp - amount);
     this.invuln = PLAYER.invulnTime;
-    this.scene.cameras.main.shake(120, 0.006);
-    if (!this.alive) this.scene.events.emit('player-died');
+    this.scene.cameras.main.shake(FX.hitShake.duration, FX.hitShake.intensity);
+    sfx.play('hit');
+    if (!this.alive) this.scene.events.emit('player-died', cause);
   }
 
   readKeyboard() {

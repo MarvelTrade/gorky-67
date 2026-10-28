@@ -46,6 +46,17 @@ export default {
   newBest: 'Новый рекорд!',
   again: 'Ещё раз',
 
+  // Замеры
+  copyStats: 'Скопировать статистику',
+  copied: 'Скопировано',
+  copyFailed: 'Не удалось скопировать',
+  byShell: 'снаряд',
+  enemy_infantry: 'заражённый',
+  enemy_jeep: 'вездеход',
+  enemy_aa: 'зенитка',
+  enemy_tank: 'танк',
+  enemy_boss: 'Объект',
+
   // Улучшения
   levelUp: 'Уровень',
   lvl: 'ур.',

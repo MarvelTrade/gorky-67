@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { RUN, CONTROLS, RADIO } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
+import { sfx } from '../systems/Sfx.js';
 
 const PAD = 12;
 const XP_BAR_H = 10;
@@ -157,5 +158,6 @@ export class UIScene extends Phaser.Scene {
     // Под полоской босса, чтобы не перекрывать её на 5-й волне
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
     this.radioLeft = RADIO.duration + RADIO.fade * 2;
+    sfx.play('radio');
   }
 }

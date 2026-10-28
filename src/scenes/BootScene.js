@@ -21,6 +21,7 @@ export class BootScene extends Phaser.Scene {
     this.makeBulletTexture();
     this.makeMissileTexture();
     this.makeGemTexture();
+    this.makeParticleTextures();
     this.makeCityTiles();
     platform.gameReady();
     this.scene.start('MenuScene');
@@ -248,6 +249,20 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xc8f4ff);
     g.fillTriangle(6, 2, 9, 7, 6, 7);
     this.makeTexture(g, 'gem', 12, 14);
+  }
+
+  // Мягкое пятно для облачков и квадратик для обломков; цвет задаёт tint частиц
+  makeParticleTextures() {
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    for (let r = 8; r > 0; r -= 2) {
+      g.fillStyle(0xffffff, 0.18);
+      g.fillCircle(8, 8, r);
+    }
+    this.makeTexture(g, 'puff', 16, 16);
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffffff);
+    g.fillRect(0, 0, 4, 4);
+    this.makeTexture(g, 'spark', 4, 4);
   }
 
   // Город — квадратные кварталы CITY.tile × CITY.tile, по краям дороги.

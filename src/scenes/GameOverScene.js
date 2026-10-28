@@ -3,6 +3,7 @@ import { RUN } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { platform } from '../platform/platform.js';
+import { copyReport } from '../systems/Telemetry.js';
 
 // Итоги забега и «Ещё раз». data: { win, time, kills, level }
 export class GameOverScene extends Phaser.Scene {
@@ -65,9 +66,27 @@ export class GameOverScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ENTER', () => this.restart());
     this.input.keyboard.on('keydown-SPACE', () => this.restart());
 
-    // Кнопка появляется, когда её уже можно нажать
+    // Для плейтестов: все замеры текстом в буфер обмена
+    const copy = this.add
+      .text(0, 0, t('copyStats'), {
+        fontFamily: 'sans-serif',
+        fontSize: '15px',
+        color: '#9fb08f',
+        padding: { x: 10, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    copy.on('pointerup', async () => {
+      if (!this.ready) return;
+      const ok = await copyReport();
+      copy.setText(t(ok ? 'copied' : 'copyFailed'));
+      this.time.delayedCall(1500, () => copy.setText(t('copyStats')));
+    });
+
+    // Кнопки появляются, когда их уже можно нажать
     button.setAlpha(0);
-    this.tweens.add({ targets: button, alpha: 1, delay: RUN.gameOverInputDelay * 1000, duration: 200 });
+    copy.setAlpha(0);
+    this.tweens.add({ targets: [button, copy], alpha: 1, delay: RUN.gameOverInputDelay * 1000, duration: 200 });
 
     // Сверху вниз: заголовок, концовка, цифры, рекорд, кнопка.
     // На низком экране (телефон лёжа) цифры в одну строку, иначе кнопка не влезает.
@@ -88,7 +107,9 @@ export class GameOverScene extends Phaser.Scene {
       y += statsText.height + 12;
       bestText.setPosition(width / 2, y);
       y += bestText.height + (short ? 20 : 48);
-      button.setPosition(width / 2, Math.min(y + 36, height - 46));
+      const by = Math.min(y + 36, height - (short ? 70 : 90));
+      button.setPosition(width / 2, by);
+      copy.setPosition(width / 2, by + 36 + (short ? 18 : 26));
     };
     layout();
     this.scale.on('resize', layout);

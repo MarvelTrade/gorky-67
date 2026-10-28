@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -10,6 +10,9 @@ import { MachineGun } from '../entities/MachineGun.js';
 import { MissileLauncher } from '../entities/MissileLauncher.js';
 import { WaveSpawner } from '../systems/WaveSpawner.js';
 import { Upgrades } from '../systems/Upgrades.js';
+import { Fx } from '../systems/Fx.js';
+import { sfx } from '../systems/Sfx.js';
+import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
 import { t } from '../i18n/index.js';
 
@@ -54,6 +57,7 @@ export class GameScene extends Phaser.Scene {
     this.missiles = new MissileLauncher(this, this.player, this.missileGroup, this.enemies);
     this.spawner = new WaveSpawner(this, this.enemies, this.player);
     this.upgrades = new Upgrades(this);
+    this.fx = new Fx(this);
 
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
@@ -61,27 +65,33 @@ export class GameScene extends Phaser.Scene {
       enemy.hit(bullet.damage);
     });
     this.physics.add.overlap(this.missileGroup, this.enemies, (missile) => missile.explode());
+    // Причину урона запоминаем для замеров: «тип врага» или «тип:shell»
     this.physics.add.overlap(this.player.sprite, this.enemies, (_, enemy) => {
-      this.player.takeDamage(enemy.damage);
+      this.player.takeDamage(enemy.damage, enemy.type);
     });
     this.physics.add.overlap(this.player.sprite, this.shells, (_, shell) => {
       if (!shell.active) return;
       shell.kill();
-      this.player.takeDamage(shell.damage);
+      this.player.takeDamage(shell.damage, `${shell.source}:shell`);
     });
 
     this.kills = 0;
     this.level = 1;
     this.xp = 0;
-    this.xpNext = XP.base;
+    this.xpNext = XP.first;
     this.pendingLevels = 0;
     this.ended = false;
     this.banners = 0; // сколько надписей сейчас на экране — следующая встаёт ниже
     this.boss = null;
     this.bossKilled = false;
+    this.picks = []; // выбранные улучшения по порядку — для замеров
+    this.firstLevelUpAt = null;
 
+    this.events.on('enemy-hit', (enemy, damage) => this.fx.damageNumber(enemy.x, enemy.y, damage, damage >= 40));
     this.events.on('enemy-killed', (enemy) => {
       this.kills++;
+      this.fx.enemyDeath(enemy);
+      if (enemy.type !== 'infantry') sfx.play('explosion');
       if (enemy === this.boss) {
         this.onBossKilled(enemy);
         return;
@@ -94,15 +104,21 @@ export class GameScene extends Phaser.Scene {
       this.banner(t('bossIncoming'), '#ff6a5a');
       this.cameras.main.shake(400, 0.008);
     });
-    this.events.on('xp-collected', (value) => this.addXp(value));
-    this.events.on('explosion', (x, y, r) => this.explosionFx(x, y, r));
+    this.events.on('xp-collected', (value) => {
+      sfx.play('pickup');
+      this.addXp(value);
+    });
+    this.events.on('explosion', (x, y, r) => {
+      this.explosionFx(x, y, r);
+      sfx.play('explosion');
+    });
     this.events.on('wave-changed', (n) => this.banner(t(`wave_${n}`)));
     this.events.on('resume', () => {
       this.player.resetInput();
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
       if (this.pendingLevels > 0) this.time.delayedCall(150, () => this.openLevelUp());
     });
-    this.events.once('player-died', () => this.endRun(false));
+    this.events.once('player-died', (cause) => this.endRun(false, cause));
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
@@ -114,7 +130,7 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
+      for (const e of ['enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
       this.scale.off('resize', this.fitZoom, this);
       this.scene.stop('UIScene');
       platform.gameplayStop();
@@ -127,7 +143,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Конец забега: смерть или продержался RUN.duration секунд
-  endRun(win) {
+  endRun(win, cause = null) {
     if (this.ended) return;
     this.ended = true;
     // Уровень и смерть могли случиться в одном кадре — выбор улучшения уже не нужен
@@ -137,7 +153,9 @@ export class GameScene extends Phaser.Scene {
     if (!win) {
       p.hide();
       this.explosionFx(p.x, p.y, 70);
-      this.cameras.main.shake(300, 0.012);
+      this.fx.debris.explode(24, p.x, p.y);
+      this.fx.shake(FX.deathShake);
+      sfx.play('explosion');
     }
     const stats = {
       win,
@@ -147,6 +165,7 @@ export class GameScene extends Phaser.Scene {
       bossSeen: !!this.boss,
       bossKilled: this.bossKilled,
     };
+    recordRun({ ...stats, cause, picks: this.picks, firstLevelUpAt: this.firstLevelUpAt });
     this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
   }
 
@@ -155,7 +174,8 @@ export class GameScene extends Phaser.Scene {
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
       this.level++;
-      this.xpNext += XP.perLevel;
+      if (this.firstLevelUpAt === null) this.firstLevelUpAt = Math.round(this.spawner.elapsed);
+      this.xpNext = this.level === 2 ? XP.base : this.xpNext + XP.perLevel;
       this.pendingLevels++;
     }
     if (this.pendingLevels > 0 && !this.scene.isPaused()) this.openLevelUp();
@@ -168,12 +188,14 @@ export class GameScene extends Phaser.Scene {
       this.pendingLevels = 0;
       return;
     }
+    sfx.play('levelUp');
     this.scene.pause();
     this.scene.launch('LevelUpScene', {
       level: this.level - this.pendingLevels + 1,
       choices,
       onPick: (id) => {
         this.upgrades.apply(id);
+        this.picks.push({ id, t: Math.round(this.spawner.elapsed) });
         this.pendingLevels--;
         this.scene.resume();
       },
@@ -201,7 +223,6 @@ export class GameScene extends Phaser.Scene {
         this.explosionFx(x + Phaser.Math.Between(-40, 40), y + Phaser.Math.Between(-40, 40), 50)
       );
     }
-    this.cameras.main.shake(500, 0.015);
     this.endRun(true);
   }
 

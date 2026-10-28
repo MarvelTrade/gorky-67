@@ -40,6 +40,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hp -= damage;
     this.flash = FLASH_TIME;
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
+    this.scene.events.emit('enemy-hit', this, damage);
     if (this.hp <= 0) {
       this.die();
       return true;
@@ -167,5 +168,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const shell = this.scene.shells.get();
     if (!shell) return;
     shell.fire(this.x, this.y, angle, cfg.shellSpeed, cfg.shellDamage, cfg.shellLife, cfg.shellTexture);
+    shell.source = this.type;
   }
 }

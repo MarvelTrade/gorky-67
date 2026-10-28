@@ -42,6 +42,16 @@ export default {
   newBest: 'New record!',
   again: 'Play again',
 
+  copyStats: 'Copy stats',
+  copied: 'Copied',
+  copyFailed: 'Copy failed',
+  byShell: 'shell',
+  enemy_infantry: 'infected',
+  enemy_jeep: 'rover',
+  enemy_aa: 'AA gun',
+  enemy_tank: 'tank',
+  enemy_boss: 'The Object',
+
   levelUp: 'Level',
   lvl: 'lv.',
   upg_damage: 'Caliber',

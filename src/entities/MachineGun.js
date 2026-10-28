@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { GUN } from '../config.js';
 import { findNearest } from '../systems/AutoAim.js';
+import { sfx } from '../systems/Sfx.js';
 
 // Стартовое оружие: сам стреляет в ближайшего врага в радиусе.
 // Статы копируются из GUN, чтобы улучшения меняли их, не трогая конфиг.
@@ -34,6 +35,7 @@ export class MachineGun {
     const angle =
       Math.atan2(target.y - my, target.x - mx) + Phaser.Math.FloatBetween(-st.spread, st.spread);
     bullet.fire(mx, my, angle, st.bulletSpeed, st.damage, st.bulletLife);
+    sfx.play('shot');
     this.cooldown = 1 / st.fireRate;
   }
 }
