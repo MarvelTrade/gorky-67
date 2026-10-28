@@ -73,11 +73,12 @@ export class LevelUpScene extends Phaser.Scene {
     let cw, ch, positions;
     if (row) {
       cw = Math.min(260, (width - 40 - (n - 1) * 20) / n);
-      ch = Math.min(220, height * 0.5);
+      // Карточки пониже, чтобы на невысоком экране заголовок не лез на HUD
+      ch = Math.min(220, height * 0.45);
       const total = n * cw + (n - 1) * 20;
-      const y = height * 0.58;
+      const y = height * 0.62;
       positions = this.cards.map((_, i) => ({ x: (width - total) / 2 + cw / 2 + i * (cw + 20), y }));
-      this.title.setPosition(width / 2, height * 0.58 - ch / 2 - 50);
+      this.title.setPosition(width / 2, y - ch / 2 - 32);
     } else {
       cw = Math.min(420, width - 40);
       ch = Math.min(130, (height - 200) / n - 16);

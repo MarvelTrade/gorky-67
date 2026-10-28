@@ -1,10 +1,11 @@
 import * as Phaser from 'phaser';
-import { PLAYER } from '../config.js';
+import { PLAYER, CONTROLS } from '../config.js';
 import { DEPTH } from '../depth.js';
 
 // Вертолёт игрока. Управление:
-//  - палец/мышь зажаты → летит к точке под пальцем; отпустил → зависает
-//  - WASD/стрелки → летит в направлении, имеют приоритет над пальцем
+//  - палец → плавающий джойстик: где коснулся, там центр; отпустил → зависает
+//  - мышь зажата → летит к точке под курсором
+//  - WASD/стрелки → летит в направлении, имеют приоритет над остальным
 export class Player {
   constructor(scene, x, y) {
     this.scene = scene;
@@ -28,7 +29,8 @@ export class Player {
     this.hp = this.maxHp;
     this.invuln = 0;
 
-    this.target = null;
+    this.target = null; // точка под мышью, в экранных координатах
+    this.stick = null; // { id, ax, ay, x, y } — джойстик пальца, тоже в экранных координатах
     this.desired = new Phaser.Math.Vector2();
 
     this.keys = scene.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT');
@@ -38,23 +40,34 @@ export class Player {
     input.on('pointermove', this.onPointer, this);
     input.on('pointerup', this.onPointerUp, this);
     input.on('pointerupoutside', this.onPointerUp, this);
-    input.on('gameout', this.onPointerUp, this);
+    input.on('gameout', () => (this.target = null));
   }
 
   onPointer(pointer) {
     if (!pointer.isDown) return;
-    // Точку храним в экранных координатах: держишь палец на месте —
+    if (pointer.wasTouch && CONTROLS.touchJoystick) {
+      // Второй палец джойстик не перехватывает
+      if (this.stick && this.stick.id !== pointer.id) return;
+      // Центр — там, где палец оказался первым; в том числе после паузы, если палец не отпускали
+      if (!this.stick) this.stick = { id: pointer.id, ax: pointer.x, ay: pointer.y };
+      this.stick.x = pointer.x;
+      this.stick.y = pointer.y;
+      return;
+    }
+    // Точку храним в экранных координатах: держишь мышь на месте —
     // вертолёт продолжает лететь, а камера едет за ним.
     this.target = { x: pointer.x, y: pointer.y };
   }
 
-  onPointerUp() {
+  onPointerUp(pointer) {
+    if (this.stick && this.stick.id === pointer.id) this.stick = null;
     if (!this.scene.input.activePointer.isDown) this.target = null;
   }
 
   // После паузы: палец/клавиши могли отпустить, пока сцена не слушала ввод
   resetInput() {
     this.target = null;
+    this.stick = null;
     this.scene.input.keyboard.resetKeys();
   }
 
@@ -101,6 +114,14 @@ export class Player {
 
     if (key.x || key.y) {
       desired.set(key.x, key.y).normalize().scale(this.stats.maxSpeed);
+    } else if (this.stick) {
+      const dx = this.stick.x - this.stick.ax;
+      const dy = this.stick.y - this.stick.ay;
+      const len = Math.hypot(dx, dy);
+      if (len > CONTROLS.deadZone) {
+        const speed = this.stats.maxSpeed * Math.min(1, len / CONTROLS.stickRadius);
+        desired.set(dx / len, dy / len).scale(speed);
+      }
     } else if (this.target) {
       const world = this.scene.cameras.main.getWorldPoint(this.target.x, this.target.y);
       const dx = world.x - s.x;

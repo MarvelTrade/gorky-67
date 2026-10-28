@@ -4,7 +4,7 @@ const STRINGS = {
   ru: {
     title: 'Туалетный воин',
     play: 'Играть',
-    hint: 'Веди пальцем — вертолёт летит следом',
+    hint: 'Коснись в любом месте и тяни — вертолёт полетит',
     levelUp: 'Уровень',
     wave: 'Волна',
     lose: 'Сбит!',
@@ -37,7 +37,7 @@ const STRINGS = {
   en: {
     title: 'Toilet Warrior',
     play: 'Play',
-    hint: 'Drag your finger — the chopper follows',
+    hint: 'Touch anywhere and drag to fly',
     levelUp: 'Level',
     wave: 'Wave',
     lose: 'Shot down!',

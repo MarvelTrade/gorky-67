@@ -24,6 +24,8 @@ export class MenuScene extends Phaser.Scene {
 
     const layout = () => {
       const { width, height } = this.scale;
+      // Название не должно вылезать за края на узких телефонах
+      title.setFontSize(Math.min(42, Math.floor(width / 9)));
       title.setPosition(width / 2, height * 0.3);
       button.setPosition(width / 2, height * 0.55);
       hint.setPosition(width / 2, height * 0.55 + 70);

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { RUN } from '../config.js';
+import { RUN, CONTROLS } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n.js';
 
@@ -20,6 +20,7 @@ export class UIScene extends Phaser.Scene {
     this.gs = this.scene.get('GameScene');
 
     this.bars = this.add.graphics();
+    this.stick = this.add.graphics();
     const style = { fontFamily: 'sans-serif', color: '#ffffff', stroke: '#000000', strokeThickness: 4 };
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
@@ -47,16 +48,17 @@ export class UIScene extends Phaser.Scene {
     g.fillStyle(0x4fd8ff);
     g.fillRect(0, 0, width * Math.min(1, gs.xp / gs.xpNext), XP_BAR_H);
 
-    // HP — слева под полосой опыта
+    // HP — слева под полосой опыта; на узком экране короче, чтобы не наезжать на таймер
+    const hpW = Math.min(HP_BAR_W, width / 2 - 50);
     const hpY = XP_BAR_H + PAD + 22;
     const hpFrac = Math.max(0, p.hp / p.maxHp);
     g.fillStyle(0x000000, 0.55);
-    g.fillRect(PAD - 2, hpY - 2, HP_BAR_W + 4, HP_BAR_H + 4);
+    g.fillRect(PAD - 2, hpY - 2, hpW + 4, HP_BAR_H + 4);
     g.fillStyle(hpFrac > 0.5 ? 0x6cc04a : hpFrac > 0.25 ? 0xe0b030 : 0xe04030);
-    g.fillRect(PAD, hpY, HP_BAR_W * hpFrac, HP_BAR_H);
+    g.fillRect(PAD, hpY, hpW * hpFrac, HP_BAR_H);
 
     this.levelText.setPosition(PAD, XP_BAR_H + 6).setText(`${t('level')} ${gs.level}`);
-    this.hpText.setPosition(PAD + HP_BAR_W / 2, hpY + HP_BAR_H / 2).setText(`${Math.ceil(p.hp)} / ${p.maxHp}`);
+    this.hpText.setPosition(PAD + hpW / 2, hpY + HP_BAR_H / 2).setText(`${Math.ceil(p.hp)} / ${p.maxHp}`);
 
     // Таймер — сколько осталось продержаться; последние 30 с краснеет
     const left = RUN.duration - gs.spawner.elapsed;
@@ -81,8 +83,29 @@ export class UIScene extends Phaser.Scene {
       this.bossText.setPosition(width / 2, by - 3);
     }
 
+    this.drawStick(p.stick);
+
     if (this.fpsText) {
       this.fpsText.setPosition(width - PAD, XP_BAR_H + 6).setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
     }
+  }
+
+  // Плавающий джойстик под пальцем: кольцо в точке касания и «шляпка», куда тянешь
+  drawStick(stick) {
+    const g = this.stick;
+    g.clear();
+    if (!stick || stick.x === undefined) return;
+    const r = CONTROLS.stickRadius;
+    let dx = stick.x - stick.ax;
+    let dy = stick.y - stick.ay;
+    const len = Math.hypot(dx, dy);
+    if (len > r) {
+      dx = (dx / len) * r;
+      dy = (dy / len) * r;
+    }
+    g.lineStyle(3, 0xffffff, 0.35);
+    g.strokeCircle(stick.ax, stick.ay, r);
+    g.fillStyle(0xffffff, 0.3);
+    g.fillCircle(stick.ax + dx, stick.ay + dy, 22);
   }
 }

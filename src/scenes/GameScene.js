@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -76,6 +76,7 @@ export class GameScene extends Phaser.Scene {
     this.xpNext = XP.base;
     this.pendingLevels = 0;
     this.ended = false;
+    this.banners = 0; // сколько надписей сейчас на экране — следующая встаёт ниже
     this.boss = null;
     this.bossKilled = false;
 
@@ -105,6 +106,8 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
+    this.fitZoom();
+    this.scale.on('resize', this.fitZoom, this);
 
     this.scene.launch('UIScene');
 
@@ -112,9 +115,15 @@ export class GameScene extends Phaser.Scene {
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
       for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
+      this.scale.off('resize', this.fitZoom, this);
       this.scene.stop('UIScene');
       platform.gameplayStop();
     });
+  }
+
+  fitZoom() {
+    const { width, height } = this.scale;
+    this.cameras.main.setZoom(Math.min(1, Math.min(width, height) / VIEW.minShortSide));
   }
 
   // Конец забега: смерть или продержался RUN.duration секунд
@@ -199,7 +208,8 @@ export class GameScene extends Phaser.Scene {
   banner(message, color = '#ffe066') {
     const { width, height } = this.scale;
     const text = this.add
-      .text(width / 2, height * 0.25, message, {
+      // Не выше 130 px — там HUD и полоска босса
+      .text(width / 2, Math.max(height * 0.25, 130) + this.banners * 50, message, {
         fontFamily: 'sans-serif',
         fontSize: '36px',
         color,
@@ -210,12 +220,16 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(DEPTH.banner);
+    this.banners++;
     this.tweens.add({
       targets: text,
       alpha: { from: 1, to: 0 },
       delay: 1200,
       duration: 600,
-      onComplete: () => text.destroy(),
+      onComplete: () => {
+        text.destroy();
+        this.banners--;
+      },
     });
   }
 
