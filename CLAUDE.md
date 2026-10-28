@@ -72,7 +72,17 @@ index.html
 - После каждой фичи — запуск `npm run build` и проверка консоли браузера на ошибки.
 - Делать по одному шагу, коммитить в git после каждого рабочего шага.
 
-## Подготовка к Яндекс Играм (на будущее, сейчас только заглушки в platform.js)
+## Яндекс Игры (ветка yandex-sdk)
+- `npm run build:yandex` → `build/gorky-67-yandex.zip` (index.html в корне, проверка имён и размера). Только эта сборка
+  подключает SDK (`.env.yandex`: `VITE_PLATFORM=yandex`); `npm run dev`, `npm run build` и `npm run deploy` — на заглушках.
+- SDK грузится динамически из `/sdk.js` (относительный путь — для архива из Консоли). Нет SDK — заглушки, без падений.
+- `platform.gameReady()` — один раз, когда на экране меню. `gameplayStart/Stop` — забег, выбор улучшения, смерть.
+- Пауза от платформы (`game_api_pause/resume`) и реклама: забег на паузу, звук выключен.
+- Реклама: межстраничная при «Ещё раз», не чаще `ADS.fullscreenMinInterval`; «Воскреснуть» за rewarded — раз за забег.
+- Сохранения (рекорд, настройки звука) — `player.setData/getData`, копия в localStorage.
+- В сборке для Яндекса нет кнопки «Скопировать статистику» и бота.
+
+### Изначальный план подготовки
 - `platform.init()`, `platform.gameReady()` (вызвать, когда игра реально готова к игре), `platform.gameplayStart/Stop()`
 - `platform.showFullscreenAd()` — между забегами, не чаще разумного
 - `platform.showRewardedAd()` — «Воскреснуть» после смерти (1 раз за забег)

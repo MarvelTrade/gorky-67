@@ -4,6 +4,9 @@ export default {
   subtitle: 'Gorky-67 · 1983',
   play: 'Play',
   hint: 'Touch anywhere and drag to fly',
+  hintDesktop: 'WASD or arrow keys to fly. Or hold the mouse where you want to go.\nShooting is automatic.',
+  soundOn: 'Sound: on',
+  soundOff: 'Sound: off',
 
   telegramHeader: 'TELEGRAM',
   telegramStamp: 'CLASSIFIED',
@@ -33,6 +36,11 @@ export default {
 
   lose: 'Shot down!',
   win: 'Survived!',
+  reviveOffer: 'Watch an ad to continue with half armor?',
+  reviveBtn: 'Ad → revive',
+  giveUp: 'Finish',
+  adLoading: 'Loading the ad…',
+  adFailed: 'The ad did not show — cannot continue',
   ending_win: 'The column made it out. Officially, there was no accident.',
   ending_lose: 'Falcon went silent. The city is closed until further notice.',
   time: 'Time',

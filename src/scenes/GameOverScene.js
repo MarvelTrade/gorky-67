@@ -66,7 +66,8 @@ export class GameOverScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ENTER', () => this.restart());
     this.input.keyboard.on('keydown-SPACE', () => this.restart());
 
-    // Для плейтестов: все замеры текстом в буфер обмена
+    // Для плейтестов: все замеры текстом в буфер обмена. В сборке для Яндекса кнопки нет —
+    // игрокам каталога она ни к чему (рекомендация 6.7)
     const copy = this.add
       .text(0, 0, t('copyStats'), {
         fontFamily: 'sans-serif',
@@ -76,6 +77,7 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
+    copy.setVisible(import.meta.env.VITE_PLATFORM !== 'yandex');
     copy.on('pointerup', async () => {
       if (!this.ready) return;
       const ok = await copyReport();

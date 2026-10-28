@@ -1,5 +1,4 @@
 import * as Phaser from 'phaser';
-import { platform } from '../platform/platform.js';
 import { PALETTE as P, CITY } from '../config.js';
 
 // Генерирует текстуры из примитивов — внешних ассетов пока нет.
@@ -23,7 +22,6 @@ export class BootScene extends Phaser.Scene {
     this.makeGemTexture();
     this.makeParticleTextures();
     this.makeCityTiles();
-    platform.gameReady();
     this.scene.start('MenuScene');
   }
 

@@ -63,7 +63,7 @@ export function report() {
     const picks = r.picks.map((p) => `${t(`upg_${p.id}`)} (${formatTime(p.t)})`).join(' → ') || '—';
     lines.push(
       `#${i + 1} ${r.at.slice(0, 16).replace('T', ' ')} · сессия ${r.session}, забег ${r.runInSession} · ` +
-        `${formatTime(r.time)} · ${result} · ур. ${r.level} · убито ${r.kills} · ${boss}`,
+        `${formatTime(r.time)} · ${result}${r.revived ? ' (после воскрешения)' : ''} · ур. ${r.level} · убито ${r.kills} · ${boss}`,
       `   улучшения: ${picks}`
     );
   });
