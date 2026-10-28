@@ -7,5 +7,5 @@ export const DEPTH = {
   bullets: 20,
   player: 30,
   rotor: 31,
-  debug: 100,
+  banner: 100,
 };

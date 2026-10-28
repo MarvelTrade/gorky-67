@@ -3,6 +3,8 @@ import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { LevelUpScene } from './scenes/LevelUpScene.js';
+import { UIScene } from './scenes/UIScene.js';
+import { GameOverScene } from './scenes/GameOverScene.js';
 import { platform } from './platform/platform.js';
 import { initLang } from './i18n.js';
 
@@ -24,7 +26,7 @@ function startGame() {
       activePointers: 2,
     },
     disableContextMenu: true,
-    scene: [BootScene, MenuScene, GameScene, LevelUpScene],
+    scene: [BootScene, MenuScene, GameScene, UIScene, LevelUpScene, GameOverScene],
   });
 
   if (import.meta.env.DEV) window.__game = game;

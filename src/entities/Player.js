@@ -58,6 +58,14 @@ export class Player {
     this.scene.input.keyboard.resetKeys();
   }
 
+  hide() {
+    this.body.setVelocity(0, 0);
+    this.body.enable = false;
+    this.sprite.setVisible(false);
+    this.rotor.setVisible(false);
+    this.shadow.setVisible(false);
+  }
+
   get x() {
     return this.sprite.x;
   }

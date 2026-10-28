@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -75,6 +75,7 @@ export class GameScene extends Phaser.Scene {
     this.xp = 0;
     this.xpNext = XP.base;
     this.pendingLevels = 0;
+    this.ended = false;
 
     this.events.on('enemy-killed', (enemy) => {
       this.kills++;
@@ -89,24 +90,42 @@ export class GameScene extends Phaser.Scene {
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
       if (this.pendingLevels > 0) this.time.delayedCall(150, () => this.openLevelUp());
     });
-    // Временно, до экрана итогов (шаг 5): смерть = перезапуск забега
-    this.events.once('player-died', () => this.time.delayedCall(600, () => this.scene.restart()));
+    this.events.once('player-died', () => this.endRun(false));
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
 
-    // Временный отладочный текст, пока нет UIScene (шаг 5)
-    this.debugText = this.add
-      .text(10, 10, '', { fontFamily: 'monospace', fontSize: '14px', color: '#ffffff' })
-      .setScrollFactor(0)
-      .setDepth(DEPTH.debug);
+    this.scene.launch('UIScene');
 
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
       for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'resume', 'player-died']) this.events.off(e);
+      this.scene.stop('UIScene');
       platform.gameplayStop();
     });
+  }
+
+  // Конец забега: смерть или продержался RUN.duration секунд
+  endRun(win) {
+    if (this.ended) return;
+    this.ended = true;
+    // Уровень и смерть могли случиться в одном кадре — выбор улучшения уже не нужен
+    this.scene.stop('LevelUpScene');
+    this.scene.resume();
+    const p = this.player;
+    if (!win) {
+      p.hide();
+      this.explosionFx(p.x, p.y, 70);
+      this.cameras.main.shake(300, 0.012);
+    }
+    const stats = {
+      win,
+      time: Math.min(this.spawner.elapsed, RUN.duration),
+      kills: this.kills,
+      level: this.level,
+    };
+    this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
   }
 
   addXp(value) {
@@ -121,7 +140,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   openLevelUp() {
-    if (this.pendingLevels <= 0 || !this.player.alive) return;
+    if (this.pendingLevels <= 0 || this.ended) return;
     const choices = this.upgrades.roll(3);
     if (choices.length === 0) {
       this.pendingLevels = 0;
@@ -164,7 +183,7 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(DEPTH.debug);
+      .setDepth(DEPTH.banner);
     this.tweens.add({
       targets: text,
       alpha: { from: 1, to: 0 },
@@ -184,23 +203,13 @@ export class GameScene extends Phaser.Scene {
     for (let y = 0; y <= WORLD.height; y += WORLD.gridStep) g.lineBetween(0, y, WORLD.width, y);
   }
 
-  formatTime(sec) {
-    const s = Math.floor(sec);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  }
-
   update(time, delta) {
-    if (!this.player.alive) return;
+    if (this.ended) return;
     const dt = delta / 1000;
     this.player.update(dt);
     this.gun.update(dt);
     this.missiles.update(dt);
     this.spawner.update(dt);
-
-    this.debugText.setText(
-      `${this.formatTime(this.spawner.elapsed)}  волна ${this.spawner.waveIndex + 1}  ` +
-        `HP ${this.player.hp}/${this.player.maxHp}  ур ${this.level}  xp ${this.xp}/${this.xpNext}  ` +
-        `убито ${this.kills}  врагов ${this.enemies.countActive()}  FPS ${Math.round(this.game.loop.actualFps)}`
-    );
+    if (this.spawner.elapsed >= RUN.duration) this.endRun(true);
   }
 }
