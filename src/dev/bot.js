@@ -1,14 +1,18 @@
 // Бот для замеров баланса. Только dev-сборка: в консоли браузера
 //   __startBot()                 — уклоняется от врагов и снарядов, собирает кристаллы
 //   __startBot({ dodge: false }) — «новичок»: летит за кристаллами, не уклоняется
+//   __startBot({ smart: true })  — улучшения по приоритету, а не случайно
 //   __bot.log                    — что произошло: уровни, HP, враги, FPS каждые 15 с
-// Улучшения выбирает случайно. Играет в реальном времени, забег — 5 минут.
+// Играет в реальном времени, забег — 5 минут.
+
+// Порядок, в котором «думающий» игрок берёт улучшения
+const PRIORITY = ['missile', 'damage', 'fireRate', 'hp', 'magnet', 'speed'];
 
 export function installBot(game) {
-  window.__startBot = ({ dodge = true } = {}) => {
+  window.__startBot = ({ dodge = true, smart = false } = {}) => {
     if (window.__bot) clearInterval(window.__bot.timer);
     game.scene.getScenes(true)[0]?.scene.start('GameScene');
-    const log = { dodge, samples: [], picks: [], minFps: 99, hpLossByMin: [0, 0, 0, 0, 0, 0], done: false };
+    const log = { dodge, smart, samples: [], picks: [], minFps: 99, hpLossByMin: [0, 0, 0, 0, 0, 0], done: false };
     let lastHp = null;
     let lastSample = 0;
 
@@ -27,7 +31,11 @@ export function installBot(game) {
       const lu = scenes.getScene('LevelUpScene');
       if (scenes.isActive('LevelUpScene') && lu.ready && !lu.picked) {
         const choices = lu.data_.choices;
-        const i = Math.floor(Math.random() * choices.length);
+        let i = Math.floor(Math.random() * choices.length);
+        if (smart) {
+          const rank = choices.map((c) => PRIORITY.indexOf(c.id));
+          i = rank.indexOf(Math.min(...rank));
+        }
         log.picks.push(`${choices[i].id}@${Math.round(sc.spawner.elapsed)}`);
         lu.pick(i);
         return;

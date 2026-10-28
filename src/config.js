@@ -72,7 +72,7 @@ export const PLAYER = {
   rotorSpeed: 40,       // рад/с, чисто визуал
   hitRadius: 18,
   maxHp: 100,
-  invulnTime: 0.6,      // с неуязвимости после получения урона
+  invulnTime: 0.8,      // с неуязвимости после получения урона (было 0.6 — см. замер шага 9)
   magnetRadius: 90,     // с какого расстояния кристаллы летят к вертолёту
 };
 
@@ -102,6 +102,11 @@ export const PALETTE = {
   infected: 0x6b7350,   // кожа заражённых
 };
 
+// Приоритет целей для автонаведения
+export const AIM = {
+  bossGunShare: 0.6,    // доля выстрелов пулемёта по «Объекту», когда он в радиусе
+};
+
 // Ключи — внутренние имена типов (и текстур):
 //   infantry — заражённые, jeep — заражённый вездеход, aa — зенитная установка оцепления,
 //   tank — танк оцепления, boss — «Объект».
@@ -113,7 +118,7 @@ export const ENEMIES = {
     hp: 20,
     speed: 55,
     speedJitter: 15,    // ± к скорости, чтобы толпа не слипалась в точку
-    damage: 10,         // урон игроку при касании
+    damage: 8,          // урон игроку при касании (было 10: новичок погибал в первую минуту)
     xp: 1,              // ценность выпадающего кристалла
     radius: 9,
   },
@@ -166,7 +171,7 @@ export const ENEMIES = {
   // «Объект»: огромный мутант из лаборатории, медленно ползёт к игроку и плюётся «Зарёй»
   boss: {
     behavior: 'boss',
-    hp: 5000,
+    hp: 3200,           // 5000 не успевали снять за минуту даже сильной сборкой (замер шага 9)
     speed: 28,
     speedJitter: 0,
     damage: 20,
@@ -191,15 +196,19 @@ export const BOSS_SPAWN = {
   dist: 380,            // расстояние от игрока
 };
 
-// Волны: каждые WAVE_LENGTH секунд — следующая. Для каждого типа — пачка раз в interval секунд.
+// Волны: каждые WAVE_LENGTH секунд — следующая. Для каждого типа — пачка раз в interval секунд,
+// начиная с from секунд от начала волны (по умолчанию сразу).
 // hpMul растит живучесть врагов, чтобы улучшения не делали игру слишком лёгкой.
 export const WAVE_LENGTH = 60;
 export const WAVES = [
   { hpMul: 1.0, infantry: { interval: 1.0, batch: 4 } },
-  { hpMul: 1.2, infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 3.0, batch: 2 } },
-  { hpMul: 1.5, infantry: { interval: 0.9, batch: 6 }, jeep: { interval: 2.5, batch: 3 }, aa: { interval: 7, batch: 1 }, tank: { interval: 14, batch: 1 } },
-  { hpMul: 1.9, infantry: { interval: 0.8, batch: 7 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 11, batch: 1 } },
-  { hpMul: 2.4, infantry: { interval: 0.7, batch: 8 }, jeep: { interval: 1.6, batch: 4 }, aa: { interval: 4, batch: 2 }, tank: { interval: 9, batch: 2 } },
+  { hpMul: 1.2, infantry: { interval: 1.0, batch: 4 }, jeep: { interval: 3.0, batch: 2 } },
+  // Замер ботом (шаг 9): на 3-й волне всё новое приходило разом — скачок урона;
+  // с 4-й волны пул в 300 врагов забивался к ~3:45. Новые типы теперь вводятся по очереди,
+  // пехоты на 4–5-й волне меньше.
+  { hpMul: 1.5, infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 2.5, batch: 2 }, tank: { interval: 14, batch: 1, from: 15 }, aa: { interval: 7, batch: 1, from: 30 } },
+  { hpMul: 1.9, infantry: { interval: 1.0, batch: 6 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 11, batch: 1 } },
+  { hpMul: 2.4, infantry: { interval: 0.9, batch: 7 }, jeep: { interval: 1.8, batch: 3 }, aa: { interval: 4, batch: 2 }, tank: { interval: 9, batch: 2 } },
 ];
 
 export const SPAWN = {
@@ -221,7 +230,7 @@ export const XP = {
   // (45, +5) давала первый уровень вовремя, но к 2:15 только 7-й уровень и полный пул врагов.
   // Поэтому первый уровень отдельно, дальше — дешевле.
   first: 45,            // опыта до 2-го уровня — он приходит на ~20-й секунде
-  base: 20,             // опыта до 3-го уровня
+  base: 14,             // опыта до 3-го уровня (20 — к 2:00 только 8-й уровень, толпа копилась)
   perLevel: 6,          // +столько к требованию за каждый следующий уровень
   pickupRadius: 22,
   gemStartSpeed: 120,   // скорость кристалла в момент «захвата» магнитом

@@ -61,10 +61,15 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
+      if (bullet.only?.active && enemy !== bullet.only) return;
       bullet.kill();
       enemy.hit(bullet.damage);
     });
-    this.physics.add.overlap(this.missileGroup, this.enemies, (missile) => missile.explode());
+    this.physics.add.overlap(this.missileGroup, this.enemies, (missile, enemy) => {
+      // Ракета, наведённая на «Объект», не взрывается о толпу по пути
+      if (missile.target === this.boss && this.boss?.active && enemy !== this.boss) return;
+      missile.explode();
+    });
     // Причину урона запоминаем для замеров: «тип врага» или «тип:shell»
     this.physics.add.overlap(this.player.sprite, this.enemies, (_, enemy) => {
       this.player.takeDamage(enemy.damage, enemy.type);

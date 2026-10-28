@@ -8,9 +8,11 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     this.setDepth(DEPTH.bullets);
   }
 
-  fire(x, y, angle, speed, damage, life) {
+  // only — если задан, снаряд пролетает сквозь всех, кроме этой цели (выстрелы по «Объекту»)
+  fire(x, y, angle, speed, damage, life, only = null) {
     this.damage = damage;
     this.life = life;
+    this.only = only;
     this.enableBody(true, x, y, true, true);
     this.rotation = angle;
     this.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);

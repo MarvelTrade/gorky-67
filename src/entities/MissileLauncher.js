@@ -1,5 +1,5 @@
 import { MISSILE } from '../config.js';
-import { findNearest } from '../systems/AutoAim.js';
+import { findNearest, bossInRange } from '../systems/AutoAim.js';
 
 // Ракетная установка. count = 0, пока улучшение не взято.
 // Залп из count ракет раз в cooldown секунд, каждая — в свою цель, если хватает врагов.
@@ -22,8 +22,10 @@ export class MissileLauncher {
     const st = this.stats;
     const taken = new Set();
     let fired = 0;
+    // Первая ракета залпа — всегда в «Объект», если он в радиусе
+    const boss = bossInRange(this.scene, s.x, s.y, st.range);
     for (let i = 0; i < st.count; i++) {
-      const target = findNearest(this.enemies, s.x, s.y, st.range, taken);
+      const target = i === 0 && boss ? boss : findNearest(this.enemies, s.x, s.y, st.range, taken);
       if (!target) break;
       taken.add(target);
       const missile = this.missiles.get();

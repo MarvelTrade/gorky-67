@@ -23,8 +23,8 @@ export class WaveSpawner {
     const index = Math.min(WAVES.length - 1, Math.floor(this.elapsed / WAVE_LENGTH));
     if (index !== this.waveIndex) {
       this.waveIndex = index;
-      // Новые типы появляются сразу, а не через полный интервал
-      for (const type of Object.keys(ENEMIES)) this.timers[type] = 0;
+      // Новые типы появляются сразу (или через from секунд), а не через полный интервал
+      for (const type of Object.keys(ENEMIES)) this.timers[type] = WAVES[index][type]?.from ?? 0;
       this.scene.events.emit('wave-changed', index + 1);
     }
 

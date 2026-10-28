@@ -18,3 +18,11 @@ export function findNearest(group, x, y, range, exclude) {
   }
   return best;
 }
+
+// Живой босс в радиусе — или null. Нужен, чтобы оружие не тратило весь огонь
+// на толпу вокруг: замер показал, что иначе «Объект» не получает урона вовсе.
+export function bossInRange(scene, x, y, range) {
+  const b = scene.boss;
+  if (!b || !b.active) return null;
+  return Math.hypot(b.x - x, b.y - y) <= range ? b : null;
+}
