@@ -7,7 +7,8 @@
     "dev": "vite",
     "host": "vite --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "sh scripts/deploy.sh"
   },
   "dependencies": {
     "phaser": "^4.2.1"
