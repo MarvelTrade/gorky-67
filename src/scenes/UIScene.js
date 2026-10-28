@@ -7,6 +7,7 @@ const PAD = 12;
 const XP_BAR_H = 10;
 const HP_BAR_W = 180;
 const HP_BAR_H = 14;
+const BOSS_BAR_H = 12;
 
 // HUD поверх GameScene: полоска опыта с уровнем, HP, оставшееся время.
 // Только читает состояние GameScene, ничего в нём не меняет.
@@ -23,6 +24,10 @@ export class UIScene extends Phaser.Scene {
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
     this.timerText = this.add.text(0, 0, '', { ...style, fontSize: '28px', fontStyle: 'bold' }).setOrigin(0.5, 0);
+    this.bossText = this.add
+      .text(0, 0, t('boss'), { ...style, fontSize: '14px', strokeThickness: 3, color: '#ffb0a0' })
+      .setOrigin(0.5, 1)
+      .setVisible(false);
     this.fpsText = import.meta.env.DEV
       ? this.add.text(0, 0, '', { ...style, fontSize: '12px', strokeThickness: 3 }).setOrigin(1, 0)
       : null;
@@ -59,6 +64,22 @@ export class UIScene extends Phaser.Scene {
       .setPosition(width / 2, XP_BAR_H + 6)
       .setText(formatTime(Math.ceil(left)))
       .setColor(left <= 30 ? '#ff6a5a' : '#ffffff');
+
+    // HP босса — под таймером, пока он жив
+    const boss = gs.boss;
+    const showBoss = !!boss && boss.active;
+    this.bossText.setVisible(showBoss);
+    if (showBoss) {
+      const bw = Math.min(400, width - 2 * PAD);
+      const bx = (width - bw) / 2;
+      const by = XP_BAR_H + 78;
+      const frac = Math.max(0, boss.hp / boss.cfg.hp);
+      g.fillStyle(0x000000, 0.6);
+      g.fillRect(bx - 2, by - 2, bw + 4, BOSS_BAR_H + 4);
+      g.fillStyle(0xd04030);
+      g.fillRect(bx, by, bw * frac, BOSS_BAR_H);
+      this.bossText.setPosition(width / 2, by - 3);
+    }
 
     if (this.fpsText) {
       this.fpsText.setPosition(width - PAD, XP_BAR_H + 6).setText(`FPS ${Math.round(this.game.loop.actualFps)}`);

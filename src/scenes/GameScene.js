@@ -76,15 +76,26 @@ export class GameScene extends Phaser.Scene {
     this.xpNext = XP.base;
     this.pendingLevels = 0;
     this.ended = false;
+    this.boss = null;
+    this.bossKilled = false;
 
     this.events.on('enemy-killed', (enemy) => {
       this.kills++;
+      if (enemy === this.boss) {
+        this.onBossKilled(enemy);
+        return;
+      }
       const gem = this.gems.get();
       if (gem) gem.drop(enemy.x, enemy.y, enemy.cfg.xp, this.player);
     });
+    this.events.on('boss-spawned', (boss) => {
+      this.boss = boss;
+      this.banner(t('bossIncoming'), '#ff6a5a');
+      this.cameras.main.shake(400, 0.008);
+    });
     this.events.on('xp-collected', (value) => this.addXp(value));
     this.events.on('explosion', (x, y, r) => this.explosionFx(x, y, r));
-    this.events.on('wave-changed', (n) => this.waveBanner(n));
+    this.events.on('wave-changed', (n) => this.banner(`${t('wave')} ${n}`));
     this.events.on('resume', () => {
       this.player.resetInput();
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
@@ -100,7 +111,7 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'resume', 'player-died']) this.events.off(e);
+      for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
       this.scene.stop('UIScene');
       platform.gameplayStop();
     });
@@ -124,6 +135,8 @@ export class GameScene extends Phaser.Scene {
       time: Math.min(this.spawner.elapsed, RUN.duration),
       kills: this.kills,
       level: this.level,
+      bossSeen: !!this.boss,
+      bossKilled: this.bossKilled,
     };
     this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
   }
@@ -170,13 +183,26 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  waveBanner(n) {
+  // Серия взрывов по корпусу и победа
+  onBossKilled(boss) {
+    this.bossKilled = true;
+    const { x, y } = boss;
+    for (let i = 0; i < 6; i++) {
+      this.time.delayedCall(i * 120, () =>
+        this.explosionFx(x + Phaser.Math.Between(-40, 40), y + Phaser.Math.Between(-40, 40), 50)
+      );
+    }
+    this.cameras.main.shake(500, 0.015);
+    this.endRun(true);
+  }
+
+  banner(message, color = '#ffe066') {
     const { width, height } = this.scale;
     const text = this.add
-      .text(width / 2, height * 0.25, `${t('wave')} ${n}`, {
+      .text(width / 2, height * 0.25, message, {
         fontFamily: 'sans-serif',
         fontSize: '36px',
-        color: '#ffe066',
+        color,
         fontStyle: 'bold',
         stroke: '#000000',
         strokeThickness: 5,

@@ -15,6 +15,7 @@ export class BootScene extends Phaser.Scene {
     this.makeJeepTexture();
     this.makeAATexture();
     this.makeShellTexture();
+    this.makeBossTexture();
     this.makeBulletTexture();
     this.makeMissileTexture();
     this.makeGemTexture();
@@ -106,6 +107,28 @@ export class BootScene extends Phaser.Scene {
     g.lineStyle(2, 0x2a2420);
     g.strokeRect(2, 2, 30, 30);
     this.makeTexture(g, 'aa', 34, 34);
+  }
+
+  // Босс: большая платформа с гусеницами, башня, четыре ствола вправо
+  makeBossTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x2a2420);
+    g.fillRect(6, 4, 78, 14);
+    g.fillRect(6, 72, 78, 14);
+    g.fillStyle(ENEMIES.boss.color);
+    g.fillRoundedRect(10, 12, 70, 66, 10);
+    g.lineStyle(3, 0x2a2420);
+    g.strokeRoundedRect(10, 12, 70, 66, 10);
+    g.fillStyle(0x2a2420);
+    for (const y of [32, 39, 48, 55]) g.fillRect(45, y, 45, 4);
+    g.fillStyle(0x7a6a5a);
+    g.fillCircle(45, 45, 20);
+    g.lineStyle(3, 0x2a2420);
+    g.strokeCircle(45, 45, 20);
+    g.fillStyle(0xff3b2f);
+    g.fillCircle(18, 20, 3);
+    g.fillCircle(18, 70, 3);
+    this.makeTexture(g, 'boss', 90, 90);
   }
 
   // Снаряд зенитки — заметный, чтобы успеть увернуться

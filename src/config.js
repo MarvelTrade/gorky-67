@@ -37,7 +37,7 @@ export const GUN = {
   muzzleOffset: 34,     // от центра вертолёта до носа
 };
 
-// behavior: chase — идёт на игрока, dash — рывками, turret — стоит и стреляет
+// behavior: chase — идёт на игрока, dash — рывками, turret — стоит и стреляет, boss — мини-босс
 export const ENEMIES = {
   infantry: {
     behavior: 'chase',
@@ -78,6 +78,32 @@ export const ENEMIES = {
     radius: 15,
     color: 0x7a6a5a,
   },
+  // Мини-босс: большая зенитная установка, медленно ползёт к игроку
+  boss: {
+    behavior: 'boss',
+    hp: 5000,
+    speed: 28,
+    speedJitter: 0,
+    damage: 20,
+    xp: 0,
+    radius: 40,
+    color: 0x5a4a3e,
+    volleyInterval: 1.3,  // прицельный залп
+    volleyCount: 3,
+    volleySpread: 0.25,   // рад между снарядами залпа
+    burstInterval: 3.2,   // кольцо снарядов во все стороны
+    burstCount: 16,
+    shellSpeed: 190,
+    shellDamage: 14,
+    shellLife: 5,
+  },
+};
+
+// Босс появляется в начале 5-й минуты недалеко от игрока, чтобы его было видно.
+// Убил босса — победа сразу; не убил, но дожил до конца RUN.duration — тоже победа.
+export const BOSS_SPAWN = {
+  at: 240,              // с от начала забега
+  dist: 380,            // расстояние от игрока
 };
 
 // Волны: каждые WAVE_LENGTH секунд — следующая. Для каждого типа — пачка раз в interval секунд.
@@ -99,7 +125,7 @@ export const SPAWN = {
 
 export const POOLS = {
   bullets: 120,
-  shells: 60,
+  shells: 150,
   missiles: 24,
   gems: 400,
 };

@@ -28,6 +28,7 @@ export class GameOverScene extends Phaser.Scene {
       `${t('kills')}: ${stats.kills}`,
       `${t('level')}: ${stats.level}`,
     ];
+    if (stats.bossSeen) lines.push(t(stats.bossKilled ? 'bossKilled' : 'bossAlive'));
     const statsText = this.add
       .text(0, 0, lines.join('\n'), {
         fontFamily: 'sans-serif',
@@ -69,16 +70,16 @@ export class GameOverScene extends Phaser.Scene {
     this.events.once('shutdown', () => this.scale.off('resize', layout));
   }
 
-  // Рекорд — дольше продержался, при равенстве — больше убил
   async updateRecord(stats, text) {
     const save = await platform.loadProgress();
     const best = save.best;
-    const isNew = !best || stats.time > best.time || (stats.time === best.time && stats.kills > best.kills);
-    if (isNew) {
-      await platform.saveProgress({ ...save, best: { time: stats.time, kills: stats.kills } });
+    const run = { time: stats.time, kills: stats.kills, boss: stats.bossKilled };
+    if (!best || isBetter(run, best)) {
+      await platform.saveProgress({ ...save, best: run });
       text.setText(t('newBest')).setColor('#ffe066');
     } else {
-      text.setText(`${t('best')}: ${formatTime(best.time)} · ${best.kills}`);
+      const boss = best.boss ? ` · ${t('bossShort')}` : '';
+      text.setText(`${t('best')}: ${formatTime(best.time)} · ${best.kills}${boss}`);
     }
   }
 
@@ -89,4 +90,12 @@ export class GameOverScene extends Phaser.Scene {
     await platform.showFullscreenAd();
     this.scene.start('GameScene');
   }
+}
+
+// Убил босса — лучше, чем не убил; среди убивших — кто быстрее,
+// среди остальных — кто дольше продержался; при равенстве — больше убитых.
+function isBetter(a, b) {
+  if (!!a.boss !== !!b.boss) return !!a.boss;
+  if (a.time !== b.time) return a.boss ? a.time < b.time : a.time > b.time;
+  return a.kills > b.kills;
 }

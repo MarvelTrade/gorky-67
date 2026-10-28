@@ -23,7 +23,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // Таймер текущей фазы: рывок/пауза у джипа, перезарядка у зенитки.
     // Случайный старт, чтобы враги одной пачки не действовали синхронно.
     this.phase = 'pause';
-    this.timer = Phaser.Math.FloatBetween(0, cfg.pauseTime ?? cfg.fireInterval ?? 0);
+    this.timer = Phaser.Math.FloatBetween(0, cfg.pauseTime ?? cfg.fireInterval ?? cfg.volleyInterval ?? 0);
+    this.burstTimer = cfg.burstInterval ?? 0;
 
     this.setTexture(type);
     this.enableBody(true, x, y, true, true);
@@ -67,7 +68,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const dx = t.x - this.x;
     const dy = t.y - this.y;
     const dist = Math.hypot(dx, dy) || 1;
-    if (dist > SPAWN.despawnDist) {
+    if (dist > SPAWN.despawnDist && this.cfg.behavior !== 'boss') {
       this.despawn();
       return;
     }
@@ -82,6 +83,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         break;
       case 'turret':
         this.updateTurret(dt, dx, dy, dist);
+        break;
+      case 'boss':
+        this.updateBoss(dt, dx, dy, dist);
         break;
     }
   }
@@ -113,9 +117,36 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.rotation = Math.atan2(dy, dx);
     this.timer -= dt;
     if (this.timer > 0 || dist > cfg.range) return;
+    this.fireShell(this.rotation);
+    this.timer = cfg.fireInterval;
+  }
+
+  // Босс: ползёт к игроку, часто бьёт прицельным веером и иногда — кольцом во все стороны
+  updateBoss(dt, dx, dy, dist) {
+    const cfg = this.cfg;
+    this.body.setVelocity((dx / dist) * this.speed, (dy / dist) * this.speed);
+    this.rotation = Math.atan2(dy, dx);
+
+    this.timer -= dt;
+    if (this.timer <= 0) {
+      this.timer = cfg.volleyInterval;
+      const half = (cfg.volleyCount - 1) / 2;
+      for (let i = 0; i < cfg.volleyCount; i++) this.fireShell(this.rotation + (i - half) * cfg.volleySpread);
+    }
+
+    this.burstTimer -= dt;
+    if (this.burstTimer <= 0) {
+      this.burstTimer = cfg.burstInterval;
+      // Кольцо каждый раз чуть повёрнуто, чтобы безопасные щели не стояли на месте
+      const offset = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      for (let i = 0; i < cfg.burstCount; i++) this.fireShell(offset + (i / cfg.burstCount) * Math.PI * 2);
+    }
+  }
+
+  fireShell(angle) {
+    const cfg = this.cfg;
     const shell = this.scene.shells.get();
     if (!shell) return;
-    shell.fire(this.x, this.y, this.rotation, cfg.shellSpeed, cfg.shellDamage, cfg.shellLife);
-    this.timer = cfg.fireInterval;
+    shell.fire(this.x, this.y, angle, cfg.shellSpeed, cfg.shellDamage, cfg.shellLife);
   }
 }
