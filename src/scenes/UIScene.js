@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
-import { RUN, CONTROLS } from '../config.js';
+import { RUN, CONTROLS, RADIO } from '../config.js';
 import { formatTime } from '../format.js';
-import { t } from '../i18n.js';
+import { t } from '../i18n/index.js';
 
 const PAD = 12;
 const XP_BAR_H = 10;
@@ -21,6 +21,20 @@ export class UIScene extends Phaser.Scene {
 
     this.bars = this.add.graphics();
     this.stick = this.add.graphics();
+
+    // Радио «Берёзы»: позывной и одна строка
+    this.radioWave = -1;
+    this.radioLeft = 0;
+    this.radio = this.add.container(0, 0).setAlpha(0);
+    this.radioBg = this.add.graphics();
+    this.radioCall = this.add.text(0, 0, t('radioCallsign'), {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      color: '#d8f040',
+      fontStyle: 'bold',
+    });
+    this.radioText = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff' });
+    this.radio.add([this.radioBg, this.radioCall, this.radioText]);
     const style = { fontFamily: 'sans-serif', color: '#ffffff', stroke: '#000000', strokeThickness: 4 };
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
@@ -34,9 +48,10 @@ export class UIScene extends Phaser.Scene {
       : null;
   }
 
-  update() {
+  update(time, delta) {
     const gs = this.gs;
     if (!gs.player) return;
+    this.updateRadio(gs, delta / 1000);
     const { width } = this.scale;
     const p = gs.player;
     const g = this.bars;
@@ -107,5 +122,40 @@ export class UIScene extends Phaser.Scene {
     g.strokeCircle(stick.ax, stick.ay, r);
     g.fillStyle(0xffffff, 0.3);
     g.fillCircle(stick.ax + dx, stick.ay + dy, 22);
+  }
+
+  // Новая волна — новая реплика. Опрашиваем номер волны, а не ловим событие:
+  // первая волна стартует раньше, чем эта сцена успевает подписаться.
+  // Пока игра на паузе (выбор улучшения), реплика не тратит своё время.
+  updateRadio(gs, dt) {
+    const wave = gs.spawner.waveIndex;
+    if (wave >= 0 && wave !== this.radioWave) {
+      this.radioWave = wave;
+      this.showRadio(t(`radio_${wave + 1}`));
+    }
+    if (this.radioLeft <= 0 || gs.scene.isPaused()) return;
+    this.radioLeft -= dt;
+    const total = RADIO.duration + RADIO.fade * 2;
+    const passed = total - this.radioLeft;
+    this.radio.setAlpha(Math.max(0, Math.min(1, passed / RADIO.fade, this.radioLeft / RADIO.fade)));
+  }
+
+  showRadio(line) {
+    const { width } = this.scale;
+    const w = Math.min(440, width - 2 * PAD);
+    const pad = 10;
+    this.radioText.setText(line).setWordWrapWidth(w - pad * 2 - 6);
+    this.radioCall.setPosition(pad + 6, pad - 2);
+    this.radioText.setPosition(pad + 6, pad + 14);
+    const h = this.radioText.height + pad * 2 + 14;
+    this.radioBg
+      .clear()
+      .fillStyle(0x0c100a, 0.78)
+      .fillRoundedRect(0, 0, w, h, 6)
+      .fillStyle(0xd8f040)
+      .fillRect(0, 0, 4, h);
+    // Под полоской босса, чтобы не перекрывать её на 5-й волне
+    this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
+    this.radioLeft = RADIO.duration + RADIO.fade * 2;
   }
 }

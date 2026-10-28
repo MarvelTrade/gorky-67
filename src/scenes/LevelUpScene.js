@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { LEVELUP } from '../config.js';
-import { t } from '../i18n.js';
+import { t } from '../i18n/index.js';
 
 // Пауза с выбором 1 из 3 улучшений. Запускается поверх приостановленной GameScene.
 // data: { level, choices: [{ id, name, desc, level, max }], onPick(id) }

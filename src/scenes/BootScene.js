@@ -1,8 +1,9 @@
 import * as Phaser from 'phaser';
 import { platform } from '../platform/platform.js';
-import { ENEMIES } from '../config.js';
+import { PALETTE as P, CITY } from '../config.js';
 
 // Генерирует текстуры из примитивов — внешних ассетов пока нет.
+// Все спрайты смотрят вправо (угол 0).
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene');
@@ -14,16 +15,18 @@ export class BootScene extends Phaser.Scene {
     this.makeInfantryTexture();
     this.makeJeepTexture();
     this.makeAATexture();
-    this.makeShellTexture();
+    this.makeTankTexture();
     this.makeBossTexture();
+    this.makeShellTextures();
     this.makeBulletTexture();
     this.makeMissileTexture();
     this.makeGemTexture();
+    this.makeCityTiles();
     platform.gameReady();
     this.scene.start('MenuScene');
   }
 
-  // Корпус в стиле Comanche, нос смотрит вправо (угол 0)
+  // «Изделие 67»: угловатый корпус, нос вправо
   makeHeliTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     const hull = [
@@ -44,9 +47,9 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x56616b);
     g.fillRect(38, 6, 8, 36);
     // корпус — угловатый ромб
-    g.fillStyle(0x9aa7b3);
+    g.fillStyle(0xb4c0ca);
     g.fillPoints(hull, true);
-    g.lineStyle(2, 0x2a3036);
+    g.lineStyle(2, 0x1c2126);
     g.strokePoints(hull, true);
     // кабина
     g.fillStyle(0x9fd3e0);
@@ -64,76 +67,129 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'rotor', 72, 72);
   }
 
-  // Солдат сверху: плечи, каска, ствол вперёд (вправо)
-  makeInfantryTexture() {
-    const c = ENEMIES.infantry.color;
-    const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x222222);
-    g.fillRect(12, 9, 10, 2);
-    g.fillStyle(c);
-    g.fillEllipse(10, 10, 12, 18);
-    g.fillStyle(0x5a3a2a);
-    g.fillCircle(10, 10, 5);
-    this.makeTexture(g, 'infantry', 22, 20);
+  // Мягкое ядовитое свечение вокруг центра — общее для всего заражённого
+  glow(g, x, y, r) {
+    g.fillStyle(P.glow, 0.14);
+    g.fillCircle(x, y, r);
+    g.fillStyle(P.glow, 0.2);
+    g.fillCircle(x, y, r * 0.72);
   }
 
-  // Джип сверху, капот вправо
+  // Заражённый сверху: плечи, голова, руки тянутся вперёд, жёлтое свечение
+  makeInfantryTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    this.glow(g, 13, 13, 13);
+    g.fillStyle(P.infected);
+    g.fillRect(14, 7, 9, 3);
+    g.fillRect(14, 16, 9, 3);
+    g.fillEllipse(12, 13, 11, 17);
+    g.fillStyle(0x8a9466);
+    g.fillCircle(13, 13, 4);
+    g.fillStyle(P.glow);
+    g.fillRect(15, 11, 2, 1);
+    g.fillRect(15, 14, 2, 1);
+    this.makeTexture(g, 'infantry', 26, 26);
+  }
+
+  // Заражённый вездеход: армейский, с пятнами «Зари» и жёлтыми фарами
   makeJeepTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x222222);
-    g.fillRect(4, 0, 6, 3);
-    g.fillRect(18, 0, 6, 3);
-    g.fillRect(4, 15, 6, 3);
-    g.fillRect(18, 15, 6, 3);
-    g.fillStyle(ENEMIES.jeep.color);
-    g.fillRect(0, 2, 28, 14);
-    g.fillStyle(0x6a5a20);
-    g.fillRect(4, 4, 12, 10);
-    g.fillStyle(0x333333);
-    g.fillRect(8, 8, 10, 2);
-    this.makeTexture(g, 'jeep', 28, 18);
+    this.glow(g, 16, 11, 15);
+    g.fillStyle(0x161a14);
+    for (const [x, y] of [[6, 1], [20, 1], [6, 18], [20, 18]]) g.fillRect(x, y, 6, 3);
+    g.fillStyle(P.army);
+    g.fillRect(2, 3, 28, 16);
+    g.fillStyle(P.armyDark);
+    g.fillRect(6, 5, 12, 12);
+    g.fillStyle(P.glow, 0.7);
+    g.fillCircle(11, 8, 2);
+    g.fillCircle(22, 15, 2);
+    g.fillStyle(P.glow);
+    g.fillRect(29, 4, 2, 3);
+    g.fillRect(29, 15, 2, 3);
+    this.makeTexture(g, 'jeep', 32, 22);
   }
 
-  // Зенитка: квадратная платформа, башня, два ствола вправо
+  // Зенитная установка оцепления: платформа, башня, два ствола, белая полоса опознавания
   makeAATexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x4a4038);
+    g.fillStyle(P.army);
     g.fillRect(2, 2, 30, 30);
-    g.fillStyle(ENEMIES.aa.color);
+    g.lineStyle(2, P.armyDark);
+    g.strokeRect(2, 2, 30, 30);
+    g.fillStyle(0xd8d8d0);
+    g.fillRect(4, 4, 3, 26);
+    g.fillStyle(0x4a5c3c);
     g.fillCircle(17, 17, 10);
-    g.fillStyle(0x2a2420);
+    g.fillStyle(P.armyDark);
     g.fillRect(17, 12, 17, 3);
     g.fillRect(17, 19, 17, 3);
-    g.lineStyle(2, 0x2a2420);
-    g.strokeRect(2, 2, 30, 30);
     this.makeTexture(g, 'aa', 34, 34);
   }
 
-  // Босс: большая платформа с гусеницами, башня, четыре ствола вправо
-  makeBossTexture() {
+  // Танк оцепления: гусеницы, корпус, башня и длинный ствол вперёд
+  makeTankTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x2a2420);
-    g.fillRect(6, 4, 78, 14);
-    g.fillRect(6, 72, 78, 14);
-    g.fillStyle(ENEMIES.boss.color);
-    g.fillRoundedRect(10, 12, 70, 66, 10);
-    g.lineStyle(3, 0x2a2420);
-    g.strokeRoundedRect(10, 12, 70, 66, 10);
-    g.fillStyle(0x2a2420);
-    for (const y of [32, 39, 48, 55]) g.fillRect(45, y, 45, 4);
-    g.fillStyle(0x7a6a5a);
-    g.fillCircle(45, 45, 20);
-    g.lineStyle(3, 0x2a2420);
-    g.strokeCircle(45, 45, 20);
-    g.fillStyle(0xff3b2f);
-    g.fillCircle(18, 20, 3);
-    g.fillCircle(18, 70, 3);
-    this.makeTexture(g, 'boss', 90, 90);
+    g.fillStyle(0x161a14);
+    g.fillRect(4, 2, 40, 8);
+    g.fillRect(4, 30, 40, 8);
+    g.fillStyle(0x2a3022);
+    for (let x = 6; x < 44; x += 6) {
+      g.fillRect(x, 3, 2, 6);
+      g.fillRect(x, 31, 2, 6);
+    }
+    g.fillStyle(P.army);
+    g.fillRect(6, 9, 36, 22);
+    g.lineStyle(2, P.armyDark);
+    g.strokeRect(6, 9, 36, 22);
+    g.fillStyle(P.armyDark);
+    g.fillRect(28, 18, 30, 4);
+    g.fillStyle(0x4a5c3c);
+    g.fillCircle(24, 20, 9);
+    g.lineStyle(2, P.armyDark);
+    g.strokeCircle(24, 20, 9);
+    g.fillStyle(0xd8d8d0);
+    g.fillRect(8, 11, 3, 18);
+    this.makeTexture(g, 'tank', 58, 40);
   }
 
-  // Снаряд зенитки — заметный, чтобы успеть увернуться
-  makeShellTexture() {
+  // «Объект»: бесформенная туша с щупальцами, светящимися наростами и пастью спереди
+  makeBossTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
+    const c = 50;
+    g.fillStyle(P.glow, 0.1);
+    g.fillCircle(c, c, 50);
+    g.fillStyle(P.glow, 0.14);
+    g.fillCircle(c, c, 42);
+    // щупальца
+    g.lineStyle(7, 0x4a3a4e);
+    for (let i = 0; i < 7; i++) {
+      const a = Math.PI * 0.55 + (i / 6) * Math.PI * 0.9;
+      g.lineBetween(c, c, c + Math.cos(a) * 46, c + Math.sin(a) * 46);
+    }
+    // туша из нескольких наплывов
+    g.fillStyle(0x5b4a5e);
+    for (const [x, y, r] of [[48, 50, 30], [38, 36, 18], [38, 64, 18], [62, 42, 16], [62, 58, 16]]) {
+      g.fillCircle(x, y, r);
+    }
+    g.fillStyle(P.infected);
+    g.fillCircle(46, 50, 20);
+    // светящиеся наросты
+    g.fillStyle(P.glow);
+    for (const [x, y, r] of [[34, 34, 4], [30, 60, 5], [52, 36, 3], [44, 66, 3], [26, 47, 3]]) {
+      g.fillCircle(x, y, r);
+    }
+    // пасть
+    g.fillStyle(0x1a1018);
+    g.fillEllipse(70, 50, 16, 24);
+    g.fillStyle(P.glow);
+    g.fillEllipse(72, 50, 6, 12);
+    this.makeTexture(g, 'boss', 100, 100);
+  }
+
+  makeShellTextures() {
+    // Зенитка — красно-оранжевый, заметный, чтобы успеть увернуться
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
     g.fillStyle(0xff3b2f, 0.35);
     g.fillCircle(8, 8, 8);
     g.fillStyle(0xff6a3d);
@@ -141,6 +197,29 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffe0a0);
     g.fillCircle(8, 8, 2);
     this.makeTexture(g, 'shell', 16, 16);
+
+    // Танк — вытянутый трассер: видно, куда летит
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xff8a3d, 0.4);
+    g.fillEllipse(10, 6, 20, 12);
+    g.fillStyle(0xffd080);
+    g.fillEllipse(12, 6, 14, 6);
+    g.fillStyle(0xffffff);
+    g.fillEllipse(15, 6, 6, 3);
+    this.makeTexture(g, 'tankShell', 20, 12);
+
+    // «Объект» — плевок «Зарёй»
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    // Тёмная обводка, чтобы снаряд не путался со светящимися заражёнными
+    g.fillStyle(P.glow, 0.3);
+    g.fillCircle(8, 8, 8);
+    g.fillStyle(0x2a3010);
+    g.fillCircle(8, 8, 6);
+    g.fillStyle(0xb8e020);
+    g.fillCircle(8, 8, 5);
+    g.fillStyle(0xf4ffb0);
+    g.fillCircle(7, 7, 2);
+    this.makeTexture(g, 'spit', 16, 16);
   }
 
   makeBulletTexture() {
@@ -169,6 +248,111 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xc8f4ff);
     g.fillTriangle(6, 2, 9, 7, 6, 7);
     this.makeTexture(g, 'gem', 12, 14);
+  }
+
+  // Город — квадратные кварталы CITY.tile × CITY.tile, по краям дороги.
+  // Несколько вариантов; GameScene раскладывает их с поворотами, и стыки всегда сходятся.
+  makeCityTiles() {
+    const s = CITY.tile;
+    const rnd = new Phaser.Math.RandomDataGenerator(['gorky-67']);
+    const layouts = [
+      // две длинные девятиэтажки и двор между ними
+      (g) => {
+        this.building(g, 60, 66, 280, 56);
+        this.building(g, 60, 262, 280, 56);
+        this.trees(g, rnd, 70, 140, 260, 100, 9);
+      },
+      // «буквой Г» и ряд гаражей
+      (g) => {
+        this.building(g, 60, 60, 280, 56);
+        this.building(g, 60, 116, 56, 224);
+        g.fillStyle(0x5c5f63);
+        for (let i = 0; i < 6; i++) g.fillRect(170 + i * 28, 300, 24, 34);
+        this.trees(g, rnd, 140, 140, 190, 130, 7);
+      },
+      // две точечные башни
+      (g) => {
+        this.building(g, 70, 70, 100, 100);
+        this.building(g, 230, 230, 100, 100);
+        this.trees(g, rnd, 220, 60, 110, 120, 5);
+        this.trees(g, rnd, 60, 220, 120, 110, 5);
+      },
+      // площадь с памятником
+      (g) => {
+        g.fillStyle(0x5e6166);
+        g.fillRect(70, 70, 260, 260);
+        g.lineStyle(2, 0x6c7075);
+        for (let i = 1; i < 6; i++) {
+          g.lineBetween(70 + i * 43, 70, 70 + i * 43, 330);
+          g.lineBetween(70, 70 + i * 43, 330, 70 + i * 43);
+        }
+        g.fillStyle(P.panelDark);
+        g.fillCircle(200, 200, 30);
+        g.fillStyle(P.panel);
+        g.fillRect(190, 190, 20, 20);
+        for (const [x, y] of [[50, 50], [350, 50], [50, 350], [350, 350], [200, 50], [50, 200], [350, 200], [200, 350]]) {
+          this.tree(g, x, y, 11);
+        }
+      },
+    ];
+
+    layouts.forEach((draw, i) => {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(P.asphalt);
+      g.fillRect(0, 0, s, s);
+      // Разметка по краям: половина линии на каждом квартале, вместе — одна линия
+      g.fillStyle(P.roadMark);
+      for (let d = 10; d < s; d += 40) {
+        g.fillRect(d, 0, 20, 1);
+        g.fillRect(d, s - 1, 20, 1);
+        g.fillRect(0, d, 1, 20);
+        g.fillRect(s - 1, d, 1, 20);
+      }
+      g.fillStyle(P.sidewalk);
+      g.fillRect(CITY.road, CITY.road, s - CITY.road * 2, s - CITY.road * 2);
+      g.fillStyle(P.yard);
+      g.fillRect(CITY.road + 6, CITY.road + 6, s - CITY.road * 2 - 12, s - CITY.road * 2 - 12);
+      draw(g);
+      this.makeTexture(g, `city${i}`, s, s);
+    });
+  }
+
+  // Панельный дом сверху: тень, крыша с подъездными секциями и выходами на крышу
+  building(g, x, y, w, h) {
+    g.fillStyle(0x000000, 0.28);
+    g.fillRect(x + 8, y + 8, w, h);
+    g.fillStyle(P.panel);
+    g.fillRect(x, y, w, h);
+    g.lineStyle(2, P.panelDark);
+    g.strokeRect(x, y, w, h);
+    const long = w >= h;
+    const len = long ? w : h;
+    const sections = Math.max(1, Math.round(len / 46));
+    const step = len / sections;
+    g.lineStyle(1, P.panelDark, 0.7);
+    for (let i = 1; i < sections; i++) {
+      if (long) g.lineBetween(x + i * step, y, x + i * step, y + h);
+      else g.lineBetween(x, y + i * step, x + w, y + i * step);
+    }
+    g.fillStyle(P.panelDark);
+    for (let i = 0; i < sections; i++) {
+      const cx = long ? x + (i + 0.5) * step : x + w / 2;
+      const cy = long ? y + h / 2 : y + (i + 0.5) * step;
+      g.fillRect(cx - 4, cy - 4, 8, 8);
+    }
+  }
+
+  tree(g, x, y, r) {
+    g.fillStyle(P.tree);
+    g.fillCircle(x, y, r);
+    g.fillStyle(P.treeLight);
+    g.fillCircle(x - r * 0.3, y - r * 0.3, r * 0.5);
+  }
+
+  trees(g, rnd, x, y, w, h, n) {
+    for (let i = 0; i < n; i++) {
+      this.tree(g, x + rnd.between(10, w - 10), y + rnd.between(10, h - 10), rnd.between(8, 13));
+    }
   }
 
   makeTexture(g, key, w, h) {

@@ -1,7 +1,7 @@
 // Обёртка над SDK платформы (Яндекс Игры). Сейчас — заглушки.
 // Игра обращается к платформе только через этот модуль.
 
-const SAVE_KEY = 'toilet-warrior-save';
+const SAVE_KEY = 'gorky-67-save';
 
 export const platform = {
   async init() {},

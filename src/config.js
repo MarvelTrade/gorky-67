@@ -18,12 +18,27 @@ export const VIEW = {
   minShortSide: 520,
 };
 
+// Реплики «Берёзы» при смене волны — поверх игры, без паузы
+export const RADIO = {
+  duration: 2,          // с на экране
+  fade: 0.3,            // с на появление и исчезновение
+};
+
+export const BRIEFING = {
+  typeSpeed: 70,        // символов в секунду
+  inputDelay: 0.3,      // с, пока тап не срабатывает
+};
+
 export const WORLD = {
   width: 4000,
   height: 4000,
-  gridStep: 100,
-  bgColor: 0x2c3a24,
-  gridColor: 0x3a4a30,
+};
+
+// Город из квадратных кварталов; WORLD должен делиться на tile без остатка
+export const CITY = {
+  tile: 400,
+  road: 34,             // ширина половины дороги по краю квартала
+  variants: 4,          // сколько видов кварталов рисует BootScene
 };
 
 export const PLAYER = {
@@ -49,7 +64,27 @@ export const GUN = {
   muzzleOffset: 34,     // от центра вертолёта до носа
 };
 
-// behavior: chase — идёт на игрока, dash — рывками, turret — стоит и стреляет, boss — мини-босс
+// Палитра на примитивах: серые панельки, тёмно-зелёная техника, ядовито-жёлтое свечение заражённых
+export const PALETTE = {
+  asphalt: 0x2e3134,
+  roadMark: 0x8a8670,
+  sidewalk: 0x55585c,
+  yard: 0x3c403a,
+  panel: 0x80858b,      // крыши панельных домов
+  panelDark: 0x4e5257,
+  tree: 0x2e4a2a,
+  treeLight: 0x3d5c36,
+  army: 0x3a4a30,       // техника оцепления
+  armyDark: 0x26301f,
+  glow: 0xe0ff30,       // свечение «Зари»
+  infected: 0x6b7350,   // кожа заражённых
+};
+
+// Ключи — внутренние имена типов (и текстур):
+//   infantry — заражённые, jeep — заражённый вездеход, aa — зенитная установка оцепления,
+//   tank — танк оцепления, boss — «Объект».
+// behavior: chase — идёт на игрока, dash — рывками, turret — стоит и стреляет,
+//   tank — ползёт и стреляет по прямой, boss — мини-босс.
 export const ENEMIES = {
   infantry: {
     behavior: 'chase',
@@ -59,7 +94,6 @@ export const ENEMIES = {
     damage: 10,         // урон игроку при касании
     xp: 1,              // ценность выпадающего кристалла
     radius: 9,
-    color: 0xc0503c,
   },
   jeep: {
     behavior: 'dash',
@@ -73,7 +107,6 @@ export const ENEMIES = {
     damage: 12,
     xp: 2,
     radius: 11,
-    color: 0xb8a040,
   },
   aa: {
     behavior: 'turret',
@@ -85,12 +118,30 @@ export const ENEMIES = {
     shellSpeed: 170,    // снаряды медленные — от них надо уворачиваться
     shellDamage: 12,
     shellLife: 4,
+    shellTexture: 'shell',
     damage: 10,
     xp: 4,
     radius: 15,
-    color: 0x7a6a5a,
   },
-  // Мини-босс: большая зенитная установка, медленно ползёт к игроку
+  // Медленный, толстый; поворачивает корпус к игроку не сразу и стреляет туда, куда смотрит
+  tank: {
+    behavior: 'tank',
+    hp: 180,
+    speed: 22,
+    speedJitter: 4,
+    turnRate: 0.9,      // рад/с — от выстрела можно уйти вбок
+    fireInterval: 3,
+    range: 600,
+    aimTolerance: 0.25, // рад: стреляет, только если почти навёлся
+    shellSpeed: 300,    // быстрее зенитки, но строго по прямой
+    shellDamage: 18,
+    shellLife: 3,
+    shellTexture: 'tankShell',
+    damage: 15,
+    xp: 6,
+    radius: 18,
+  },
+  // «Объект»: огромный мутант из лаборатории, медленно ползёт к игроку и плюётся «Зарёй»
   boss: {
     behavior: 'boss',
     hp: 5000,
@@ -99,7 +150,6 @@ export const ENEMIES = {
     damage: 20,
     xp: 0,
     radius: 40,
-    color: 0x5a4a3e,
     volleyInterval: 1.3,  // прицельный залп
     volleyCount: 3,
     volleySpread: 0.25,   // рад между снарядами залпа
@@ -108,6 +158,7 @@ export const ENEMIES = {
     shellSpeed: 190,
     shellDamage: 14,
     shellLife: 5,
+    shellTexture: 'spit',
   },
 };
 
@@ -124,9 +175,9 @@ export const WAVE_LENGTH = 60;
 export const WAVES = [
   { hpMul: 1.0, infantry: { interval: 1.0, batch: 4 } },
   { hpMul: 1.2, infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 3.0, batch: 2 } },
-  { hpMul: 1.5, infantry: { interval: 0.9, batch: 6 }, jeep: { interval: 2.5, batch: 3 }, aa: { interval: 7, batch: 1 } },
-  { hpMul: 1.9, infantry: { interval: 0.8, batch: 7 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 } },
-  { hpMul: 2.4, infantry: { interval: 0.7, batch: 8 }, jeep: { interval: 1.6, batch: 4 }, aa: { interval: 4, batch: 2 } },
+  { hpMul: 1.5, infantry: { interval: 0.9, batch: 6 }, jeep: { interval: 2.5, batch: 3 }, aa: { interval: 7, batch: 1 }, tank: { interval: 14, batch: 1 } },
+  { hpMul: 1.9, infantry: { interval: 0.8, batch: 7 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 11, batch: 1 } },
+  { hpMul: 2.4, infantry: { interval: 0.7, batch: 8 }, jeep: { interval: 1.6, batch: 4 }, aa: { interval: 4, batch: 2 }, tank: { interval: 9, batch: 2 } },
 ];
 
 export const SPAWN = {

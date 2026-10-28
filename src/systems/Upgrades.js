@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { UPGRADES } from '../config.js';
-import { t } from '../i18n.js';
+import { t } from '../i18n/index.js';
 
 // Что делает каждое улучшение. scene — GameScene.
 const DEFS = {

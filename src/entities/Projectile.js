@@ -27,14 +27,15 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
   }
 }
 
-// Снаряд зенитки: то же самое, только своя текстура
+// Вражеский снаряд: то же самое, только текстура своя у каждого стрелка
 export class EnemyShell extends Projectile {
   constructor(scene, x, y) {
     super(scene, x, y);
     this.setTexture('shell');
   }
 
-  fire(x, y, angle, speed, damage, life) {
+  fire(x, y, angle, speed, damage, life, texture = 'shell') {
+    this.setTexture(texture);
     super.fire(x, y, angle, speed, damage, life);
     this.body.setCircle(5, this.width / 2 - 5, this.height / 2 - 5);
   }

@@ -1,0 +1,59 @@
+// All English strings. Keys match ru.js.
+export default {
+  title: 'GORKY-67',
+  subtitle: 'Gorky-67 · 1983',
+  play: 'Play',
+  hint: 'Touch anywhere and drag to fly',
+
+  telegramHeader: 'TELEGRAM',
+  telegramStamp: 'CLASSIFIED',
+  telegram:
+    'URGENT CLASSIFIED STOP ACCIDENT AT OBJECT 67 STOP ZARYA OUTSIDE PERIMETER STOP\n' +
+    'ORDER DOME IN EFFECT STOP CITY SEALED STOP\n' +
+    'FALCON TO COVER EVAC COLUMN STOP CORDON MAY OPEN FIRE STOP',
+  tapToContinue: 'Tap to continue',
+
+  radioCallsign: 'BERYOZA',
+  wave_1: 'The Checkpoint',
+  wave_2: 'Labour Square',
+  wave_3: 'The Cordon',
+  wave_4: 'Building B',
+  wave_5: 'Object 67',
+  radio_1: "Falcon, column's at the gate. Cover it.",
+  radio_2: 'Vehicles on the square. Not ours anymore.',
+  radio_3: 'The cordon has its orders. Stay high.',
+  radio_4: 'Building B is silent. Hold the column.',
+  radio_5: "The Object is out of the lab. It's yours.",
+
+  boss: 'The Object',
+  bossIncoming: 'THE OBJECT',
+  bossKilled: 'The Object destroyed!',
+  bossAlive: 'The Object is still alive',
+  bossShort: 'object',
+
+  lose: 'Shot down!',
+  win: 'Survived!',
+  ending_win: 'The column made it out. Officially, there was no accident.',
+  ending_lose: 'Falcon went silent. The city is closed until further notice.',
+  time: 'Time',
+  kills: 'Kills',
+  level: 'Level',
+  best: 'Best',
+  newBest: 'New record!',
+  again: 'Play again',
+
+  levelUp: 'Level',
+  lvl: 'lv.',
+  upg_damage: 'Caliber',
+  upg_damage_desc: 'Machine gun damage +25%',
+  upg_fireRate: 'Fire rate',
+  upg_fireRate_desc: 'Machine gun fires 20% faster',
+  upg_speed: 'Afterburner',
+  upg_speed_desc: 'Flight speed +10%',
+  upg_magnet: 'Magnet',
+  upg_magnet_desc: 'Crystals are pulled from farther away',
+  upg_hp: 'Armor',
+  upg_hp_desc: '+25 max HP and repair 25',
+  upg_missile: 'Missiles',
+  upg_missile_desc: '+1 homing missile per salvo',
+};

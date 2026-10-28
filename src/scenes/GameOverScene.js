@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { RUN } from '../config.js';
 import { formatTime } from '../format.js';
-import { t } from '../i18n.js';
+import { t } from '../i18n/index.js';
 import { platform } from '../platform/platform.js';
 
 // Итоги забега и «Ещё раз». data: { win, time, kills, level }
@@ -23,25 +23,36 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // Концовка — одна строка по итогу забега
+    const ending = this.add
+      .text(0, 0, t(stats.win ? 'ending_win' : 'ending_lose'), {
+        fontFamily: 'monospace',
+        fontSize: '17px',
+        color: '#d8e0c8',
+        align: 'center',
+        lineSpacing: 4,
+      })
+      .setOrigin(0.5, 0);
+
     const lines = [
       `${t('time')}: ${formatTime(stats.time)}`,
       `${t('kills')}: ${stats.kills}`,
       `${t('level')}: ${stats.level}`,
     ];
-    if (stats.bossSeen) lines.push(t(stats.bossKilled ? 'bossKilled' : 'bossAlive'));
+    const bossLine = stats.bossSeen ? t(stats.bossKilled ? 'bossKilled' : 'bossAlive') : null;
     const statsText = this.add
-      .text(0, 0, lines.join('\n'), {
+      .text(0, 0, '', {
         fontFamily: 'sans-serif',
         fontSize: '24px',
         color: '#e8f0d8',
         align: 'center',
         lineSpacing: 8,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0);
 
     const bestText = this.add
       .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '20px', color: '#9fb08f' })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0);
     this.updateRecord(stats, bestText);
 
     const button = this.add.container(0, 0);
@@ -58,12 +69,26 @@ export class GameOverScene extends Phaser.Scene {
     button.setAlpha(0);
     this.tweens.add({ targets: button, alpha: 1, delay: RUN.gameOverInputDelay * 1000, duration: 200 });
 
+    // Сверху вниз: заголовок, концовка, цифры, рекорд, кнопка.
+    // На низком экране (телефон лёжа) цифры в одну строку, иначе кнопка не влезает.
     const layout = () => {
       const { width, height } = this.scale;
-      title.setPosition(width / 2, height * 0.2);
-      statsText.setPosition(width / 2, height * 0.4);
-      bestText.setPosition(width / 2, height * 0.4 + statsText.height / 2 + 30);
-      button.setPosition(width / 2, height * 0.72);
+      const short = height < 500;
+      const sep = short ? '  ·  ' : '\n';
+      statsText.setText([lines.join(sep), bossLine].filter(Boolean).join('\n'));
+      statsText.setFontSize(short ? 20 : 24);
+      ending.setWordWrapWidth(Math.min(480, width - 40));
+
+      let y = height * (short ? 0.06 : 0.12);
+      title.setPosition(width / 2, y + title.height / 2);
+      y += title.height + 12;
+      ending.setPosition(width / 2, y);
+      y += ending.height + (short ? 16 : 32);
+      statsText.setPosition(width / 2, y);
+      y += statsText.height + 12;
+      bestText.setPosition(width / 2, y);
+      y += bestText.height + (short ? 20 : 48);
+      button.setPosition(width / 2, Math.min(y + 36, height - 46));
     };
     layout();
     this.scale.on('resize', layout);

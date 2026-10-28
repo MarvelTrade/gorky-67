@@ -27,6 +27,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.burstTimer = cfg.burstInterval ?? 0;
 
     this.setTexture(type);
+    // Сразу лицом к игроку — иначе танк первые секунды ползёт мимо
+    this.rotation = Math.atan2(target.y - y, target.x - x);
     this.enableBody(true, x, y, true, true);
     this.body.setCircle(cfg.radius, this.width / 2 - cfg.radius, this.height / 2 - cfg.radius);
     this.body.setVelocity(0, 0);
@@ -84,6 +86,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       case 'turret':
         this.updateTurret(dt, dx, dy, dist);
         break;
+      case 'tank':
+        this.updateTank(dt, dx, dy, dist);
+        break;
       case 'boss':
         this.updateBoss(dt, dx, dy, dist);
         break;
@@ -121,6 +126,20 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.timer = cfg.fireInterval;
   }
 
+  // Танк: ползёт носом вперёд, доворачивает медленно; стреляет, только когда почти навёлся
+  updateTank(dt, dx, dy, dist) {
+    const cfg = this.cfg;
+    const aim = Math.atan2(dy, dx);
+    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, aim, cfg.turnRate * dt);
+    this.body.setVelocity(Math.cos(this.rotation) * this.speed, Math.sin(this.rotation) * this.speed);
+
+    this.timer -= dt;
+    const aimed = Math.abs(Phaser.Math.Angle.Wrap(aim - this.rotation)) < cfg.aimTolerance;
+    if (this.timer > 0 || dist > cfg.range || !aimed) return;
+    this.fireShell(this.rotation);
+    this.timer = cfg.fireInterval;
+  }
+
   // Босс: ползёт к игроку, часто бьёт прицельным веером и иногда — кольцом во все стороны
   updateBoss(dt, dx, dy, dist) {
     const cfg = this.cfg;
@@ -147,6 +166,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const cfg = this.cfg;
     const shell = this.scene.shells.get();
     if (!shell) return;
-    shell.fire(this.x, this.y, angle, cfg.shellSpeed, cfg.shellDamage, cfg.shellLife);
+    shell.fire(this.x, this.y, angle, cfg.shellSpeed, cfg.shellDamage, cfg.shellLife, cfg.shellTexture);
   }
 }

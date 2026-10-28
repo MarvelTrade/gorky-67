@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -11,7 +11,7 @@ import { MissileLauncher } from '../entities/MissileLauncher.js';
 import { WaveSpawner } from '../systems/WaveSpawner.js';
 import { Upgrades } from '../systems/Upgrades.js';
 import { platform } from '../platform/platform.js';
-import { t } from '../i18n.js';
+import { t } from '../i18n/index.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -96,7 +96,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.events.on('xp-collected', (value) => this.addXp(value));
     this.events.on('explosion', (x, y, r) => this.explosionFx(x, y, r));
-    this.events.on('wave-changed', (n) => this.banner(`${t('wave')} ${n}`));
+    this.events.on('wave-changed', (n) => this.banner(t(`wave_${n}`)));
     this.events.on('resume', () => {
       this.player.resetInput();
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
@@ -208,8 +208,8 @@ export class GameScene extends Phaser.Scene {
   banner(message, color = '#ffe066') {
     const { width, height } = this.scale;
     const text = this.add
-      // Не выше 130 px — там HUD и полоска босса
-      .text(width / 2, Math.max(height * 0.25, 130) + this.banners * 50, message, {
+      // Не выше 200 px — там HUD, полоска босса и радио «Берёзы»
+      .text(width / 2, Math.max(height * 0.3, 200) + this.banners * 50, message, {
         fontFamily: 'sans-serif',
         fontSize: '36px',
         color,
@@ -233,14 +233,17 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // Сетка, чтобы было видно движение. Позже заменим на нормальную землю.
+  // Город: кварталы случайного вида и поворота — каждый забег улицы немного другие
   drawGround() {
-    const g = this.add.graphics().setDepth(DEPTH.ground);
-    g.fillStyle(WORLD.bgColor);
-    g.fillRect(0, 0, WORLD.width, WORLD.height);
-    g.lineStyle(2, WORLD.gridColor);
-    for (let x = 0; x <= WORLD.width; x += WORLD.gridStep) g.lineBetween(x, 0, x, WORLD.height);
-    for (let y = 0; y <= WORLD.height; y += WORLD.gridStep) g.lineBetween(0, y, WORLD.width, y);
+    const s = CITY.tile;
+    for (let y = 0; y < WORLD.height; y += s) {
+      for (let x = 0; x < WORLD.width; x += s) {
+        this.add
+          .image(x + s / 2, y + s / 2, `city${Phaser.Math.Between(0, CITY.variants - 1)}`)
+          .setAngle(Phaser.Math.Between(0, 3) * 90)
+          .setDepth(DEPTH.ground);
+      }
+    }
   }
 
   update(time, delta) {
