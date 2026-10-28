@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { platform } from '../platform/platform.js';
+import { ENEMIES } from '../config.js';
 
 // Генерирует текстуры из примитивов — внешних ассетов пока нет.
 export class BootScene extends Phaser.Scene {
@@ -10,6 +11,8 @@ export class BootScene extends Phaser.Scene {
   create() {
     this.makeHeliTexture();
     this.makeRotorTexture();
+    this.makeInfantryTexture();
+    this.makeBulletTexture();
     platform.gameReady();
     this.scene.start('MenuScene');
   }
@@ -53,6 +56,26 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x222222);
     g.fillCircle(36, 36, 4);
     this.makeTexture(g, 'rotor', 72, 72);
+  }
+
+  // Солдат сверху: плечи, каска, ствол вперёд (вправо)
+  makeInfantryTexture() {
+    const c = ENEMIES.infantry.color;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x222222);
+    g.fillRect(12, 9, 10, 2);
+    g.fillStyle(c);
+    g.fillEllipse(10, 10, 12, 18);
+    g.fillStyle(0x5a3a2a);
+    g.fillCircle(10, 10, 5);
+    this.makeTexture(g, 'infantry', 22, 20);
+  }
+
+  makeBulletTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xffe066);
+    g.fillRect(0, 0, 12, 3);
+    this.makeTexture(g, 'bullet', 12, 3);
   }
 
   makeTexture(g, key, w, h) {

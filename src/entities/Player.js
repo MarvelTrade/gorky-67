@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { PLAYER } from '../config.js';
+import { DEPTH } from '../depth.js';
 
 // Вертолёт игрока. Управление:
 //  - палец/мышь зажаты → летит к точке под пальцем; отпустил → зависает
@@ -10,14 +11,20 @@ export class Player {
 
     // Тень на земле — смещена, вертолёт «висит» в воздухе
     this.shadow = scene.add.image(x, y, 'heli').setTint(0x000000).setAlpha(0.35).setScale(0.9);
+    this.shadow.setDepth(DEPTH.shadow);
 
     this.sprite = scene.physics.add.sprite(x, y, 'heli');
     this.sprite.setCollideWorldBounds(true);
     this.sprite.body.setCircle(PLAYER.hitRadius, 35 - PLAYER.hitRadius, 24 - PLAYER.hitRadius);
+    this.sprite.setDepth(DEPTH.player);
     this.body = this.sprite.body;
 
     this.rotor = scene.add.image(x, y, 'rotor');
-    this.rotor.setDepth(this.sprite.depth + 1);
+    this.rotor.setDepth(DEPTH.rotor);
+
+    this.maxHp = PLAYER.maxHp;
+    this.hp = this.maxHp;
+    this.invuln = 0;
 
     this.target = null;
     this.desired = new Phaser.Math.Vector2();
@@ -41,6 +48,27 @@ export class Player {
 
   onPointerUp() {
     if (!this.scene.input.activePointer.isDown) this.target = null;
+  }
+
+  get x() {
+    return this.sprite.x;
+  }
+
+  get y() {
+    return this.sprite.y;
+  }
+
+  get alive() {
+    return this.hp > 0;
+  }
+
+  // Урон с неуязвимостью после попадания, чтобы толпа не сжигала HP за кадр
+  takeDamage(amount) {
+    if (this.invuln > 0 || !this.alive) return;
+    this.hp = Math.max(0, this.hp - amount);
+    this.invuln = PLAYER.invulnTime;
+    this.scene.cameras.main.shake(120, 0.006);
+    if (!this.alive) this.scene.events.emit('player-died');
   }
 
   readKeyboard() {
@@ -78,6 +106,12 @@ export class Player {
     if (speed > 20) {
       const aim = Math.atan2(this.body.velocity.y, this.body.velocity.x);
       s.rotation = Phaser.Math.Angle.RotateTo(s.rotation, aim, PLAYER.turnSpeed * dt);
+    }
+
+    // Мигание во время неуязвимости
+    if (this.invuln > 0) {
+      this.invuln -= dt;
+      s.setAlpha(this.invuln > 0 && Math.floor(this.invuln * 20) % 2 ? 0.35 : 1);
     }
 
     this.shadow.setPosition(s.x + 18, s.y + 26).setRotation(s.rotation);

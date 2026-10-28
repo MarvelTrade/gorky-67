@@ -1,0 +1,10 @@
+// Порядок отрисовки слоёв
+export const DEPTH = {
+  ground: 0,
+  enemies: 10,
+  shadow: 15,
+  bullets: 20,
+  player: 30,
+  rotor: 31,
+  debug: 100,
+};
