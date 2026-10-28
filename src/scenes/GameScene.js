@@ -3,7 +3,7 @@ import { WORLD, SPAWN, POOLS, XP } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
-import { Projectile } from '../entities/Projectile.js';
+import { Projectile, EnemyShell } from '../entities/Projectile.js';
 import { Missile } from '../entities/Missile.js';
 import { XPGem } from '../entities/XPGem.js';
 import { MachineGun } from '../entities/MachineGun.js';
@@ -11,6 +11,7 @@ import { MissileLauncher } from '../entities/MissileLauncher.js';
 import { WaveSpawner } from '../systems/WaveSpawner.js';
 import { Upgrades } from '../systems/Upgrades.js';
 import { platform } from '../platform/platform.js';
+import { t } from '../i18n.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -31,6 +32,11 @@ export class GameScene extends Phaser.Scene {
     this.bullets = this.physics.add.group({
       classType: Projectile,
       maxSize: POOLS.bullets,
+      runChildUpdate: true,
+    });
+    this.shells = this.physics.add.group({
+      classType: EnemyShell,
+      maxSize: POOLS.shells,
       runChildUpdate: true,
     });
     this.missileGroup = this.physics.add.group({
@@ -58,6 +64,11 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player.sprite, this.enemies, (_, enemy) => {
       this.player.takeDamage(enemy.damage);
     });
+    this.physics.add.overlap(this.player.sprite, this.shells, (_, shell) => {
+      if (!shell.active) return;
+      shell.kill();
+      this.player.takeDamage(shell.damage);
+    });
 
     this.kills = 0;
     this.level = 1;
@@ -72,6 +83,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.events.on('xp-collected', (value) => this.addXp(value));
     this.events.on('explosion', (x, y, r) => this.explosionFx(x, y, r));
+    this.events.on('wave-changed', (n) => this.waveBanner(n));
     this.events.on('resume', () => {
       this.player.resetInput();
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
@@ -92,7 +104,7 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'resume', 'player-died']) this.events.off(e);
+      for (const e of ['enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'resume', 'player-died']) this.events.off(e);
       platform.gameplayStop();
     });
   }
@@ -139,6 +151,29 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  waveBanner(n) {
+    const { width, height } = this.scale;
+    const text = this.add
+      .text(width / 2, height * 0.25, `${t('wave')} ${n}`, {
+        fontFamily: 'sans-serif',
+        fontSize: '36px',
+        color: '#ffe066',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(DEPTH.debug);
+    this.tweens.add({
+      targets: text,
+      alpha: { from: 1, to: 0 },
+      delay: 1200,
+      duration: 600,
+      onComplete: () => text.destroy(),
+    });
+  }
+
   // Сетка, чтобы было видно движение. Позже заменим на нормальную землю.
   drawGround() {
     const g = this.add.graphics().setDepth(DEPTH.ground);
@@ -147,6 +182,11 @@ export class GameScene extends Phaser.Scene {
     g.lineStyle(2, WORLD.gridColor);
     for (let x = 0; x <= WORLD.width; x += WORLD.gridStep) g.lineBetween(x, 0, x, WORLD.height);
     for (let y = 0; y <= WORLD.height; y += WORLD.gridStep) g.lineBetween(0, y, WORLD.width, y);
+  }
+
+  formatTime(sec) {
+    const s = Math.floor(sec);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 
   update(time, delta) {
@@ -158,7 +198,8 @@ export class GameScene extends Phaser.Scene {
     this.spawner.update(dt);
 
     this.debugText.setText(
-      `HP ${this.player.hp}/${this.player.maxHp}  ур ${this.level}  xp ${this.xp}/${this.xpNext}  ` +
+      `${this.formatTime(this.spawner.elapsed)}  волна ${this.spawner.waveIndex + 1}  ` +
+        `HP ${this.player.hp}/${this.player.maxHp}  ур ${this.level}  xp ${this.xp}/${this.xpNext}  ` +
         `убито ${this.kills}  врагов ${this.enemies.countActive()}  FPS ${Math.round(this.game.loop.actualFps)}`
     );
   }

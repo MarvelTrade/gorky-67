@@ -26,3 +26,16 @@ export class Projectile extends Phaser.Physics.Arcade.Image {
     if (this.life <= 0) this.kill();
   }
 }
+
+// Снаряд зенитки: то же самое, только своя текстура
+export class EnemyShell extends Projectile {
+  constructor(scene, x, y) {
+    super(scene, x, y);
+    this.setTexture('shell');
+  }
+
+  fire(x, y, angle, speed, damage, life) {
+    super.fire(x, y, angle, speed, damage, life);
+    this.body.setCircle(5, this.width / 2 - 5, this.height / 2 - 5);
+  }
+}

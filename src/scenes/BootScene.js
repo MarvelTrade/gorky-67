@@ -12,6 +12,9 @@ export class BootScene extends Phaser.Scene {
     this.makeHeliTexture();
     this.makeRotorTexture();
     this.makeInfantryTexture();
+    this.makeJeepTexture();
+    this.makeAATexture();
+    this.makeShellTexture();
     this.makeBulletTexture();
     this.makeMissileTexture();
     this.makeGemTexture();
@@ -71,6 +74,50 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x5a3a2a);
     g.fillCircle(10, 10, 5);
     this.makeTexture(g, 'infantry', 22, 20);
+  }
+
+  // Джип сверху, капот вправо
+  makeJeepTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x222222);
+    g.fillRect(4, 0, 6, 3);
+    g.fillRect(18, 0, 6, 3);
+    g.fillRect(4, 15, 6, 3);
+    g.fillRect(18, 15, 6, 3);
+    g.fillStyle(ENEMIES.jeep.color);
+    g.fillRect(0, 2, 28, 14);
+    g.fillStyle(0x6a5a20);
+    g.fillRect(4, 4, 12, 10);
+    g.fillStyle(0x333333);
+    g.fillRect(8, 8, 10, 2);
+    this.makeTexture(g, 'jeep', 28, 18);
+  }
+
+  // Зенитка: квадратная платформа, башня, два ствола вправо
+  makeAATexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x4a4038);
+    g.fillRect(2, 2, 30, 30);
+    g.fillStyle(ENEMIES.aa.color);
+    g.fillCircle(17, 17, 10);
+    g.fillStyle(0x2a2420);
+    g.fillRect(17, 12, 17, 3);
+    g.fillRect(17, 19, 17, 3);
+    g.lineStyle(2, 0x2a2420);
+    g.strokeRect(2, 2, 30, 30);
+    this.makeTexture(g, 'aa', 34, 34);
+  }
+
+  // Снаряд зенитки — заметный, чтобы успеть увернуться
+  makeShellTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xff3b2f, 0.35);
+    g.fillCircle(8, 8, 8);
+    g.fillStyle(0xff6a3d);
+    g.fillCircle(8, 8, 5);
+    g.fillStyle(0xffe0a0);
+    g.fillCircle(8, 8, 2);
+    this.makeTexture(g, 'shell', 16, 16);
   }
 
   makeBulletTexture() {

@@ -31,8 +31,10 @@ export const GUN = {
   muzzleOffset: 34,     // от центра вертолёта до носа
 };
 
+// behavior: chase — идёт на игрока, dash — рывками, turret — стоит и стреляет
 export const ENEMIES = {
   infantry: {
+    behavior: 'chase',
     hp: 20,
     speed: 55,
     speedJitter: 15,    // ± к скорости, чтобы толпа не слипалась в точку
@@ -41,17 +43,57 @@ export const ENEMIES = {
     radius: 9,
     color: 0xc0503c,
   },
+  jeep: {
+    behavior: 'dash',
+    hp: 15,
+    speed: 0,           // между рывками катится по инерции
+    speedJitter: 0,
+    dashSpeed: 300,     // направление фиксируется в начале рывка — можно увернуться
+    dashTime: 0.7,
+    pauseTime: 0.6,
+    pauseDrag: 4,       // насколько быстро тормозит между рывками (1/с)
+    damage: 12,
+    xp: 2,
+    radius: 11,
+    color: 0xb8a040,
+  },
+  aa: {
+    behavior: 'turret',
+    hp: 60,
+    speed: 0,
+    speedJitter: 0,
+    fireInterval: 2.2,  // с между выстрелами
+    range: 520,         // стреляет, только если игрок ближе
+    shellSpeed: 170,    // снаряды медленные — от них надо уворачиваться
+    shellDamage: 12,
+    shellLife: 4,
+    damage: 10,
+    xp: 4,
+    radius: 15,
+    color: 0x7a6a5a,
+  },
 };
 
+// Волны: каждые WAVE_LENGTH секунд — следующая. Для каждого типа — пачка раз в interval секунд.
+// hpMul растит живучесть врагов, чтобы улучшения не делали игру слишком лёгкой.
+export const WAVE_LENGTH = 60;
+export const WAVES = [
+  { hpMul: 1.0, infantry: { interval: 1.0, batch: 4 } },
+  { hpMul: 1.2, infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 3.0, batch: 2 } },
+  { hpMul: 1.5, infantry: { interval: 0.9, batch: 6 }, jeep: { interval: 2.5, batch: 3 }, aa: { interval: 7, batch: 1 } },
+  { hpMul: 1.9, infantry: { interval: 0.8, batch: 7 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 } },
+  { hpMul: 2.4, infantry: { interval: 0.7, batch: 8 }, jeep: { interval: 1.6, batch: 4 }, aa: { interval: 4, batch: 2 } },
+];
+
 export const SPAWN = {
-  interval: 1.0,        // с между пачками
-  batch: 4,             // врагов за пачку
   margin: 80,           // насколько за краем экрана появляются
+  despawnDist: 1400,    // враги дальше этого от игрока возвращаются в пул (без опыта)
   maxEnemies: 300,      // размер пула
 };
 
 export const POOLS = {
   bullets: 120,
+  shells: 60,
   missiles: 24,
   gems: 400,
 };
