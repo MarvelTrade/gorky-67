@@ -14,6 +14,11 @@ DRY=0
 [ "${1:-}" = "--dry" ] && DRY=1
 
 cd "$ROOT"
+# Тестерам — только main: ветки вроде yandex-sdk выкладывать по ссылке нельзя
+if [ "$(git branch --show-current)" != "main" ]; then
+  echo "Выкладывать можно только из ветки main (сейчас: $(git branch --show-current))." >&2
+  exit 1
+fi
 if [ -n "$(git status --porcelain)" ]; then
   echo "Есть незакоммиченные изменения — сначала закоммить, чтобы сборка соответствовала коммиту." >&2
   exit 1
