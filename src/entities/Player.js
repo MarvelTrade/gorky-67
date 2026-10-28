@@ -22,6 +22,8 @@ export class Player {
     this.rotor = scene.add.image(x, y, 'rotor');
     this.rotor.setDepth(DEPTH.rotor);
 
+    // Копия, чтобы улучшения меняли её, а не конфиг
+    this.stats = { ...PLAYER };
     this.maxHp = PLAYER.maxHp;
     this.hp = this.maxHp;
     this.invuln = 0;
@@ -48,6 +50,12 @@ export class Player {
 
   onPointerUp() {
     if (!this.scene.input.activePointer.isDown) this.target = null;
+  }
+
+  // После паузы: палец/клавиши могли отпустить, пока сцена не слушала ввод
+  resetInput() {
+    this.target = null;
+    this.scene.input.keyboard.resetKeys();
   }
 
   get x() {
@@ -84,14 +92,14 @@ export class Player {
     const key = this.readKeyboard();
 
     if (key.x || key.y) {
-      desired.set(key.x, key.y).normalize().scale(PLAYER.maxSpeed);
+      desired.set(key.x, key.y).normalize().scale(this.stats.maxSpeed);
     } else if (this.target) {
       const world = this.scene.cameras.main.getWorldPoint(this.target.x, this.target.y);
       const dx = world.x - s.x;
       const dy = world.y - s.y;
       const dist = Math.hypot(dx, dy);
       if (dist > PLAYER.stopRadius) {
-        const speed = PLAYER.maxSpeed * Math.min(1, dist / PLAYER.arriveRadius);
+        const speed = this.stats.maxSpeed * Math.min(1, dist / PLAYER.arriveRadius);
         desired.set(dx / dist, dy / dist).scale(speed);
       }
     }

@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { LevelUpScene } from './scenes/LevelUpScene.js';
 import { platform } from './platform/platform.js';
 import { initLang } from './i18n.js';
 
@@ -23,7 +24,7 @@ function startGame() {
       activePointers: 2,
     },
     disableContextMenu: true,
-    scene: [BootScene, MenuScene, GameScene],
+    scene: [BootScene, MenuScene, GameScene, LevelUpScene],
   });
 
   if (import.meta.env.DEV) window.__game = game;

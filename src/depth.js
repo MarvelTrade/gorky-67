@@ -1,6 +1,7 @@
 // Порядок отрисовки слоёв
 export const DEPTH = {
   ground: 0,
+  gems: 5,
   enemies: 10,
   shadow: 15,
   bullets: 20,

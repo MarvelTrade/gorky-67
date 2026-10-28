@@ -13,6 +13,8 @@ export class BootScene extends Phaser.Scene {
     this.makeRotorTexture();
     this.makeInfantryTexture();
     this.makeBulletTexture();
+    this.makeMissileTexture();
+    this.makeGemTexture();
     platform.gameReady();
     this.scene.start('MenuScene');
   }
@@ -76,6 +78,27 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffe066);
     g.fillRect(0, 0, 12, 3);
     this.makeTexture(g, 'bullet', 12, 3);
+  }
+
+  makeMissileTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xff8a3d);
+    g.fillRect(0, 2, 4, 4);
+    g.fillStyle(0xe8e8e8);
+    g.fillRect(4, 1, 12, 6);
+    g.fillStyle(0xd04030);
+    g.fillTriangle(16, 1, 20, 4, 16, 7);
+    this.makeTexture(g, 'missile', 20, 8);
+  }
+
+  // Кристалл опыта — голубой ромб
+  makeGemTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x4fd8ff);
+    g.fillPoints([{ x: 6, y: 0 }, { x: 12, y: 7 }, { x: 6, y: 14 }, { x: 0, y: 7 }], true);
+    g.fillStyle(0xc8f4ff);
+    g.fillTriangle(6, 2, 9, 7, 6, 7);
+    this.makeTexture(g, 'gem', 12, 14);
   }
 
   makeTexture(g, key, w, h) {
