@@ -22,6 +22,13 @@ class SfxEngine {
     for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
   }
 
+  // Приглушить всё (затишье перед боссом) или вернуть громкость
+  duck(on) {
+    if (!this.ctx) return;
+    const v = SFX.volume * (on ? SFX.duckLevel : 1);
+    this.out.gain.setTargetAtTime(v, this.ctx.currentTime, 0.4);
+  }
+
   // Не чаще SFX.minGap[name] — иначе пулемёт и пачка кристаллов сливаются в гул
   allowed(name) {
     const now = this.ctx.currentTime;

@@ -43,6 +43,10 @@ export class UIScene extends Phaser.Scene {
     this.radio.add([this.radioBg, this.radioCall, this.radioText]);
     // Разовые реплики не по волнам (первый ящик снабжения)
     this.gs.events.on('radio', (line) => this.showRadio(line));
+    // Красная пульсация по краям экрана перед ордой
+    this.alertLeft = 0;
+    this.alertT = 0;
+    this.gs.events.on('alert', (seconds) => (this.alertLeft = seconds));
     const style = { fontFamily: 'sans-serif', color: '#ffffff', stroke: '#000000', strokeThickness: 4 };
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
@@ -64,6 +68,7 @@ export class UIScene extends Phaser.Scene {
     const p = gs.player;
     const g = this.bars;
     g.clear();
+    const { height } = this.scale;
 
     // Опыт — тонкая полоса во всю ширину сверху
     g.fillStyle(0x000000, 0.5);
@@ -98,7 +103,7 @@ export class UIScene extends Phaser.Scene {
       const bw = Math.min(400, width - 2 * PAD);
       const bx = (width - bw) / 2;
       const by = XP_BAR_H + 78;
-      const frac = Math.max(0, boss.hp / boss.cfg.hp);
+      const frac = Math.max(0, boss.hp / boss.maxHp);
       g.fillStyle(0x000000, 0.6);
       g.fillRect(bx - 2, by - 2, bw + 4, BOSS_BAR_H + 4);
       g.fillStyle(0xd04030);
@@ -106,6 +111,7 @@ export class UIScene extends Phaser.Scene {
       this.bossText.setPosition(width / 2, by - 3);
     }
 
+    this.drawAlert(g, width, height, delta / 1000, gs.scene.isPaused());
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
 
@@ -175,6 +181,24 @@ export class UIScene extends Phaser.Scene {
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
     this.radioLeft = RADIO.duration + RADIO.fade * 2;
     sfx.play('radio');
+  }
+
+  drawAlert(g, width, height, dt, paused) {
+    if (this.alertLeft <= 0) return;
+    if (!paused) {
+      this.alertLeft -= dt;
+      this.alertT += dt;
+    }
+    const a = 0.18 + 0.17 * Math.sin(this.alertT * 9);
+    // Три полосы с убывающей прозрачностью — мягкий красный край
+    for (let i = 0; i < 3; i++) {
+      const w = 10 * (i + 1);
+      g.fillStyle(0xff2020, a / (i + 1));
+      g.fillRect(0, 0, width, w);
+      g.fillRect(0, height - w, width, w);
+      g.fillRect(0, 0, w, height);
+      g.fillRect(width - w, 0, w, height);
+    }
   }
 
   // Стрелка у края экрана к ящику снабжения, который сейчас не виден

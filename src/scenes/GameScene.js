@@ -14,6 +14,7 @@ import { Fx } from '../systems/Fx.js';
 import { roofCenters } from '../cityLayout.js';
 import { Supply } from '../systems/Supply.js';
 import { Flares } from '../systems/Flares.js';
+import { RunEvents } from '../systems/RunEvents.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -63,6 +64,7 @@ export class GameScene extends Phaser.Scene {
     this.fx = new Fx(this);
     this.supply = new Supply(this, this.player);
     this.flares = new Flares(this, this.player, this.shells);
+    this.runEvents = new RunEvents(this);
 
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
@@ -92,9 +94,11 @@ export class GameScene extends Phaser.Scene {
     this.xpNext = XP.first;
     this.pendingLevels = 0;
     this.ended = false;
+    this.halting = false; // пауза запрошена, но Phaser применит её только в следующем кадре
     this.banners = 0; // сколько надписей сейчас на экране — следующая встаёт ниже
     this.boss = null;
     this.bossKilled = false;
+    this.bossKilledAt = null;
     this.picks = []; // выбранные улучшения по порядку — для замеров
     this.firstLevelUpAt = null;
 
@@ -109,6 +113,12 @@ export class GameScene extends Phaser.Scene {
       }
       const gem = this.gems.get();
       if (gem) gem.drop(enemy.x, enemy.y, enemy.cfg.xp, this.player);
+    });
+    this.events.on('boss-phase2', (boss) => {
+      this.cameras.main.flash(300, 255, 230, 120);
+      this.fx.shake(FX.bossPhaseShake);
+      sfx.play('explosion');
+      this.runEvents.bossPhase2(boss);
     });
     this.events.on('boss-spawned', (boss) => {
       this.boss = boss;
@@ -125,6 +135,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.events.on('wave-changed', (n) => this.banner(t(`wave_${n}`)));
     this.events.on('resume', () => {
+      this.halting = false;
       this.player.resetInput();
       platform.gameplayStart();
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
@@ -144,9 +155,10 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['radio', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
+      for (const e of ['radio', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'boss-phase2', 'alert', 'player-hurt', 'resume', 'player-died']) this.events.off(e);
       this.scale.off('resize', this.fitZoom, this);
       this.scene.stop('UIScene');
+      sfx.duck(false);
       platform.gameplayStop();
     });
   }
@@ -172,7 +184,7 @@ export class GameScene extends Phaser.Scene {
       sfx.play('explosion');
     }
     const stats = this.runStats(win);
-    recordRun(this.runRecord(stats, { cause }));
+    recordRun(this.runRecord(stats, { cause, ending: stats.ending }));
     this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
   }
 
@@ -184,6 +196,8 @@ export class GameScene extends Phaser.Scene {
       level: this.level,
       bossSeen: !!this.boss,
       bossKilled: this.bossKilled,
+      // Концовка: убил «Объект» — колонна прошла; дожил, но босс жив — не успел; погиб
+      ending: !win ? 'lost' : this.bossKilled ? 'convoy' : 'late',
     };
   }
 
@@ -196,14 +210,28 @@ export class GameScene extends Phaser.Scene {
       firstLevelUpAt: this.firstLevelUpAt,
       crates: { ...this.supply.picked },
       flareKills: this.flares.kills,
+      hordes: this.runEvents.summary(),
+      bossKilledAt: this.bossKilledAt,
+      bossSwarm: this.runEvents.bossSwarm ?? null,
     };
+  }
+
+  // Phaser ставит сцену на паузу только в начале следующего кадра. Если в одном кадре
+  // подобрать несколько кристаллов, без этого флага выбор улучшения открывался дважды
+  halt() {
+    this.halting = true;
+    this.scene.pause();
+  }
+
+  isHalted() {
+    return this.halting || this.scene.isPaused();
   }
 
   // Пауза: кнопка в HUD, Esc или P. Во время выбора улучшения, смерти и итогов — нельзя
   openPause() {
-    if (this.ended || this.scene.isPaused() || !this.player.alive) return;
+    if (this.ended || this.isHalted() || !this.player.alive) return;
     platform.gameplayStop();
-    this.scene.pause();
+    this.halt();
     // Надписи волн не должны просвечивать под экраном паузы (требование 1.10.3)
     const banners = this.children.list.filter((o) => o.getData?.('banner'));
     banners.forEach((b) => b.setVisible(false));
@@ -234,11 +262,11 @@ export class GameScene extends Phaser.Scene {
       this.xpNext = this.level === 2 ? XP.base : this.xpNext + XP.perLevel;
       this.pendingLevels++;
     }
-    if (this.pendingLevels > 0 && !this.scene.isPaused()) this.openLevelUp();
+    if (this.pendingLevels > 0 && !this.isHalted()) this.openLevelUp();
   }
 
   openLevelUp() {
-    if (this.pendingLevels <= 0 || this.ended) return;
+    if (this.pendingLevels <= 0 || this.ended || this.isHalted()) return;
     const choices = this.upgrades.roll(3);
     if (choices.length === 0) {
       this.pendingLevels = 0;
@@ -246,7 +274,7 @@ export class GameScene extends Phaser.Scene {
     }
     sfx.play('levelUp');
     platform.gameplayStop();
-    this.scene.pause();
+    this.halt();
     this.scene.launch('LevelUpScene', {
       level: this.level - this.pendingLevels + 1,
       choices,
@@ -274,6 +302,7 @@ export class GameScene extends Phaser.Scene {
   // Серия взрывов по корпусу и победа
   onBossKilled(boss) {
     this.bossKilled = true;
+    this.bossKilledAt = Math.round(this.spawner.elapsed);
     const { x, y } = boss;
     for (let i = 0; i < 6; i++) {
       this.time.delayedCall(i * 120, () =>
@@ -338,6 +367,7 @@ export class GameScene extends Phaser.Scene {
     this.missiles.update(dt);
     this.flares.update(dt);
     this.supply.update(dt);
+    this.runEvents.update(this.spawner.elapsed);
     this.spawner.update(dt);
     if (this.spawner.elapsed >= RUN.duration) this.endRun(true);
   }

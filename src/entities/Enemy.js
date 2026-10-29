@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { SPAWN } from '../config.js';
+import { SPAWN, EVENTS } from '../config.js';
 import { DEPTH } from '../depth.js';
 
 const FLASH_TIME = 0.06;
@@ -17,6 +17,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.cfg = cfg;
     this.target = target;
     this.hp = cfg.hp * hpMul;
+    this.maxHp = this.hp;
+    // «Объект»: интервалы залпов — свои, во второй фазе они короче
+    this.phase2 = false;
+    this.volleyEvery = cfg.volleyInterval;
+    this.ringEvery = cfg.burstInterval;
     this.damage = cfg.damage;
     this.speed = cfg.speed + Phaser.Math.FloatBetween(-cfg.speedJitter, cfg.speedJitter);
     this.flash = 0;
@@ -46,6 +51,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.flash = FLASH_TIME;
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
     this.scene.events.emit('enemy-hit', this, damage);
+    if (this.type === 'boss' && !this.phase2 && this.hp > 0 && this.hp <= this.maxHp * EVENTS.bossSwarm.atHpFrac) {
+      this.phase2 = true;
+      this.volleyEvery /= EVENTS.bossSwarm.fireRateMul;
+      this.ringEvery /= EVENTS.bossSwarm.fireRateMul;
+      this.scene.events.emit('boss-phase2', this);
+    }
     if (this.hp <= 0) {
       this.die();
       return true;
@@ -199,14 +210,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     this.timer -= dt;
     if (this.timer <= 0) {
-      this.timer = cfg.volleyInterval;
+      this.timer = this.volleyEvery;
       const half = (cfg.volleyCount - 1) / 2;
       for (let i = 0; i < cfg.volleyCount; i++) this.fireShell(this.rotation + (i - half) * cfg.volleySpread);
     }
 
     this.burstTimer -= dt;
     if (this.burstTimer <= 0) {
-      this.burstTimer = cfg.burstInterval;
+      this.burstTimer = this.ringEvery;
       // Кольцо каждый раз чуть повёрнуто, чтобы безопасные щели не стояли на месте
       const offset = Phaser.Math.FloatBetween(0, Math.PI * 2);
       for (let i = 0; i < cfg.burstCount; i++) this.fireShell(offset + (i / cfg.burstCount) * Math.PI * 2);

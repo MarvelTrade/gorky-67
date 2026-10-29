@@ -27,7 +27,7 @@ export class GameOverScene extends Phaser.Scene {
 
     // Концовка — одна строка по итогу забега
     const ending = this.add
-      .text(0, 0, t(stats.win ? 'ending_win' : 'ending_lose'), {
+      .text(0, 0, t(`ending_${stats.ending}`), {
         fontFamily: 'monospace',
         fontSize: '17px',
         color: '#d8e0c8',

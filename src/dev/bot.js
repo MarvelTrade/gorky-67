@@ -7,6 +7,7 @@
 //
 // Ускоренный режим, когда вкладка скрыта или нужен быстрый прогон:
 //   __startBot({ smart: true, manual: true }); __botRun(60)  — прокрутить 60 с игрового времени
+//   __botRun(60, { headless: true }) — то же без отрисовки, в разы быстрее (для замеров баланса)
 // Игра шагает вручную по 1/60 с, бот решает каждые 3 шага. __bot.log.frameMs — сколько
 // миллисекунд занимает кадр (логика + отрисовка) по минутам: до 16.7 мс — это 60 FPS.
 
@@ -168,14 +169,18 @@ export function installBot(game) {
 
   // Прокрутить игру на seconds игрового времени вручную (см. «Ускоренный режим» выше)
   let clock = performance.now();
-  window.__botRun = (seconds) => {
+  window.__botRun = (seconds, { headless = false } = {}) => {
     const bot = window.__bot;
     const dt = 1000 / 60;
     for (let i = 0; i < Math.round(seconds * 60) && !bot.log.done; i++) {
       clock += dt;
       const t0 = performance.now();
-      game.step(clock, dt);
       const sc = game.scene.getScene('GameScene');
+      if (headless) {
+        game.headlessStep(clock, dt);
+        // Без отрисовки камера сама не догоняет вертолёт, а бот рулит относительно экрана
+        if (game.scene.isActive('GameScene')) sc.cameras.main.preRender();
+      } else game.step(clock, dt);
       if (game.scene.isActive('GameScene') && sc.spawner) {
         const m = Math.min(5, Math.floor(sc.spawner.elapsed / 60));
         bot.log.frameMs[m].push(performance.now() - t0);

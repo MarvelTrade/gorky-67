@@ -50,7 +50,8 @@ export function report() {
     `GORKY-67 · забегов: ${runs.length} · сессий: ${sessions.size}`,
     `Забегов подряд в сессии: ${perSession.join(', ')} (среднее ${(runs.length / sessions.size).toFixed(1)})`,
     `Выжили: ${runs.filter((r) => r.win).length} · вышли в меню: ${runs.filter((r) => r.quit).length} · среднее время: ${formatTime(avg)}`,
-    `Дошли до Объекта: ${runs.filter((r) => r.bossSeen).length} · убили: ${runs.filter((r) => r.bossKilled).length}`,
+    `Дошли до Объекта: ${runs.filter((r) => r.bossSeen).length} · убили: ${runs.filter((r) => r.bossKilled).length}` +
+      ` · концовки: ${['convoy', 'late', 'lost'].map((e) => `${e} ${runs.filter((r) => r.ending === e).length}`).join(', ')}`,
     `Причины смерти: ${Object.entries(causes).map(([c, n]) => `${causeName(c)} ${n}`).join(', ') || '—'}`,
     `Ящики: ${['repair', 'magnet', 'bomb'].map((k) => `${t(`supply_${k}`)} ${runs.reduce((s, r) => s + (r.crates?.[k] ?? 0), 0)}`).join(', ')}` +
       ` · сбито ловушками: ${runs.reduce((s, r) => s + (r.flareKills ?? 0), 0)}`,
@@ -61,14 +62,22 @@ export function report() {
   lines.push('');
   runs.forEach((r, i) => {
     const result = r.win ? 'выжил' : r.quit ? 'вышел в меню' : `погиб от: ${causeName(r.cause)}`;
-    const boss = r.bossKilled ? 'Объект убит' : r.bossSeen ? 'Объект жив' : 'до Объекта не дошёл';
+    const boss = r.bossKilled
+      ? `Объект убит на ${formatTime(r.bossKilledAt ?? r.time)}`
+      : r.bossSeen
+        ? 'Объект жив'
+        : 'до Объекта не дошёл';
+    const hordes = (r.hordes ?? [])
+      .map((h) => `орда ${formatTime(h.at)}: ${h.survived ? 'пережил' : 'погиб'} (HP ${h.hpBefore}→${h.hpAfter}, урон ${h.damage ?? '?'})`)
+      .join('; ');
     const picks = r.picks.map((p) => `${t(`upg_${p.id}`)} (${formatTime(p.t)})`).join(' → ') || '—';
     lines.push(
       `#${i + 1} ${r.at.slice(0, 16).replace('T', ' ')} · сессия ${r.session}, забег ${r.runInSession} · ` +
         `${formatTime(r.time)} · ${result} · ур. ${r.level} · убито ${r.kills} · ${boss}`,
       `   улучшения: ${picks}`,
       `   ящики: ${r.crates ? ['repair', 'magnet', 'bomb'].map((k) => `${t(`supply_${k}`)} ${r.crates[k]}`).join(', ') : '—'}` +
-        ` · сбито ловушками: ${r.flareKills ?? 0}`
+        ` · сбито ловушками: ${r.flareKills ?? 0}`,
+      `   ${hordes || 'орд не было'} · концовка: ${r.ending ?? '—'}`
     );
   });
   return lines.join('\n');

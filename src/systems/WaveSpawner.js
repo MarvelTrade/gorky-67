@@ -12,6 +12,8 @@ export class WaveSpawner {
     this.waveIndex = -1;
     this.timers = {};
     this.bossSpawned = false;
+    this.paused = false; // затишье перед боссом — новых врагов нет
+    this.infantryRate = 1; // во время орды обычной пехоты меньше
   }
 
   get wave() {
@@ -33,13 +35,14 @@ export class WaveSpawner {
       this.spawnBoss();
     }
 
+    if (this.paused) return;
     const wave = this.wave;
     for (const type of Object.keys(ENEMIES)) {
       const rule = wave[type];
       if (!rule) continue;
       this.timers[type] -= dt;
       if (this.timers[type] > 0) continue;
-      this.timers[type] = rule.interval;
+      this.timers[type] = rule.interval / (type === 'infantry' ? this.infantryRate : 1);
       for (let i = 0; i < rule.batch; i++) this.spawn(type);
     }
   }
@@ -52,9 +55,13 @@ export class WaveSpawner {
     const cam = this.scene.cameras.main;
     const radius = Math.hypot(cam.width, cam.height) / cam.zoom / 2 + SPAWN.margin;
     const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-    const x = Phaser.Math.Clamp(this.target.x + Math.cos(angle) * radius, 0, WORLD.width);
-    const y = Phaser.Math.Clamp(this.target.y + Math.sin(angle) * radius, 0, WORLD.height);
+    this.place(enemy, type, this.target.x + Math.cos(angle) * radius, this.target.y + Math.sin(angle) * radius);
+  }
 
+  // Поставить врага в точку (в пределах мира) с живучестью текущей волны
+  place(enemy, type, x, y) {
+    x = Phaser.Math.Clamp(x, 0, WORLD.width);
+    y = Phaser.Math.Clamp(y, 0, WORLD.height);
     enemy.spawn(type, ENEMIES[type], x, y, this.target, this.wave.hpMul);
   }
 
