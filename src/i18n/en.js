@@ -31,6 +31,10 @@ export default {
   bossAlive: 'The Object is still alive',
   bossShort: 'object',
 
+  pause: 'Paused',
+  resume: 'Resume',
+  quitToMenu: 'Quit to menu',
+
   lose: 'Shot down!',
   win: 'Survived!',
   ending_win: 'The column made it out. Officially, there was no accident.',

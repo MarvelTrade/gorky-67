@@ -42,14 +42,14 @@ export function report() {
   for (const r of runs) sessions.set(r.session, Math.max(sessions.get(r.session) ?? 0, r.runInSession));
   const perSession = [...sessions.values()];
   const causes = {};
-  for (const r of runs) if (!r.win) causes[r.cause] = (causes[r.cause] ?? 0) + 1;
+  for (const r of runs) if (!r.win && !r.quit) causes[r.cause] = (causes[r.cause] ?? 0) + 1;
   const avg = runs.reduce((s, r) => s + r.time, 0) / runs.length;
   const firstLvl = runs.filter((r) => r.firstLevelUpAt != null);
 
   const lines = [
     `GORKY-67 · забегов: ${runs.length} · сессий: ${sessions.size}`,
     `Забегов подряд в сессии: ${perSession.join(', ')} (среднее ${(runs.length / sessions.size).toFixed(1)})`,
-    `Выжили: ${runs.filter((r) => r.win).length} · среднее время: ${formatTime(avg)}`,
+    `Выжили: ${runs.filter((r) => r.win).length} · вышли в меню: ${runs.filter((r) => r.quit).length} · среднее время: ${formatTime(avg)}`,
     `Дошли до Объекта: ${runs.filter((r) => r.bossSeen).length} · убили: ${runs.filter((r) => r.bossKilled).length}`,
     `Причины смерти: ${Object.entries(causes).map(([c, n]) => `${causeName(c)} ${n}`).join(', ') || '—'}`,
     firstLvl.length
@@ -58,7 +58,7 @@ export function report() {
   ].filter(Boolean);
   lines.push('');
   runs.forEach((r, i) => {
-    const result = r.win ? 'выжил' : `погиб от: ${causeName(r.cause)}`;
+    const result = r.win ? 'выжил' : r.quit ? 'вышел в меню' : `погиб от: ${causeName(r.cause)}`;
     const boss = r.bossKilled ? 'Объект убит' : r.bossSeen ? 'Объект жив' : 'до Объекта не дошёл';
     const picks = r.picks.map((p) => `${t(`upg_${p.id}`)} (${formatTime(p.t)})`).join(' → ') || '—';
     lines.push(
