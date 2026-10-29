@@ -21,6 +21,11 @@ export class UIScene extends Phaser.Scene {
     this.gs = this.scene.get('GameScene');
 
     this.bars = this.add.graphics();
+
+    // Пауза — справа сверху. Большая зона нажатия, чтобы попадать пальцем
+    this.pauseBtn = this.add.image(0, 0, 'pauseBtn').setInteractive({ useHandCursor: true });
+    this.pauseBtn.input.hitArea.setTo(-8, -8, this.pauseBtn.width + 16, this.pauseBtn.height + 16);
+    this.pauseBtn.on('pointerdown', () => this.gs.openPause());
     this.stick = this.add.graphics();
 
     // Радио «Берёзы»: позывной и одна строка
@@ -104,8 +109,16 @@ export class UIScene extends Phaser.Scene {
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
 
+    // Под экраном паузы радио не показываем — иначе тексты наложатся
+    this.radio.setVisible(!this.scene.isActive('PauseScene'));
+
+    // Кнопка видна, только когда паузу можно поставить
+    this.pauseBtn
+      .setPosition(width - PAD - this.pauseBtn.width / 2, XP_BAR_H + 6 + this.pauseBtn.height / 2)
+      .setVisible(!gs.ended && !gs.scene.isPaused() && p.alive);
+
     if (this.fpsText) {
-      this.fpsText.setPosition(width - PAD, XP_BAR_H + 6).setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
+      this.fpsText.setPosition(width - PAD, XP_BAR_H + 56).setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
     }
   }
 

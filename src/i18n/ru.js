@@ -38,6 +38,11 @@ export default {
   bossAlive: 'Объект остался жив',
   bossShort: 'объект',
 
+  // Пауза
+  pause: 'Пауза',
+  resume: 'Продолжить',
+  quitToMenu: 'Выйти в меню',
+
   // Итоги
   lose: 'Сбит!',
   win: 'Выжил!',

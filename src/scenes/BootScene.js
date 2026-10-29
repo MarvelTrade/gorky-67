@@ -24,6 +24,7 @@ export class BootScene extends Phaser.Scene {
     this.makeGemTexture();
     this.makeParticleTextures();
     this.makeSupplyTextures();
+    this.makePauseTexture();
     this.makeCityTiles();
     platform.gameReady();
     this.scene.start('MenuScene');
@@ -296,6 +297,19 @@ export class BootScene extends Phaser.Scene {
     g.lineStyle(3, 0xffd040);
     g.strokeCircle(24, 24, 21);
     this.makeTexture(g, 'beacon', 48, 48);
+  }
+
+  // Кнопка паузы: полупрозрачный круг и две полоски
+  makePauseTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x000000, 0.45);
+    g.fillCircle(20, 20, 20);
+    g.lineStyle(2, 0xffffff, 0.6);
+    g.strokeCircle(20, 20, 19);
+    g.fillStyle(0xffffff);
+    g.fillRect(13, 11, 5, 18);
+    g.fillRect(22, 11, 5, 18);
+    this.makeTexture(g, 'pauseBtn', 40, 40);
   }
 
   // Город — квадратные кварталы CITY.tile × CITY.tile, по краям дороги.

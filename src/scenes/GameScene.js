@@ -126,6 +126,7 @@ export class GameScene extends Phaser.Scene {
     this.events.on('wave-changed', (n) => this.banner(t(`wave_${n}`)));
     this.events.on('resume', () => {
       this.player.resetInput();
+      platform.gameplayStart();
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
       if (this.pendingLevels > 0) this.time.delayedCall(150, () => this.openLevelUp());
     });
@@ -137,6 +138,8 @@ export class GameScene extends Phaser.Scene {
     this.scale.on('resize', this.fitZoom, this);
 
     this.scene.launch('UIScene');
+    this.input.keyboard.on('keydown-ESC', () => this.openPause());
+    this.input.keyboard.on('keydown-P', () => this.openPause());
 
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
@@ -168,7 +171,13 @@ export class GameScene extends Phaser.Scene {
       this.fx.shake(FX.deathShake);
       sfx.play('explosion');
     }
-    const stats = {
+    const stats = this.runStats(win);
+    recordRun(this.runRecord(stats, { cause }));
+    this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
+  }
+
+  runStats(win) {
+    return {
       win,
       time: Math.min(this.spawner.elapsed, RUN.duration),
       kills: this.kills,
@@ -176,15 +185,44 @@ export class GameScene extends Phaser.Scene {
       bossSeen: !!this.boss,
       bossKilled: this.bossKilled,
     };
-    recordRun({
+  }
+
+  // Всё, что пишется в замеры о забеге
+  runRecord(stats, extra) {
+    return {
       ...stats,
-      cause,
+      ...extra,
       picks: this.picks,
       firstLevelUpAt: this.firstLevelUpAt,
       crates: { ...this.supply.picked },
       flareKills: this.flares.kills,
+    };
+  }
+
+  // Пауза: кнопка в HUD, Esc или P. Во время выбора улучшения, смерти и итогов — нельзя
+  openPause() {
+    if (this.ended || this.scene.isPaused() || !this.player.alive) return;
+    platform.gameplayStop();
+    this.scene.pause();
+    // Надписи волн не должны просвечивать под экраном паузы (требование 1.10.3)
+    const banners = this.children.list.filter((o) => o.getData?.('banner'));
+    banners.forEach((b) => b.setVisible(false));
+    this.scene.launch('PauseScene', {
+      onResume: () => {
+        banners.forEach((b) => b.active && b.setVisible(true));
+        this.scene.resume();
+      },
+      onQuit: () => this.quit(),
     });
-    this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
+  }
+
+  // Вышел в меню посреди забега — в замерах это отдельный исход, не смерть
+  quit() {
+    if (!this.ended) {
+      this.ended = true;
+      recordRun(this.runRecord(this.runStats(false), { quit: true, cause: null }));
+    }
+    this.scene.start('MenuScene');
   }
 
   addXp(value) {
@@ -207,6 +245,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     sfx.play('levelUp');
+    platform.gameplayStop();
     this.scene.pause();
     this.scene.launch('LevelUpScene', {
       level: this.level - this.pendingLevels + 1,
@@ -258,7 +297,8 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(DEPTH.banner);
+      .setDepth(DEPTH.banner)
+      .setData('banner', true);
     this.banners++;
     this.tweens.add({
       targets: text,

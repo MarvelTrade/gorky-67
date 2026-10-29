@@ -6,6 +6,7 @@ import { GameScene } from './scenes/GameScene.js';
 import { LevelUpScene } from './scenes/LevelUpScene.js';
 import { UIScene } from './scenes/UIScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
+import { PauseScene } from './scenes/PauseScene.js';
 import { platform } from './platform/platform.js';
 import { initLang } from './i18n/index.js';
 import { sfx } from './systems/Sfx.js';
@@ -28,7 +29,7 @@ function startGame() {
       activePointers: 2,
     },
     disableContextMenu: true,
-    scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, GameOverScene],
+    scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, PauseScene, GameOverScene],
   });
 
   sfx.init(game);
