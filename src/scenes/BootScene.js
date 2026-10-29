@@ -1,5 +1,4 @@
 import * as Phaser from 'phaser';
-import { platform } from '../platform/platform.js';
 import { PALETTE as P, CITY } from '../config.js';
 import { BUILDINGS } from '../cityLayout.js';
 
@@ -26,7 +25,6 @@ export class BootScene extends Phaser.Scene {
     this.makeSupplyTextures();
     this.makePauseTexture();
     this.makeCityTiles();
-    platform.gameReady();
     this.scene.start('MenuScene');
   }
 

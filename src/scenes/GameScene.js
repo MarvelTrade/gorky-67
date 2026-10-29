@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -95,7 +95,9 @@ export class GameScene extends Phaser.Scene {
     this.pendingLevels = 0;
     this.ended = false;
     this.halting = false; // пауза запрошена, но Phaser применит её только в следующем кадре
-    this.banners = 0; // сколько надписей сейчас на экране — следующая встаёт ниже
+    this.dying = false; // вертолёт сбит, ждём решения «Воскреснуть»
+    this.revived = false; // воскрешение — один раз за забег
+    this.banners = []; // надписи на экране — следующая встаёт ниже
     this.boss = null;
     this.bossKilled = false;
     this.bossKilledAt = null;
@@ -141,7 +143,7 @@ export class GameScene extends Phaser.Scene {
       // Набралось сразу несколько уровней — следующий выбор после короткой передышки
       if (this.pendingLevels > 0) this.time.delayedCall(150, () => this.openLevelUp());
     });
-    this.events.once('player-died', (cause) => this.endRun(false, cause));
+    this.events.on('player-died', (cause) => this.onPlayerDied(cause));
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
@@ -168,24 +170,63 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setZoom(Math.min(1, Math.min(width, height) / VIEW.minShortSide));
   }
 
-  // Конец забега: смерть или продержался RUN.duration секунд
-  endRun(win, cause = null) {
-    if (this.ended) return;
-    this.ended = true;
+  // Вертолёт сбит: взрыв, затем — предложение воскреснуть (если можно) или итоги
+  onPlayerDied(cause) {
+    if (this.ended || this.dying) return;
+    this.dying = true;
     // Уровень и смерть могли случиться в одном кадре — выбор улучшения уже не нужен
     this.scene.stop('LevelUpScene');
     this.scene.resume();
-    const p = this.player;
-    if (!win) {
-      p.hide();
-      this.explosionFx(p.x, p.y, 70);
-      this.fx.debris.explode(24, p.x, p.y);
-      this.fx.shake(FX.deathShake);
-      sfx.play('explosion');
+    platform.gameplayStop();
+    // Надписи волн не должны просвечивать под экраном «Воскреснуть» (требование 1.10.3)
+    for (const b of [...this.banners]) {
+      this.tweens.killTweensOf(b);
+      this.removeBanner(b);
     }
+    const p = this.player;
+    p.hide();
+    this.explosionFx(p.x, p.y, 70);
+    this.fx.debris.explode(24, p.x, p.y);
+    this.fx.shake(FX.deathShake);
+    sfx.play('explosion');
+
+    this.time.delayedCall(RUN.endDelay * 1000, () => {
+      if (this.revived || !platform.canShowRewarded()) {
+        this.endRun(false, cause, 0);
+        return;
+      }
+      this.halt();
+      this.scene.launch('ReviveScene', {
+        onRevive: () => this.revive(),
+        onGiveUp: () => this.endRun(false, cause, 0),
+      });
+    });
+  }
+
+  // После рекламы: половина брони, неуязвимость и чистое место вокруг
+  revive() {
+    this.revived = true;
+    this.dying = false;
+    const p = this.player;
+    p.revive(ADS.reviveHp, ADS.reviveInvuln);
+    const r2 = ADS.reviveClearRadius ** 2;
+    for (const e of this.enemies.getChildren()) {
+      if (e.active && e !== this.boss && (e.x - p.x) ** 2 + (e.y - p.y) ** 2 < r2) e.despawn();
+    }
+    for (const s of this.shells.getChildren()) if (s.active) s.kill();
+    this.scene.resume();
+  }
+
+  // Конец забега: смерть или продержался RUN.duration секунд
+  endRun(win, cause = null, delay = RUN.endDelay) {
+    if (this.ended) return;
+    this.ended = true;
+    this.scene.stop('LevelUpScene');
+    this.scene.resume();
+    platform.gameplayStop();
     const stats = this.runStats(win);
     recordRun(this.runRecord(stats, { cause, ending: stats.ending }));
-    this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
+    this.time.delayedCall(delay * 1000, () => this.scene.start('GameOverScene', stats));
   }
 
   runStats(win) {
@@ -208,6 +249,7 @@ export class GameScene extends Phaser.Scene {
       ...extra,
       picks: this.picks,
       firstLevelUpAt: this.firstLevelUpAt,
+      revived: this.revived,
       crates: { ...this.supply.picked },
       flareKills: this.flares.kills,
       hordes: this.runEvents.summary(),
@@ -229,11 +271,11 @@ export class GameScene extends Phaser.Scene {
 
   // Пауза: кнопка в HUD, Esc или P. Во время выбора улучшения, смерти и итогов — нельзя
   openPause() {
-    if (this.ended || this.isHalted() || !this.player.alive) return;
+    if (this.ended || this.dying || this.isHalted() || !this.player.alive) return;
     platform.gameplayStop();
     this.halt();
     // Надписи волн не должны просвечивать под экраном паузы (требование 1.10.3)
-    const banners = this.children.list.filter((o) => o.getData?.('banner'));
+    const banners = [...this.banners];
     banners.forEach((b) => b.setVisible(false));
     this.scene.launch('PauseScene', {
       onResume: () => {
@@ -273,7 +315,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     sfx.play('levelUp');
-    platform.gameplayStop();
+    platform.gameplayStop(); // выбор улучшения — пауза в разметке геймплея
     this.halt();
     this.scene.launch('LevelUpScene', {
       level: this.level - this.pendingLevels + 1,
@@ -316,7 +358,7 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const text = this.add
       // Не выше 200 px — там HUD, полоска босса и радио «Берёзы»
-      .text(width / 2, Math.max(height * 0.3, 200) + this.banners * 50, message, {
+      .text(width / 2, Math.max(height * 0.3, 200) + this.banners.length * 50, message, {
         fontFamily: 'sans-serif',
         fontSize: '36px',
         color,
@@ -326,19 +368,20 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(DEPTH.banner)
-      .setData('banner', true);
-    this.banners++;
+      .setDepth(DEPTH.banner);
+    this.banners.push(text);
     this.tweens.add({
       targets: text,
       alpha: { from: 1, to: 0 },
       delay: 1200,
       duration: 600,
-      onComplete: () => {
-        text.destroy();
-        this.banners--;
-      },
+      onComplete: () => this.removeBanner(text),
     });
+  }
+
+  removeBanner(text) {
+    this.banners = this.banners.filter((b) => b !== text);
+    text.destroy();
   }
 
   // Город: кварталы случайного вида и поворота — каждый забег улицы немного другие.
@@ -360,7 +403,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (this.ended) return;
+    if (this.ended || this.dying) return;
     const dt = delta / 1000;
     this.player.update(dt);
     this.gun.update(dt);

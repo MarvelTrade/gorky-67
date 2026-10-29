@@ -80,6 +80,17 @@ export class Player {
     this.shadow.setVisible(false);
   }
 
+  // «Воскреснуть»: снова виден, часть брони и временная неуязвимость
+  revive(hpFraction, invulnTime) {
+    this.hp = Math.ceil(this.maxHp * hpFraction);
+    this.invuln = invulnTime;
+    this.body.enable = true;
+    this.body.setVelocity(0, 0);
+    this.sprite.setVisible(true).setAlpha(1);
+    this.rotor.setVisible(true);
+    this.shadow.setVisible(true);
+  }
+
   get x() {
     return this.sprite.x;
   }

@@ -7,9 +7,11 @@ import { LevelUpScene } from './scenes/LevelUpScene.js';
 import { UIScene } from './scenes/UIScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
 import { PauseScene } from './scenes/PauseScene.js';
+import { ReviveScene } from './scenes/ReviveScene.js';
 import { platform } from './platform/platform.js';
 import { initLang } from './i18n/index.js';
 import { sfx } from './systems/Sfx.js';
+import { settings, loadSettings } from './settings.js';
 
 function startGame() {
   const game = new Phaser.Game({
@@ -29,7 +31,7 @@ function startGame() {
       activePointers: 2,
     },
     disableContextMenu: true,
-    scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, PauseScene, GameOverScene],
+    scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, PauseScene, ReviveScene, GameOverScene],
   });
 
   sfx.init(game);
@@ -39,13 +41,42 @@ function startGame() {
     import('./dev/bot.js').then((m) => m.installBot(game));
   }
 
-  // Звук на паузу при уходе со вкладки
+  // Звук выключен, пока вкладка скрыта, идёт реклама или платформа поставила паузу,
+  // либо игрок сам выключил его в меню
+  const state = { hidden: document.hidden, platformPaused: false };
+  const applyMute = () => {
+    game.sound.mute = state.hidden || state.platformPaused || !settings.sound;
+  };
+  game.registry.set('applyMute', applyMute);
   document.addEventListener('visibilitychange', () => {
-    game.sound.mute = document.hidden;
+    state.hidden = document.hidden;
+    applyMute();
   });
+
+  // Пауза от платформы (реклама, смена вкладки): останавливаем забег, если он идёт,
+  // и возобновляем только то, что остановили сами
+  let pausedByPlatform = false;
+  platform.onPause(() => {
+    state.platformPaused = true;
+    applyMute();
+    if (game.scene.isActive('GameScene')) {
+      game.scene.pause('GameScene');
+      pausedByPlatform = true;
+    }
+  });
+  platform.onResume(() => {
+    state.platformPaused = false;
+    applyMute();
+    if (pausedByPlatform) {
+      pausedByPlatform = false;
+      game.scene.resume('GameScene');
+    }
+  });
+  applyMute();
 }
 
-platform.init().then(() => {
+platform.init().then(async () => {
   initLang();
+  await loadSettings();
   startGame();
 });
