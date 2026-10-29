@@ -18,6 +18,13 @@ export class XPGem extends Phaser.GameObjects.Image {
     this.setPosition(x, y).setActive(true).setVisible(true);
   }
 
+  // Притянуть к вертолёту сразу, без магнита (ящик «Магнит»)
+  pull(speed) {
+    if (this.attracted) return;
+    this.attracted = true;
+    this.speed = speed;
+  }
+
   collect() {
     this.setActive(false).setVisible(false);
     this.scene.events.emit('xp-collected', this.value);

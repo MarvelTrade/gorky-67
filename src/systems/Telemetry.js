@@ -52,6 +52,8 @@ export function report() {
     `Выжили: ${runs.filter((r) => r.win).length} · среднее время: ${formatTime(avg)}`,
     `Дошли до Объекта: ${runs.filter((r) => r.bossSeen).length} · убили: ${runs.filter((r) => r.bossKilled).length}`,
     `Причины смерти: ${Object.entries(causes).map(([c, n]) => `${causeName(c)} ${n}`).join(', ') || '—'}`,
+    `Ящики: ${['repair', 'magnet', 'bomb'].map((k) => `${t(`supply_${k}`)} ${runs.reduce((s, r) => s + (r.crates?.[k] ?? 0), 0)}`).join(', ')}` +
+      ` · сбито ловушками: ${runs.reduce((s, r) => s + (r.flareKills ?? 0), 0)}`,
     firstLvl.length
       ? `Первый уровень в среднем на ${(firstLvl.reduce((s, r) => s + r.firstLevelUpAt, 0) / firstLvl.length).toFixed(0)} с`
       : null,
@@ -64,7 +66,9 @@ export function report() {
     lines.push(
       `#${i + 1} ${r.at.slice(0, 16).replace('T', ' ')} · сессия ${r.session}, забег ${r.runInSession} · ` +
         `${formatTime(r.time)} · ${result} · ур. ${r.level} · убито ${r.kills} · ${boss}`,
-      `   улучшения: ${picks}`
+      `   улучшения: ${picks}`,
+      `   ящики: ${r.crates ? ['repair', 'magnet', 'bomb'].map((k) => `${t(`supply_${k}`)} ${r.crates[k]}`).join(', ') : '—'}` +
+        ` · сбито ловушками: ${r.flareKills ?? 0}`
     );
   });
   return lines.join('\n');

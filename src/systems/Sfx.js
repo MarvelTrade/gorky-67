@@ -109,6 +109,21 @@ class SfxEngine {
     f.connect(g);
   }
 
+  // Ящик снабжения: два коротких восходящих тона
+  supply(t) {
+    this.tone('triangle', t, 660, 660, 0.08, 0.16);
+    this.tone('triangle', t + 0.09, 990, 990, 0.12, 0.16);
+  }
+
+  // Отстрел ловушек: шипящий хлопок
+  flare(t) {
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = 2500;
+    this.noiseSrc(t, 0.25).connect(f);
+    f.connect(this.env(t, 0.16, 0.005, 0.22));
+  }
+
   // Попадание по вертолёту — глухой удар
   hit(t) {
     this.tone('square', t, 140, 60, 0.12, 0.16);

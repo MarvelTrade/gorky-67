@@ -36,6 +36,8 @@ export class UIScene extends Phaser.Scene {
     });
     this.radioText = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff' });
     this.radio.add([this.radioBg, this.radioCall, this.radioText]);
+    // Разовые реплики не по волнам (первый ящик снабжения)
+    this.gs.events.on('radio', (line) => this.showRadio(line));
     const style = { fontFamily: 'sans-serif', color: '#ffffff', stroke: '#000000', strokeThickness: 4 };
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
@@ -100,6 +102,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     this.drawStick(p.stick);
+    this.drawSupplyArrows(gs, g);
 
     if (this.fpsText) {
       this.fpsText.setPosition(width - PAD, XP_BAR_H + 6).setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
@@ -159,5 +162,38 @@ export class UIScene extends Phaser.Scene {
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
     this.radioLeft = RADIO.duration + RADIO.fade * 2;
     sfx.play('radio');
+  }
+
+  // Стрелка у края экрана к ящику снабжения, который сейчас не виден
+  drawSupplyArrows(gs, g) {
+    const cam = gs.cameras.main;
+    const view = cam.worldView;
+    const { width, height } = this.scale;
+    const m = 26; // отступ от края
+    for (const c of gs.supply.active) {
+      if (view.contains(c.x, c.y)) continue;
+      const sx = (c.x - view.x) * cam.zoom;
+      const sy = (c.y - view.y) * cam.zoom;
+      const cx = width / 2;
+      const cy = height / 2;
+      const a = Math.atan2(sy - cy, sx - cx);
+      // Точка на краю экрана по направлению к ящику
+      const k = Math.min((width / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (height / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+      const x = cx + Math.cos(a) * k;
+      const y = cy + Math.sin(a) * k;
+      const tip = 14;
+      const back = 9;
+      g.fillStyle(0x000000, 0.5);
+      g.fillCircle(x, y, 14);
+      g.fillStyle(0xffd040);
+      g.fillTriangle(
+        x + Math.cos(a) * tip,
+        y + Math.sin(a) * tip,
+        x + Math.cos(a + 2.5) * back,
+        y + Math.sin(a + 2.5) * back,
+        x + Math.cos(a - 2.5) * back,
+        y + Math.sin(a - 2.5) * back
+      );
+    }
   }
 }

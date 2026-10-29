@@ -34,6 +34,7 @@ export const FX = {
   infectedShake: { duration: 90, intensity: 0.003 }, // заражённый вцепился — лёгкая тряска
   heavyShake: { duration: 260, intensity: 0.011 }, // погиб танк
   bossShake: { duration: 500, intensity: 0.015 },  // погиб «Объект»
+  bombShake: { duration: 450, intensity: 0.02 },   // ящик «Бомбёжка»
   deathShake: { duration: 300, intensity: 0.012 }, // погиб игрок
 };
 
@@ -278,7 +279,25 @@ export const UPGRADES = {
   magnetAdd: 45,
   hpAdd: 25,            // и к максимуму, и лечение на столько же
   missileCooldownMul: 0.85, // со 2-го уровня ракет: залп чаще
-  maxLevel: { damage: 5, fireRate: 5, speed: 4, magnet: 4, hp: 5, missile: 4 },
+  // Тепловые ловушки: по уровню (индекс 0 — 1-й уровень) — перезарядка и радиус сбития снарядов
+  flares: {
+    cooldown: [6, 5, 4, 3],     // с между отстрелами
+    radius: [110, 135, 160, 185], // px вокруг вертолёта
+  },
+  maxLevel: { damage: 5, fireRate: 5, speed: 4, magnet: 4, hp: 5, missile: 4, flares: 4 },
+};
+
+// Ящики снабжения на крышах: подбираются, только если вертолёт пролетел над ящиком
+export const SUPPLY = {
+  firstAt: 12,          // с от начала — первый ящик (после реплики «Берёзы» о первой волне)
+  interval: 40,         // с между следующими
+  maxOnMap: 2,
+  minDist: 350,         // ящик появляется на крыше не ближе и не дальше этого от вертолёта
+  maxDist: 1100,
+  pickupRadius: 34,     // «пролетел над ним»
+  weights: { repair: 1, magnet: 1, bomb: 1 }, // вероятность содержимого
+  repairHp: 30,
+  bombDamage: 200,      // урон каждому врагу на экране
 };
 
 export const LEVELUP = {

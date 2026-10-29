@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { platform } from '../platform/platform.js';
 import { PALETTE as P, CITY } from '../config.js';
+import { BUILDINGS } from '../cityLayout.js';
 
 // Генерирует текстуры из примитивов — внешних ассетов пока нет.
 // Все спрайты смотрят вправо (угол 0).
@@ -22,6 +23,7 @@ export class BootScene extends Phaser.Scene {
     this.makeMissileTexture();
     this.makeGemTexture();
     this.makeParticleTextures();
+    this.makeSupplyTextures();
     this.makeCityTiles();
     platform.gameReady();
     this.scene.start('MenuScene');
@@ -275,6 +277,27 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'spark', 4, 4);
   }
 
+  // Ящик снабжения сверху (доски и жёлтая маркировка) и кольцо маячка вокруг него
+  makeSupplyTextures() {
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x000000, 0.35);
+    g.fillRect(4, 4, 24, 24);
+    g.fillStyle(0x8a6a3a);
+    g.fillRect(1, 1, 24, 24);
+    g.lineStyle(2, 0x4a3418);
+    g.strokeRect(1, 1, 24, 24);
+    g.lineBetween(1, 1, 25, 25);
+    g.lineBetween(25, 1, 1, 25);
+    g.fillStyle(0xffd040);
+    g.fillRect(1, 10, 24, 6);
+    this.makeTexture(g, 'crate', 30, 30);
+
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.lineStyle(3, 0xffd040);
+    g.strokeCircle(24, 24, 21);
+    this.makeTexture(g, 'beacon', 48, 48);
+  }
+
   // Город — квадратные кварталы CITY.tile × CITY.tile, по краям дороги.
   // Несколько вариантов; GameScene раскладывает их с поворотами, и стыки всегда сходятся.
   makeCityTiles() {
@@ -283,22 +306,16 @@ export class BootScene extends Phaser.Scene {
     const layouts = [
       // две длинные девятиэтажки и двор между ними
       (g) => {
-        this.building(g, 60, 66, 280, 56);
-        this.building(g, 60, 262, 280, 56);
         this.trees(g, rnd, 70, 140, 260, 100, 9);
       },
       // «буквой Г» и ряд гаражей
       (g) => {
-        this.building(g, 60, 60, 280, 56);
-        this.building(g, 60, 116, 56, 224);
         g.fillStyle(0x5c5f63);
         for (let i = 0; i < 6; i++) g.fillRect(170 + i * 28, 300, 24, 34);
         this.trees(g, rnd, 140, 140, 190, 130, 7);
       },
       // две точечные башни
       (g) => {
-        this.building(g, 70, 70, 100, 100);
-        this.building(g, 230, 230, 100, 100);
         this.trees(g, rnd, 220, 60, 110, 120, 5);
         this.trees(g, rnd, 60, 220, 120, 110, 5);
       },
@@ -338,6 +355,8 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(P.yard);
       g.fillRect(CITY.road + 6, CITY.road + 6, s - CITY.road * 2 - 12, s - CITY.road * 2 - 12);
       draw(g);
+      // Дома — из общей таблицы, по ней же GameScene находит крыши
+      for (const [x, y, w, h] of BUILDINGS[i]) this.building(g, x, y, w, h);
       this.makeTexture(g, `city${i}`, s, s);
     });
   }

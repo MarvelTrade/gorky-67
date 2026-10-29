@@ -50,6 +50,20 @@ export class Fx {
       this.hops.push(scene.add.image(0, 0, 'infantry').setDepth(DEPTH.enemies + 1).setVisible(false));
     }
 
+    // Надпись над вертолётом при подборе ящика — одна, переиспользуется
+    this.popupText = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'sans-serif',
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(DEPTH.banner - 1)
+      .setVisible(false);
+
     this.numbers = [];
     if (FX.damageNumbers) {
       for (let i = 0; i < FX.damageNumberPool; i++) {
@@ -129,6 +143,20 @@ export class Fx {
     const img = this.hops.find((h) => !h.visible);
     if (img) img.setVisible(true);
     return img ?? null;
+  }
+
+  popup(x, y, text, color) {
+    const p = this.popupText;
+    this.scene.tweens.killTweensOf(p);
+    p.setText(text).setColor(color).setPosition(x, y - 40).setAlpha(1).setVisible(true);
+    this.scene.tweens.add({
+      targets: p,
+      y: y - 80,
+      alpha: 0,
+      delay: 500,
+      duration: 700,
+      onComplete: () => p.setVisible(false),
+    });
   }
 
   shake({ duration, intensity }) {

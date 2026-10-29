@@ -11,7 +11,7 @@
 // миллисекунд занимает кадр (логика + отрисовка) по минутам: до 16.7 мс — это 60 FPS.
 
 // Порядок, в котором «думающий» игрок берёт улучшения
-const PRIORITY = ['missile', 'damage', 'fireRate', 'hp', 'magnet', 'speed'];
+const PRIORITY = ['missile', 'damage', 'fireRate', 'flares', 'hp', 'magnet', 'speed'];
 
 export function installBot(game) {
   window.__startBot = ({ dodge = true, smart = false, manual = false } = {}) => {
@@ -124,6 +124,23 @@ export function installBot(game) {
         fx += ((gem.x - p.x) / gd) * w;
         fy += ((gem.y - p.y) / gd) * w;
       }
+      // Ящик снабжения — цель важнее кристаллов: летим к ближайшему, даже если он за экраном
+      // (игрок видит стрелку у края). Новичок летит так же — ящики не должны его спасать
+      let crate = null;
+      let cd = Infinity;
+      for (const c of sc.supply.active) {
+        const d = Math.hypot(c.x - p.x, c.y - p.y);
+        if (d < cd) {
+          cd = d;
+          crate = c;
+        }
+      }
+      if (crate) {
+        const w = Math.hypot(fx, fy) < 1.2 ? 1.6 : 0.6;
+        fx += ((crate.x - p.x) / cd) * w;
+        fy += ((crate.y - p.y) / cd) * w;
+      }
+
       // Не прижиматься к краям мира
       const M = 500;
       const { width: W, height: H } = sc.physics.world.bounds;

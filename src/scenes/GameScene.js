@@ -11,6 +11,9 @@ import { MissileLauncher } from '../entities/MissileLauncher.js';
 import { WaveSpawner } from '../systems/WaveSpawner.js';
 import { Upgrades } from '../systems/Upgrades.js';
 import { Fx } from '../systems/Fx.js';
+import { roofCenters } from '../cityLayout.js';
+import { Supply } from '../systems/Supply.js';
+import { Flares } from '../systems/Flares.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -58,6 +61,8 @@ export class GameScene extends Phaser.Scene {
     this.spawner = new WaveSpawner(this, this.enemies, this.player);
     this.upgrades = new Upgrades(this);
     this.fx = new Fx(this);
+    this.supply = new Supply(this, this.player);
+    this.flares = new Flares(this, this.player, this.shells);
 
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
@@ -136,7 +141,7 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
+      for (const e of ['radio', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'resume', 'player-died']) this.events.off(e);
       this.scale.off('resize', this.fitZoom, this);
       this.scene.stop('UIScene');
       platform.gameplayStop();
@@ -171,7 +176,14 @@ export class GameScene extends Phaser.Scene {
       bossSeen: !!this.boss,
       bossKilled: this.bossKilled,
     };
-    recordRun({ ...stats, cause, picks: this.picks, firstLevelUpAt: this.firstLevelUpAt });
+    recordRun({
+      ...stats,
+      cause,
+      picks: this.picks,
+      firstLevelUpAt: this.firstLevelUpAt,
+      crates: { ...this.supply.picked },
+      flareKills: this.flares.kills,
+    });
     this.time.delayedCall(RUN.endDelay * 1000, () => this.scene.start('GameOverScene', stats));
   }
 
@@ -260,15 +272,20 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // Город: кварталы случайного вида и поворота — каждый забег улицы немного другие
+  // Город: кварталы случайного вида и поворота — каждый забег улицы немного другие.
+  // Заодно собираем центры крыш — на них появляются ящики снабжения.
   drawGround() {
     const s = CITY.tile;
+    this.roofs = [];
     for (let y = 0; y < WORLD.height; y += s) {
       for (let x = 0; x < WORLD.width; x += s) {
+        const variant = Phaser.Math.Between(0, CITY.variants - 1);
+        const quarter = Phaser.Math.Between(0, 3);
         this.add
-          .image(x + s / 2, y + s / 2, `city${Phaser.Math.Between(0, CITY.variants - 1)}`)
-          .setAngle(Phaser.Math.Between(0, 3) * 90)
+          .image(x + s / 2, y + s / 2, `city${variant}`)
+          .setAngle(quarter * 90)
           .setDepth(DEPTH.ground);
+        this.roofs.push(...roofCenters(variant, quarter, x, y));
       }
     }
   }
@@ -279,6 +296,8 @@ export class GameScene extends Phaser.Scene {
     this.player.update(dt);
     this.gun.update(dt);
     this.missiles.update(dt);
+    this.flares.update(dt);
+    this.supply.update(dt);
     this.spawner.update(dt);
     if (this.spawner.elapsed >= RUN.duration) this.endRun(true);
   }

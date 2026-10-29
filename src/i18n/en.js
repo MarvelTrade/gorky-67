@@ -24,6 +24,10 @@ export default {
   radio_3: 'The cordon has its orders. Stay high.',
   radio_4: 'Building B is silent. Hold the column.',
   radio_5: "The Object is out of the lab. It's yours.",
+  radio_supply: 'Falcon, cargo on a roof. Pick it up.',
+  supply_repair: 'Repair',
+  supply_magnet: 'Magnet',
+  supply_bomb: 'Air strike',
 
   boss: 'The Object',
   bossIncoming: 'THE OBJECT',
@@ -66,4 +70,6 @@ export default {
   upg_hp_desc: '+25 max HP and repair 25',
   upg_missile: 'Missiles',
   upg_missile_desc: '+1 homing missile per salvo',
+  upg_flares: 'Flares',
+  upg_flares_desc: 'Heat flares shoot down nearby shells',
 };

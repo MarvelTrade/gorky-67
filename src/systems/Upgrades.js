@@ -20,6 +20,9 @@ const DEFS = {
     s.player.maxHp += UPGRADES.hpAdd;
     s.player.hp = Math.min(s.player.maxHp, s.player.hp + UPGRADES.hpAdd);
   },
+  flares: (s) => {
+    s.flares.level++;
+  },
   missile: (s) => {
     const st = s.missiles.stats;
     if (st.count > 0) st.cooldown *= UPGRADES.missileCooldownMul;
