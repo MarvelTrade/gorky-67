@@ -15,11 +15,12 @@ function promoSave() {
         req.on('end', () => {
           try {
             const { name, dataUrl } = JSON.parse(body);
-            if (!/^[a-z0-9-]+\.png$/.test(name)) throw new Error('bad name');
-            const png = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
-            const dir = path.resolve(server.config.root, 'promo');
-            fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(path.join(dir, name), png);
+            // Картинки — в promo/, кадры для видео — в promo/frames/ (их склеивает ffmpeg)
+            if (!/^([a-z0-9-]+\.png|frames\/f\d{5}\.jpg)$/.test(name)) throw new Error('bad name');
+            const bytes = Buffer.from(dataUrl.replace(/^data:image\/(png|jpeg);base64,/, ''), 'base64');
+            const file = path.resolve(server.config.root, 'promo', name);
+            fs.mkdirSync(path.dirname(file), { recursive: true });
+            fs.writeFileSync(file, bytes);
             res.end('ok');
           } catch (e) {
             res.statusCode = 400;

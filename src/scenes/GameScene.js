@@ -224,6 +224,10 @@ export class GameScene extends Phaser.Scene {
     this.scene.stop('LevelUpScene');
     this.scene.resume();
     platform.gameplayStop();
+    // После конца забега вертолёт больше не обновляется — без этого он ещё секунду
+    // летел по инерции, а винт и тень оставались на месте
+    this.player.body.setVelocity(0, 0);
+    this.player.body.moves = false;
     const stats = this.runStats(win);
     recordRun(this.runRecord(stats, { cause, ending: stats.ending }));
     this.time.delayedCall(delay * 1000, () => this.scene.start('GameOverScene', stats));
