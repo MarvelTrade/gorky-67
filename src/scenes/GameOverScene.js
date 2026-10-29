@@ -4,6 +4,7 @@ import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { platform } from '../platform/platform.js';
 import { copyReport } from '../systems/Telemetry.js';
+import { onTap } from '../ui/tap.js';
 
 // Итоги забега и «Ещё раз». data: { win, time, kills, level }
 export class GameOverScene extends Phaser.Scene {
@@ -62,7 +63,8 @@ export class GameOverScene extends Phaser.Scene {
       .text(0, 0, t('again'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5);
     button.add([bg, label]);
-    bg.setInteractive({ useHandCursor: true }).on('pointerup', () => this.restart());
+    bg.setInteractive({ useHandCursor: true });
+    onTap(bg, () => this.ready, () => this.restart());
     this.input.keyboard.on('keydown-ENTER', () => this.restart());
     this.input.keyboard.on('keydown-SPACE', () => this.restart());
 
@@ -76,8 +78,7 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    copy.on('pointerup', async () => {
-      if (!this.ready) return;
+    onTap(copy, () => this.ready, async () => {
       const ok = await copyReport();
       copy.setText(t(ok ? 'copied' : 'copyFailed'));
       this.time.delayedCall(1500, () => copy.setText(t('copyStats')));
@@ -122,8 +123,11 @@ export class GameOverScene extends Phaser.Scene {
     const run = { time: stats.time, kills: stats.kills, boss: stats.bossKilled };
     if (!best || isBetter(run, best)) {
       await platform.saveProgress({ ...save, best: run });
+      // Пока ждали сохранения, игрок мог уже нажать «Ещё раз» — экрана больше нет
+      if (!text.scene) return;
       text.setText(t('newBest')).setColor('#ffe066');
     } else {
+      if (!text.scene) return;
       const boss = best.boss ? ` · ${t('bossShort')}` : '';
       text.setText(`${t('best')}: ${formatTime(best.time)} · ${best.kills}${boss}`);
     }

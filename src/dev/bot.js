@@ -3,20 +3,34 @@
 //   __startBot({ dodge: false }) — «новичок»: летит за кристаллами, не уклоняется
 //   __startBot({ smart: true })  — улучшения по приоритету, а не случайно
 //   __bot.log                    — что произошло: уровни, HP, враги, FPS каждые 15 с
-// Играет в реальном времени, забег — 5 минут.
+// Играет в реальном времени, забег — 5 минут. Вкладка должна быть видна.
+//
+// Ускоренный режим, когда вкладка скрыта или нужен быстрый прогон:
+//   __startBot({ smart: true, manual: true }); __botRun(60)  — прокрутить 60 с игрового времени
+// Игра шагает вручную по 1/60 с, бот решает каждые 3 шага. __bot.log.frameMs — сколько
+// миллисекунд занимает кадр (логика + отрисовка) по минутам: до 16.7 мс — это 60 FPS.
 
 // Порядок, в котором «думающий» игрок берёт улучшения
 const PRIORITY = ['missile', 'damage', 'fireRate', 'hp', 'magnet', 'speed'];
 
 export function installBot(game) {
-  window.__startBot = ({ dodge = true, smart = false } = {}) => {
+  window.__startBot = ({ dodge = true, smart = false, manual = false } = {}) => {
     if (window.__bot) clearInterval(window.__bot.timer);
     game.scene.getScenes(true)[0]?.scene.start('GameScene');
-    const log = { dodge, smart, samples: [], picks: [], minFps: 99, hpLossByMin: [0, 0, 0, 0, 0, 0], done: false };
+    const log = {
+      dodge,
+      smart,
+      samples: [],
+      picks: [],
+      minFps: 99,
+      hpLossByMin: [0, 0, 0, 0, 0, 0],
+      frameMs: [[], [], [], [], [], []],
+      done: false,
+    };
     let lastHp = null;
     let lastSample = 0;
 
-    const timer = setInterval(() => {
+    const tick = () => {
       const scenes = game.scene;
       if (!scenes.isActive('GameScene') && !scenes.isPaused('GameScene')) {
         if (scenes.isActive('GameOverScene') && !log.done) {
@@ -125,9 +139,34 @@ export function installBot(game) {
       }
       const cam = sc.cameras.main;
       p.target = { x: cam.width / 2 + (fx / L) * 150, y: cam.height / 2 + (fy / L) * 150 };
-    }, 50);
+    };
 
-    window.__bot = { timer, log };
+    const timer = manual ? null : setInterval(tick, 50);
+    // В ручном режиме собственный цикл игры спит — иначе она шагала бы дважды
+    if (manual) game.loop.sleep();
+    else if (game.loop.sleeping) game.loop.wake();
+    window.__bot = { timer, log, tick };
     return log;
+  };
+
+  // Прокрутить игру на seconds игрового времени вручную (см. «Ускоренный режим» выше)
+  let clock = performance.now();
+  window.__botRun = (seconds) => {
+    const bot = window.__bot;
+    const dt = 1000 / 60;
+    for (let i = 0; i < Math.round(seconds * 60) && !bot.log.done; i++) {
+      clock += dt;
+      const t0 = performance.now();
+      game.step(clock, dt);
+      const sc = game.scene.getScene('GameScene');
+      if (game.scene.isActive('GameScene') && sc.spawner) {
+        const m = Math.min(5, Math.floor(sc.spawner.elapsed / 60));
+        bot.log.frameMs[m].push(performance.now() - t0);
+      }
+      if (i % 3 === 0) bot.tick();
+    }
+    const l = bot.log;
+    if (l.done) game.loop.wake();
+    return { done: l.done, end: l.end, last: l.samples.at(-1) };
   };
 }

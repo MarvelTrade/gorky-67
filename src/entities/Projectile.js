@@ -34,6 +34,8 @@ export class EnemyShell extends Projectile {
   constructor(scene, x, y) {
     super(scene, x, y);
     this.setTexture('shell');
+    // Аддитивное смешивание — снаряд светится поверх всего
+    this.setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.enemyShells);
   }
 
   fire(x, y, angle, speed, damage, life, texture = 'shell') {

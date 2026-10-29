@@ -10,7 +10,7 @@ const HP_BAR_W = 180;
 const HP_BAR_H = 14;
 const BOSS_BAR_H = 12;
 
-// HUD поверх GameScene: полоска опыта с уровнем, HP, оставшееся время.
+// HUD поверх GameScene: полоска опыта с уровнем, HP, прожитое время.
 // Только читает состояние GameScene, ничего в нём не меняет.
 export class UIScene extends Phaser.Scene {
   constructor() {
@@ -76,12 +76,12 @@ export class UIScene extends Phaser.Scene {
     this.levelText.setPosition(PAD, XP_BAR_H + 6).setText(`${t('level')} ${gs.level}`);
     this.hpText.setPosition(PAD + hpW / 2, hpY + HP_BAR_H / 2).setText(`${Math.ceil(p.hp)} / ${p.maxHp}`);
 
-    // Таймер — сколько осталось продержаться; последние 30 с краснеет
-    const left = RUN.duration - gs.spawner.elapsed;
+    // Таймер — сколько прожито (0:00 → 5:00), как и на экране итогов; последние 30 с краснеет
+    const elapsed = Math.min(gs.spawner.elapsed, RUN.duration);
     this.timerText
       .setPosition(width / 2, XP_BAR_H + 6)
-      .setText(formatTime(Math.ceil(left)))
-      .setColor(left <= 30 ? '#ff6a5a' : '#ffffff');
+      .setText(formatTime(elapsed))
+      .setColor(RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
 
     // HP босса — под таймером, пока он жив
     const boss = gs.boss;

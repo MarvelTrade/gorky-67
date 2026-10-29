@@ -72,7 +72,8 @@ export class GameScene extends Phaser.Scene {
     });
     // Причину урона запоминаем для замеров: «тип врага» или «тип:shell»
     this.physics.add.overlap(this.player.sprite, this.enemies, (_, enemy) => {
-      this.player.takeDamage(enemy.damage, enemy.type);
+      // Техника не таранит (damage 0) — вертолёт в воздухе; цепляются только заражённые и «Объект»
+      if (enemy.damage > 0) this.player.takeDamage(enemy.damage, enemy.type);
     });
     this.physics.add.overlap(this.player.sprite, this.shells, (_, shell) => {
       if (!shell.active) return;

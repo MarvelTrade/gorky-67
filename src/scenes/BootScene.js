@@ -84,9 +84,12 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(14, 7, 9, 3);
     g.fillRect(14, 16, 9, 3);
     g.fillEllipse(12, 13, 11, 17);
-    g.fillStyle(0x8a9466);
+    g.fillStyle(P.infectedHead);
     g.fillCircle(13, 13, 4);
-    g.fillStyle(P.glow);
+    // Тёмный контур — чтобы читался и на светлой площади, и на жёлтом облачке
+    g.lineStyle(1, 0x3a1a08, 0.8);
+    g.strokeEllipse(12, 13, 11, 17);
+    g.fillStyle(0xffffff);
     g.fillRect(15, 11, 2, 1);
     g.fillRect(15, 14, 2, 1);
     this.makeTexture(g, 'infantry', 26, 26);
@@ -188,40 +191,47 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'boss', 100, 100);
   }
 
+  // Вражеские снаряды — самые яркие объекты на экране: насыщенный ореол и белая сердцевина
   makeShellTextures() {
-    // Зенитка — красно-оранжевый, заметный, чтобы успеть увернуться
+    // Зенитка — крупный круглый снаряд
     let g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0xff3b2f, 0.35);
-    g.fillCircle(8, 8, 8);
-    g.fillStyle(0xff6a3d);
-    g.fillCircle(8, 8, 5);
-    g.fillStyle(0xffe0a0);
-    g.fillCircle(8, 8, 2);
-    this.makeTexture(g, 'shell', 16, 16);
+    g.fillStyle(P.shell, 0.35);
+    g.fillCircle(9, 9, 9);
+    g.fillStyle(P.shell);
+    g.fillCircle(9, 9, 6);
+    g.fillStyle(P.shellCore);
+    g.fillCircle(9, 9, 3);
+    this.makeTexture(g, 'shell', 18, 18);
 
     // Танк — вытянутый трассер: видно, куда летит
     g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0xff8a3d, 0.4);
-    g.fillEllipse(10, 6, 20, 12);
-    g.fillStyle(0xffd080);
-    g.fillEllipse(12, 6, 14, 6);
-    g.fillStyle(0xffffff);
-    g.fillEllipse(15, 6, 6, 3);
-    this.makeTexture(g, 'tankShell', 20, 12);
+    g.fillStyle(P.shell, 0.4);
+    g.fillEllipse(11, 6, 22, 12);
+    g.fillStyle(P.shell);
+    g.fillEllipse(12, 6, 16, 7);
+    g.fillStyle(P.shellCore);
+    g.fillEllipse(15, 6, 8, 3);
+    this.makeTexture(g, 'tankShell', 22, 12);
 
-    // «Объект» — плевок «Зарёй»
+    // Вездеход — мелкая быстрая пуля
     g = this.make.graphics({ x: 0, y: 0 }, false);
-    // Тёмная обводка, чтобы снаряд не путался со светящимися заражёнными
-    g.fillStyle(P.glow, 0.3);
-    g.fillCircle(8, 8, 8);
-    g.fillStyle(0x2a3010);
-    g.fillCircle(8, 8, 6);
-    g.fillStyle(0xb8e020);
-    g.fillCircle(8, 8, 5);
-    g.fillStyle(0xf4ffb0);
-    g.fillCircle(7, 7, 2);
-    this.makeTexture(g, 'spit', 16, 16);
+    g.fillStyle(P.shell, 0.45);
+    g.fillEllipse(6, 4, 12, 8);
+    g.fillStyle(P.shellCore);
+    g.fillEllipse(7, 4, 6, 3);
+    this.makeTexture(g, 'jeepShell', 12, 8);
+
+    // «Объект» — ядовито-зелёный плевок «Зарёй», не путается с оранжевыми заражёнными
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(P.spit, 0.35);
+    g.fillCircle(9, 9, 9);
+    g.fillStyle(P.spit);
+    g.fillCircle(9, 9, 6);
+    g.fillStyle(P.shellCore);
+    g.fillCircle(8, 8, 3);
+    this.makeTexture(g, 'spit', 18, 18);
   }
+
 
   makeBulletTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);

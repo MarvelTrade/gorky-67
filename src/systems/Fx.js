@@ -44,6 +44,12 @@ export class Fx {
       })
       .setDepth(DEPTH.enemies + 1);
 
+    // Картинки для прыжков заражённых — фиксированный пул, без создания объектов в бою
+    this.hops = [];
+    for (let i = 0; i < FX.hopPool; i++) {
+      this.hops.push(scene.add.image(0, 0, 'infantry').setDepth(DEPTH.enemies + 1).setVisible(false));
+    }
+
     this.numbers = [];
     if (FX.damageNumbers) {
       for (let i = 0; i < FX.damageNumberPool; i++) {
@@ -116,6 +122,13 @@ export class Fx {
       ease: 'quad.out',
       onComplete: () => n.setActive(false).setVisible(false),
     });
+  }
+
+  // Свободная картинка для прыжка или null — тогда заражённый просто не прыгает
+  takeHop() {
+    const img = this.hops.find((h) => !h.visible);
+    if (img) img.setVisible(true);
+    return img ?? null;
   }
 
   shake({ duration, intensity }) {

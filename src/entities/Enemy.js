@@ -20,6 +20,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.damage = cfg.damage;
     this.speed = cfg.speed + Phaser.Math.FloatBetween(-cfg.speedJitter, cfg.speedJitter);
     this.flash = 0;
+    this.shotsLeft = 0; // пули текущей очереди вездехода
+    this.shotTimer = 0;
+    this.hopT = 0; // прыжок заражённого: оставшееся время
+    this.hopCd = 0;
+    this.endHop();
     // Таймер текущей фазы: рывок/пауза у джипа, перезарядка у зенитки.
     // Случайный старт, чтобы враги одной пачки не действовали синхронно.
     this.phase = 'pause';
@@ -49,12 +54,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   die() {
+    this.endHop();
     this.disableBody(true, true);
     this.scene.events.emit('enemy-killed', this);
   }
 
   // Тихо вернуться в пул — без опыта и счётчика убийств
   despawn() {
+    this.endHop();
     this.disableBody(true, true);
   }
 
@@ -80,6 +87,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       case 'chase':
         this.body.setVelocity((dx / dist) * this.speed, (dy / dist) * this.speed);
         this.rotation = Math.atan2(dy, dx);
+        if (this.cfg.hopRange) this.updateHop(dt, dist);
         break;
       case 'dash':
         this.updateDash(dt, dx, dy, dist);
@@ -105,6 +113,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.body.setVelocity(this.body.velocity.x * k, this.body.velocity.y * k);
       // Пока стоит — доворачивает на игрока
       this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, Math.atan2(dy, dx), 6 * dt);
+      // Остановился — очередь по игроку
+      if (this.shotsLeft > 0) {
+        this.shotTimer -= dt;
+        if (this.shotTimer <= 0) {
+          if (dist <= cfg.range) this.fireShell(Math.atan2(dy, dx));
+          this.shotsLeft--;
+          this.shotTimer = cfg.burstInterval;
+        }
+      }
       if (this.timer <= 0) {
         this.phase = 'dash';
         this.timer = cfg.dashTime;
@@ -114,7 +131,40 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     } else if (this.timer <= 0) {
       this.phase = 'pause';
       this.timer = cfg.pauseTime;
+      this.shotsLeft = cfg.burstCount ?? 0;
+      this.shotTimer = cfg.burstDelay ?? 0;
     }
+  }
+
+  // Прыжок заражённого к вертолёту — только визуал. Рисуется отдельной картинкой из пула:
+  // если масштабировать сам спрайт, Arcade растянет и круг столкновения.
+  updateHop(dt, dist) {
+    const cfg = this.cfg;
+    this.hopCd -= dt;
+    if (this.hopT <= 0) {
+      if (this.hopCd > 0 || dist > cfg.hopRange) return;
+      this.hopImg = this.scene.fx.takeHop();
+      if (!this.hopImg) return;
+      this.hopT = cfg.hopTime;
+      this.hopCd = cfg.hopCooldown;
+      this.setAlpha(0);
+    }
+    this.hopT -= dt;
+    if (this.hopT <= 0) {
+      this.endHop();
+      return;
+    }
+    const k = Math.sin(Math.PI * (1 - this.hopT / cfg.hopTime));
+    this.hopImg.setPosition(this.x, this.y).setRotation(this.rotation).setScale(1 + (cfg.hopScale - 1) * k);
+  }
+
+  endHop() {
+    this.hopT = 0;
+    if (this.hopImg) {
+      this.hopImg.setVisible(false);
+      this.hopImg = null;
+    }
+    this.setAlpha(1);
   }
 
   // Зенитка: стоит, поворачивает ствол и стреляет медленным снарядом, если игрок в радиусе

@@ -98,7 +98,8 @@ export class Player {
     if (this.invuln > 0 || !this.alive) return;
     this.hp = Math.max(0, this.hp - amount);
     this.invuln = PLAYER.invulnTime;
-    this.scene.cameras.main.shake(FX.hitShake.duration, FX.hitShake.intensity);
+    const shake = cause === 'infantry' ? FX.infectedShake : FX.hitShake;
+    this.scene.cameras.main.shake(shake.duration, shake.intensity);
     sfx.play('hit');
     if (!this.alive) this.scene.events.emit('player-died', cause);
   }
