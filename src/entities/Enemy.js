@@ -25,6 +25,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.damage = cfg.damage;
     this.speed = cfg.speed + Phaser.Math.FloatBetween(-cfg.speedJitter, cfg.speedJitter);
     this.flash = 0;
+    this.horde = null; // RunEvents помечает заражённых из орды, чтобы потом убрать остатки
     this.shotsLeft = 0; // пули текущей очереди вездехода
     this.shotTimer = 0;
     this.hopT = 0; // прыжок заражённого: оставшееся время

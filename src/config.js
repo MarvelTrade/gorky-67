@@ -233,22 +233,29 @@ export const BOSS_SPAWN = {
 // Волны: каждые WAVE_LENGTH секунд — следующая. Для каждого типа — пачка раз в interval секунд,
 // начиная с from секунд от начала волны (по умолчанию сразу).
 // hpMul растит живучесть врагов, чтобы улучшения не делали игру слишком лёгкой.
+// alive: [мин, макс] живых врагов. Выше максимума расписание волны не спавнит никого (орда и босс — события,
+// им место освобождается); ниже минимума пехота идёт в SPAWN.refillBoost раз чаще. Замер ботом (до коридора):
+// у случайной сборки пул в 300 забивался к 3:00, умному боту было пусто (25–78 врагов). Пропускать только
+// пехоту оказалось мало: полный пул раньше заодно не пускал зенитки и танки, и без него слабая сборка гибла чаще.
 export const WAVE_LENGTH = 60;
 export const WAVES = [
-  { hpMul: 1.0, infantry: { interval: 1.0, batch: 4 } },
-  { hpMul: 1.2, infantry: { interval: 1.0, batch: 4 }, jeep: { interval: 3.0, batch: 2 } },
+  // Минимум 20 на 1-й волне удваивал пехоту с первой секунды (живых-то ноль) — бот-новичок гиб на 0:15–0:30
+  { hpMul: 1.0, alive: [0, 60], infantry: { interval: 1.0, batch: 4 } },
+  { hpMul: 1.2, alive: [30, 90], infantry: { interval: 1.0, batch: 4 }, jeep: { interval: 3.0, batch: 2 } },
   // Замер ботом (шаг 9): на 3-й волне всё новое приходило разом — скачок урона;
   // с 4-й волны пул в 300 врагов забивался к ~3:45. Новые типы теперь вводятся по очереди,
   // пехоты на 4–5-й волне меньше.
-  { hpMul: 1.5, infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 2.5, batch: 2 }, tank: { interval: 14, batch: 1, from: 15 }, aa: { interval: 7, batch: 1, from: 30 } },
-  { hpMul: 1.9, infantry: { interval: 1.0, batch: 6 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 11, batch: 1 } },
-  { hpMul: 2.4, infantry: { interval: 0.9, batch: 7 }, jeep: { interval: 1.8, batch: 3 }, aa: { interval: 4, batch: 2 }, tank: { interval: 9, batch: 2 } },
+  { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 2.5, batch: 2 }, tank: { interval: 14, batch: 1, from: 15 }, aa: { interval: 7, batch: 1, from: 30 } },
+  { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 6 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 11, batch: 1 } },
+  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 7 }, jeep: { interval: 1.8, batch: 3 }, aa: { interval: 4, batch: 2 }, tank: { interval: 9, batch: 2 } },
 ];
 
 export const SPAWN = {
   margin: 80,           // насколько за краем экрана появляются
   despawnDist: 1400,    // враги дальше этого от игрока возвращаются в пул (без опыта)
   maxEnemies: 300,      // размер пула
+  refillBoost: 1.5,     // во сколько раз чаще пехота, пока живых меньше минимума волны
+  disposable: ['infantry', 'jeep'], // кого можно тихо убрать, чтобы освободить место орде и боссу
 };
 
 export const POOLS = {
@@ -311,6 +318,9 @@ export const EVENTS = {
                         // при прорыве ~1 раз, поэтому прорыв стоит брони за счёт силы удара, а не числа врагов
     duration: 20,       // с — столько длится орда (для статистики и сниженного спавна)
     spawnMul: 0.5,      // обычный спавн пехоты на время орды
+    // Через столько секунд после конца орды её остатки за экраном уходят. Замер ботом: слабая сборка
+    // не добивала кольцо с утроенным HP, и уже к 2:00 в пуле оставалось ~180 врагов из орды.
+    leftoverLife: 10,
   },
   // Затишье перед «Объектом»: новые враги не появляются, звук приглушён
   calm: { start: 225, duration: 15 }, // 3:45–4:00

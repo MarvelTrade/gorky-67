@@ -30,7 +30,7 @@ export class RunEvents {
         h.started = true;
         h.damage = 0;
         h.hpBefore = Math.round(p.hp);
-        h.spawned = this.spawnRing(p.x, p.y, this.hordeRadius(), H.count, H.speed, H.hpMul, H.damage);
+        h.spawned = this.spawnRing(p.x, p.y, this.hordeRadius(), H.count, H.speed, H.hpMul, H.damage, h);
         spawner.infantryRate = H.spawnMul;
       }
       if (h.started && !h.done && elapsed >= h.at + H.duration) {
@@ -38,6 +38,7 @@ export class RunEvents {
         h.hpAfter = Math.round(p.hp);
         spawner.infantryRate = 1;
       }
+      if (h.done && elapsed >= h.at + H.duration + H.leftoverLife) this.expireLeftovers(h);
     }
 
     const C = EVENTS.calm;
@@ -68,9 +69,10 @@ export class RunEvents {
     this.bossSwarm = this.spawnRing(boss.x, boss.y, S.radius, S.count, S.speed);
   }
 
-  // Заражённые кольцом вокруг точки. Если пул врагов полон — сколько влезло
-  spawnRing(cx, cy, radius, count, speed, hpMul = 1, damage = null) {
+  // Заражённые кольцом вокруг точки. Место в пуле освобождается заранее за счёт дальних рядовых
+  spawnRing(cx, cy, radius, count, speed, hpMul = 1, damage = null, horde = null) {
     const { enemies, spawner } = this.scene;
+    spawner.reserve(count);
     let spawned = 0;
     for (let i = 0; i < count; i++) {
       const enemy = enemies.get();
@@ -81,9 +83,23 @@ export class RunEvents {
       enemy.hp *= hpMul;
       enemy.maxHp = enemy.hp;
       if (damage !== null) enemy.damage = damage;
+      enemy.horde = horde;
       spawned++;
     }
     return spawned;
+  }
+
+  // Остатки орды, которые игрок уже не видит, тихо уходят (без опыта) — иначе слабая
+  // сборка таскает за собой кольцо с утроенным HP до конца забега
+  expireLeftovers(h) {
+    const { enemies, spawner, cameras } = this.scene;
+    const view = cameras.main.worldView;
+    for (const e of enemies.getChildren()) {
+      if (e.active && e.horde === h && !view.contains(e.x, e.y)) {
+        e.despawn();
+        spawner.stats.expired++;
+      }
+    }
   }
 
   // Для статистики: как прошла каждая орда к моменту конца забега

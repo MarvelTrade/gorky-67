@@ -71,14 +71,19 @@ export function report() {
       .map((h) => `орда ${formatTime(h.at)}: ${h.survived ? 'пережил' : 'погиб'} (HP ${h.hpBefore}→${h.hpAfter}, урон ${h.damage ?? '?'})`)
       .join('; ');
     const picks = r.picks.map((p) => `${t(`upg_${p.id}`)} (${formatTime(p.t)})`).join(' → ') || '—';
-    lines.push(
+    const runLines = [
       `#${i + 1} ${r.at.slice(0, 16).replace('T', ' ')} · сессия ${r.session}, забег ${r.runInSession} · ` +
         `${formatTime(r.time)} · ${result}${r.revived ? ' (после воскрешения)' : ''} · ур. ${r.level} · убито ${r.kills} · ${boss}`,
       `   улучшения: ${picks}`,
       `   ящики: ${r.crates ? ['repair', 'magnet', 'bomb'].map((k) => `${t(`supply_${k}`)} ${r.crates[k]}`).join(', ') : '—'}` +
         ` · сбито ловушками: ${r.flareKills ?? 0}`,
-      `   ${hordes || 'орд не было'} · концовка: ${r.ending ?? '—'}`
-    );
+      `   ${hordes || 'орд не было'} · концовка: ${r.ending ?? '—'}`,
+      // у забегов, записанных до коридора живых, этой строки нет
+      r.spawn &&
+        `   враги: пик ${r.spawn.maxAlive} · пропущено выше коридора ${r.spawn.suppressed} · ` +
+          `убрано ради орды/босса ${r.spawn.freed} · ушло остатков орды ${r.spawn.expired} · не влезло в пул ${r.spawn.poolFull}`,
+    ];
+    lines.push(...runLines.filter(Boolean));
   });
   return lines.join('\n');
 }

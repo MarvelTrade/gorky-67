@@ -259,6 +259,7 @@ export class GameScene extends Phaser.Scene {
       hordes: this.runEvents.summary(),
       bossKilledAt: this.bossKilledAt,
       bossSwarm: this.runEvents.bossSwarm ?? null,
+      spawn: { ...this.spawner.stats },
     };
   }
 
