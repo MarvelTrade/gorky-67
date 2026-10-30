@@ -198,7 +198,9 @@ export class AirObstacles {
     // 3/4: вертолёт южнее башни (его точка на земле ниже основания) — он перед ней, рисуем поверх
     for (const img of this.towerImages) {
       if (Math.abs(img.x - p.x) > 200 || Math.abs(img.y - p.y) > 300) continue;
-      img.setDepth(p.y + AIR.flightLift > img.y ? DEPTH.player - 0.5 : DEPTH.towers + img.y / 1e5);
+      // setDepth пересортировывает всю сцену (~1000 объектов) — только когда порядок правда сменился
+      const d = p.y + AIR.flightLift > img.y ? DEPTH.player - 0.5 : DEPTH.towers + img.y / 1e5;
+      if (img.depth !== d) img.setDepth(d);
     }
     if (!p.alive) return;
     const R = this.scene.player.body.halfWidth + AIR.wires.hitPad;

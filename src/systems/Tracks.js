@@ -3,13 +3,16 @@ import { DEPTH } from '../depth.js';
 
 // Следы тяжёлой техники: танки оставляют отпечатки гусениц на асфальте, а танки и «Объект»,
 // проходя сквозь дом, ломают его (Buildings.hit) и оставляют полосу пролома.
-// Отпечатки — пул картинок: после RUINS.maxDecals старые переиспользуются.
+// Отпечатки — пул картинок в отдельном слое: после RUINS.maxDecals старые переиспользуются.
+// Слой — чтобы новый след не пересортировывал всю сцену (на телефоне это стоило ~7 FPS)
 export class Tracks {
   constructor(scene) {
     this.scene = scene;
     this.pool = [];
     this.next = 0;
     this.last = new Map(); // враг → где оставил последний след
+    // Над руинами (ground + 1.4), под живыми домами и врагами
+    this.layer = scene.add.layer().setDepth(DEPTH.ground + 1.6);
     this.makeTextures();
   }
 
@@ -52,11 +55,11 @@ export class Tracks {
   stamp(key, x, y, rotation, scale, alpha) {
     let img = this.pool[this.next];
     if (!img) {
-      img = this.scene.add.image(0, 0, key);
+      img = this.scene.make.image({ x: 0, y: 0, key }, false);
+      this.layer.add(img);
       this.pool[this.next] = img;
     }
     this.next = (this.next + 1) % RUINS.maxDecals;
-    // Над руинами (ground + 1.4), под живыми домами и врагами
-    img.setTexture(key).setPosition(x, y).setRotation(rotation).setScale(scale).setAlpha(alpha).setDepth(DEPTH.ground + 1.6);
+    img.setTexture(key).setPosition(x, y).setRotation(rotation).setScale(scale).setAlpha(alpha);
   }
 }

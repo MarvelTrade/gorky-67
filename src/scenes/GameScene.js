@@ -125,6 +125,7 @@ export class GameScene extends Phaser.Scene {
     this.revived = false; // воскрешение — один раз за забег
     this.banners = []; // надписи на экране — следующая встаёт ниже
     this.boss = null;
+    this.blasts = []; // пул вспышек взрывов — новый на каждый забег (сцена переиспользуется)
     this.bossKilled = false;
     this.bossKilledAt = null;
     this.picks = []; // выбранные улучшения по порядку — для замеров
@@ -388,23 +389,29 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // Взрывы редкие (раз в пару секунд), поэтому без пула
   // Пыль от рухнувшего дома
   dust(x, y, r) {
     this.fx.debris?.explode(Math.round(r / 4), x, y);
     this.cameras.main.shake(180, 0.004);
   }
 
-  // onGround — взрыв на земле ломает дома; вертолёт взрывается в воздухе — нет
+  // onGround — взрыв на земле ломает дома; вертолёт взрывается в воздухе — нет.
+  // Вспышки — из пула: с ракетами взрывов по несколько в секунду, а каждый новый объект
+  // пересортировывает всю сцену (на телефоне заметно по FPS)
   explosionFx(x, y, r, onGround = true) {
     if (onGround) this.buildings.damageAt(x, y, r, r * RUINS.blast);
-    const c = this.add.circle(x, y, r, 0xffa040, 0.6).setDepth(DEPTH.bullets);
+    let c = this.blasts.find((b) => !b.visible);
+    if (!c) {
+      c = this.add.circle(0, 0, 10, 0xffa040, 0.6).setDepth(DEPTH.bullets);
+      this.blasts.push(c);
+    }
+    c.setPosition(x, y).setRadius(r).setVisible(true).setAlpha(0.6);
     this.tweens.add({
       targets: c,
       scale: { from: 0.3, to: 1 },
       alpha: 0,
       duration: 250,
-      onComplete: () => c.destroy(),
+      onComplete: () => c.setVisible(false),
     });
   }
 
