@@ -35,6 +35,8 @@ export class BootScene extends Phaser.Scene {
     this.makeParticleTextures();
     this.makeSupplyTextures();
     this.makeDepotTextures();
+    this.makeWatchtowerTexture();
+    this.makeMonumentTextures();
     this.makePauseTexture();
     this.makeTowerTextures();
     this.makeStreetTextures();
@@ -351,6 +353,52 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'part', 18, 18);
   }
 
+  // Вышка «зоны» вид сверху: четыре опоры, площадка с навесом, часовой — тёмная точка
+  makeWatchtowerTexture() {
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x000000, 0.3).fillRect(12, 12, 32, 32);
+    g.lineStyle(3, 0x4a3a28);
+    g.lineBetween(6, 6, 18, 18).lineBetween(42, 6, 30, 18).lineBetween(6, 42, 18, 30).lineBetween(42, 42, 30, 30);
+    g.fillStyle(0x6a5236).fillRect(12, 12, 24, 24); // площадка
+    g.fillStyle(0x3e4a34).fillRect(10, 10, 28, 8);  // навес
+    g.fillStyle(0x2a2a2a).fillCircle(24, 26, 4);    // часовой
+    g.fillStyle(0xfff2b0).fillCircle(31, 14, 2);    // прожектор
+    this.makeTexture(g, 'watchtower', 48, 48);
+  }
+
+  // Памятник «Рабочему с шестернёй» (выдуманный) в 3/4: пьедестал и фигура с поднятой шестернёй.
+  // Сбитый — пьедестал и лежащая фигура
+  makeMonumentTextures() {
+    const pedestal = (g) => {
+      g.fillStyle(0x000000, 0.3).fillEllipse(34, 92, 50, 14);
+      g.fillStyle(0x7a7c80).fillRect(16, 60, 36, 30); // пьедестал
+      g.fillStyle(0x93959a).fillRect(16, 56, 36, 6);
+      g.fillStyle(0x5a5c60).fillRect(16, 84, 36, 6);
+      g.fillStyle(0xc8b070).fillRect(24, 68, 20, 4); // табличка
+    };
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    pedestal(g);
+    g.fillStyle(0x8a6a3a); // бронза
+    g.fillRect(29, 26, 10, 30);           // туловище
+    g.fillRect(27, 44, 5, 14).fillRect(36, 44, 5, 14); // ноги
+    g.fillCircle(34, 21, 5);              // голова
+    g.fillRect(37, 10, 4, 18);            // поднятая рука
+    g.lineStyle(3, 0xa8844a).strokeCircle(39, 7, 6); // шестерня
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2;
+      g.fillStyle(0xa8844a).fillRect(39 + Math.cos(a) * 8 - 1.5, 7 + Math.sin(a) * 8 - 1.5, 3, 3);
+    }
+    this.makeTexture(g, 'monument', 68, 98);
+
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    pedestal(g);
+    g.fillStyle(0x8a6a3a); // фигура лежит у пьедестала
+    g.fillRect(40, 84, 26, 9);
+    g.fillCircle(64, 88, 5);
+    g.fillStyle(0x1e1a14, 0.6).fillCircle(20, 92, 8); // гарь
+    this.makeTexture(g, 'monumentFallen', 68, 98);
+  }
+
   // Кнопка паузы: полупрозрачный круг и две полоски
   makePauseTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -401,6 +449,52 @@ export class BootScene extends Phaser.Scene {
         for (const [x, y] of [[50, 50], [350, 50], [50, 350], [350, 350], [200, 50], [50, 200], [350, 200], [200, 350]]) {
           this.tree(g, x, y, 11);
         }
+      },
+      // 4 — завод: бетонный двор, рельсы, штабеля
+      (g) => {
+        g.fillStyle(0x4a4c4e).fillRect(40, 40, 320, 320); // бетон
+        g.lineStyle(2, 0x6e6a60);
+        g.lineBetween(46, 190, 354, 190); // рельсы к цехам
+        g.lineBetween(46, 198, 354, 198);
+        for (let x = 50; x < 354; x += 12) g.fillStyle(0x3a3226).fillRect(x, 186, 4, 16); // шпалы
+        g.fillStyle(0x5c5240);
+        for (let i = 0; i < 4; i++) g.fillRect(270 + (i % 2) * 34, 250 + Math.floor(i / 2) * 34, 28, 28); // штабеля
+      },
+      // 5 — завод с лабораторией: бетон и подъезд к площадке люка (площадку рисует Lab)
+      (g) => {
+        g.fillStyle(0x4a4c4e).fillRect(40, 40, 320, 320);
+        g.fillStyle(0x56585a).fillRect(180, 40, 40, 100); // подъезд с севера
+        g.fillStyle(0x56585a).fillRect(180, 260, 40, 100);
+      },
+      // 6 — парк: газон, дорожки крестом, пруд, много деревьев
+      (g) => {
+        g.fillStyle(0x3f5a34).fillRect(40, 40, 320, 320);
+        g.fillStyle(0x6e6a5c);
+        g.fillRect(190, 40, 20, 320);
+        g.fillRect(40, 190, 320, 20);
+        g.fillStyle(0x2c4a5a).fillEllipse(110, 290, 110, 70); // пруд
+        g.fillStyle(0x3a6070).fillEllipse(104, 284, 70, 40);
+        this.trees(g, rnd, 50, 50, 130, 130, 9);
+        this.trees(g, rnd, 220, 50, 130, 130, 9);
+        this.trees(g, rnd, 220, 220, 130, 130, 9);
+        g.fillStyle(0x7a7468).fillCircle(200, 200, 18); // клумба на перекрёстке дорожек
+        g.fillStyle(0x8a3a3a).fillCircle(200, 200, 10);
+      },
+      // 7 — «зона»: утоптанная земля, плац
+      (g) => {
+        g.fillStyle(0x4a4636).fillRect(40, 40, 320, 320);
+        g.fillStyle(0x56523f).fillRect(60, 130, 280, 36); // плац между рядами бараков
+        g.fillStyle(0x56523f).fillRect(60, 229, 280, 36);
+      },
+      // 8 — ДК: площадь с плиткой перед зданием, клумбы, фонари
+      (g) => {
+        g.fillStyle(0x5e6166).fillRect(60, 220, 280, 120);
+        g.lineStyle(1, 0x6c7075);
+        for (let x = 60; x < 340; x += 28) g.lineBetween(x, 220, x, 340);
+        for (let y = 220; y < 340; y += 28) g.lineBetween(60, y, 340, y);
+        g.fillStyle(0x8a3a3a);
+        for (const x of [100, 300]) g.fillCircle(x, 280, 14);
+        for (const [x, y] of [[50, 50], [350, 50], [50, 220], [350, 220]]) this.tree(g, x, y, 12);
       },
     ];
 

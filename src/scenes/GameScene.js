@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN, ENEMIES } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -27,6 +27,7 @@ import { Ordnance } from '../systems/Ordnance.js';
 import { Lab } from '../systems/Lab.js';
 import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
+import { DISTRICTS, DISTRICT_VARIANT } from '../cityLayout.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -94,6 +95,8 @@ export class GameScene extends Phaser.Scene {
     this.culler.addGroup(this.gems);
     this.culler.addGroup(this.enemies);
     this.depots = new Depots(this, this.player);
+    this.spawnWatchtowers();
+    this.depots.addMonument();
     this.tracks = new Tracks(this);
     this.breakdowns = new Breakdowns(this, this.player);
     this.ordnance = new Ordnance(this, this.player);
@@ -512,10 +515,14 @@ export class GameScene extends Phaser.Scene {
   drawGround() {
     const s = CITY.tile;
     this.plazas = []; // центры площадей (квартал без домов) — туда в бою с «Объектом» бьёт артиллерия
+    this.districts = {}; // район → кварталы { x, y } (левый верхний угол)
     for (let y = 0; y < WORLD.height; y += s) {
       for (let x = 0; x < WORLD.width; x += s) {
-        const variant = Phaser.Math.Between(0, CITY.variants - 1);
-        const quarter = Phaser.Math.Between(0, 3);
+        // Район — по плану города; жилые — случайного вида и поворота, остальные стоят как задуманы
+        const d = DISTRICTS[y / s]?.[x / s] ?? 'R';
+        (this.districts[d] ??= []).push({ x, y });
+        const variant = DISTRICT_VARIANT[d] ?? Phaser.Math.Between(0, CITY.residential - 1);
+        const quarter = d === 'R' || d === 'P' ? Phaser.Math.Between(0, 3) : 0;
         this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
         if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
@@ -523,6 +530,60 @@ export class GameScene extends Phaser.Scene {
     }
     this.buildings = new Buildings(this);
     this.roofs = this.buildings.build(this.nav.rects);
+    this.drawZoneFence();
+  }
+
+  // «Зона»: колючая проволока по периметру района Z со столбами и воротами на юг
+  zoneBox() {
+    const zs = this.districts.Z ?? [];
+    if (!zs.length) return null;
+    const s = CITY.tile;
+    const x0 = Math.min(...zs.map((z) => z.x)) + 40;
+    const y0 = Math.min(...zs.map((z) => z.y)) + 40;
+    const x1 = Math.max(...zs.map((z) => z.x)) + s - 40;
+    const y1 = Math.max(...zs.map((z) => z.y)) + s - 40;
+    return { x0, y0, x1, y1 };
+  }
+
+  drawZoneFence() {
+    const b = this.zoneBox();
+    if (!b) return;
+    const g = this.add.graphics().setDepth(DEPTH.ground + 1.3);
+    const gate = (b.x0 + b.x1) / 2;
+    const segs = [
+      [b.x0, b.y0, b.x1, b.y0],
+      [b.x1, b.y0, b.x1, b.y1],
+      [b.x0, b.y1, gate - 40, b.y1], // ворота на юг
+      [gate + 40, b.y1, b.x1, b.y1],
+      [b.x0, b.y0, b.x0, b.y1],
+    ];
+    for (const [x1, y1, x2, y2] of segs) {
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      // Колючка — двойная линия с «узлами», столбы через 40 px
+      g.lineStyle(2, 0x9a9488, 0.8).lineBetween(x1, y1, x2, y2);
+      g.lineStyle(1, 0x6a645a, 0.8).lineBetween(x1 + 2, y1 + 2, x2 + 2, y2 + 2);
+      for (let d = 0; d <= len; d += 40) {
+        const k = d / len;
+        g.fillStyle(0x3a2e22).fillRect(x1 + (x2 - x1) * k - 2, y1 + (y2 - y1) * k - 2, 5, 5);
+      }
+      for (let d = 10; d < len; d += 14) {
+        const k = d / len;
+        g.fillStyle(0xb8b2a6).fillRect(x1 + (x2 - x1) * k - 1, y1 + (y2 - y1) * k - 1, 2, 2);
+      }
+    }
+  }
+
+  // Часовые на вышках по углам «зоны» и посередине длинных сторон
+  spawnWatchtowers() {
+    const b = this.zoneBox();
+    if (!b) return;
+    const mx = (b.x0 + b.x1) / 2;
+    const my = (b.y0 + b.y1) / 2;
+    for (const [x, y] of [[b.x0, b.y0], [b.x1, b.y0], [b.x0, b.y1], [b.x1, b.y1], [mx, b.y0], [b.x0, my]]) {
+      const e = this.enemies.get();
+      if (!e) break;
+      e.spawn('watchtower', ENEMIES.watchtower, x, y, this.player);
+    }
   }
 
   update(time, delta) {

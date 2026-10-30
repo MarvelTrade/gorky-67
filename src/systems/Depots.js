@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
-import { DEPOT, XP } from '../config.js';
+import { DEPOT, XP, MONUMENT, CITY } from '../config.js';
+import { t } from '../i18n/index.js';
 import { DEPTH } from '../depth.js';
 import { sfx } from './Sfx.js';
 
@@ -29,6 +30,17 @@ export class Depots {
       scene.culler?.add(img);
       this.list.push({ x: p.x, y: p.y, hp: DEPOT.hp, img, ring, active: true });
     }
+  }
+
+  // Памятник «Рабочему с шестернёй» в центре первой площади: сбивается, как склад, добыча больше
+  addMonument() {
+    const sq = this.scene.districts?.S?.[0];
+    if (!sq) return;
+    const x = sq.x + CITY.tile / 2;
+    const y = sq.y + CITY.tile / 2;
+    const img = this.scene.add.image(x, y, 'monument').setOrigin(0.5, 0.85).setDepth(DEPTH.buildings + y / 1e5);
+    this.scene.culler?.add(img);
+    this.list.push({ x, y, hp: MONUMENT.hp, img, ring: null, active: true, monument: true });
   }
 
   // Ближайший целый склад в радиусе прицела — или null
@@ -100,6 +112,14 @@ export class Depots {
     d.active = false;
     this.broken++;
     this.scene.tweens.killTweensOf(d.img);
+    if (d.monument) {
+      // Памятник падает: пьедестал остаётся, фигура лежит рядом
+      d.img.setTexture('monumentFallen').setScale(1);
+      this.scene.events.emit('explosion', d.x, d.y, 40);
+      this.scene.events.emit('radio', t('vova_monument'), 'vova', false);
+      this.drop(d.x, d.y, MONUMENT.money, MONUMENT.parts);
+      return;
+    }
     d.img.setTexture('depotBroken').setScale(1);
     d.ring.destroy();
     this.scene.events.emit('explosion', d.x, d.y, 34);

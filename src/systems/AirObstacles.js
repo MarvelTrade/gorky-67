@@ -29,7 +29,7 @@ export class AirObstacles {
     const placed = [];
     for (const [kind, def] of Object.entries(AIR.towers)) {
       for (let i = 0; i < def.count; i++) {
-        const spot = this.findSpot(rnd, placed, def.radius);
+        const spot = this.findSpot(rnd, placed, def.radius, def.district);
         if (!spot) continue;
         placed.push(spot);
         this.addTower(kind, def, spot.x, spot.y);
@@ -40,15 +40,18 @@ export class AirObstacles {
   }
 
   // Случайная точка внутри квартала: не на улице, не в доме, не у старта и не рядом с другой башней
-  findSpot(rnd, placed, radius) {
+  // district — строка районов («FL»): башня ставится только в их кварталы (трубы — на заводе)
+  findSpot(rnd, placed, radius, district) {
+    const tiles = district ? Object.entries(this.scene.districts ?? {}).filter(([d]) => district.includes(d)).flatMap(([, list]) => list) : null;
     const s = CITY.tile;
     const rects = this.buildings;
     const m = AIR.buildingMargin + radius;
     const cx = WORLD.width / 2;
     const cy = WORLD.height / 2;
     for (let tries = 0; tries < 400; tries++) {
-      const tx = rnd.between(0, WORLD.width / s - 1) * s;
-      const ty = rnd.between(0, WORLD.height / s - 1) * s;
+      const tile = tiles?.length ? rnd.pick(tiles) : null;
+      const tx = tile ? tile.x : rnd.between(0, WORLD.width / s - 1) * s;
+      const ty = tile ? tile.y : rnd.between(0, WORLD.height / s - 1) * s;
       const x = tx + rnd.between(AIR.roadMargin, s - AIR.roadMargin);
       const y = ty + rnd.between(AIR.roadMargin, s - AIR.roadMargin);
       if (Math.hypot(x - cx, y - cy) < AIR.startClear) continue;

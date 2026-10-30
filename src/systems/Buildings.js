@@ -10,6 +10,14 @@ import { buildingHeight } from '../cityLayout.js';
 // Текстура — одна на каждый размер дома; домов ~170, размеров — несколько.
 const RUIN_H = 6; // px — высота груды обломков на экране
 
+// Цвета стен, цоколя и крыши по виду дома
+const STYLES = {
+  panel: { wall: 0x5d6269, base: 0x4a4f55, roof: P.panel },
+  factory: { wall: 0x7a4e3c, base: 0x4e3226, roof: 0x5e5248 },
+  barrack: { wall: 0x6b5a40, base: 0x4a3e2c, roof: 0x5b4a36 },
+  dk: { wall: 0xd8cfb8, base: 0xa89e88, roof: 0xb8b0a0 },
+};
+
 export class Buildings {
   constructor(scene) {
     this.scene = scene;
@@ -22,11 +30,12 @@ export class Buildings {
     this.roofs = [];
     this.fires = [];
     this.list = []; // дома с HP — для разрушений
-    for (const [x, y, w, h] of rects) {
+    rects.forEach(([x, y, w, h], i) => {
+      const style = this.scene.nav?.rectStyles?.[i] ?? 'panel';
       const H = buildingHeight(w, h);
       const r = rnd.frac();
       const state = r < CHAOS.burningHouses ? 'burning' : r < CHAOS.burningHouses + CHAOS.shelledHouses ? 'shelled' : 'ok';
-      const key = this.texture(w, h, H, state);
+      const key = this.texture(w, h, H, state, style);
       if (state === 'burning') {
         const n = Math.max(1, Math.round(Math.max(w, h) / 120));
         for (let i = 0; i < n; i++) {
@@ -46,8 +55,8 @@ export class Buildings {
       this.roofs.push(roof);
       const maxHp = w * h * RUINS.hpPerArea;
       // Дом «после обстрела» уже потрёпан — рушится быстрее
-      this.list.push({ x, y, w, h, H, img, roof, state, maxHp, hp: state === 'shelled' ? maxHp * RUINS.damaged : maxHp });
-    }
+      this.list.push({ x, y, w, h, H, img, roof, state, style, maxHp, hp: state === 'shelled' ? maxHp * RUINS.damaged : maxHp });
+    });
     return this.roofs;
   }
 
@@ -78,7 +87,7 @@ export class Buildings {
 
   setState(b, state) {
     b.state = state;
-    b.img.setTexture(this.texture(b.w, b.h, b.H, state));
+    b.img.setTexture(this.texture(b.w, b.h, b.H, state, b.style));
   }
 
   // Руины: дом становится низкой грудой обломков на земле — ниже врагов и следов,
@@ -121,8 +130,11 @@ export class Buildings {
     return key;
   }
 
-  texture(w, h, H, state = 'ok') {
-    const key = `bld_${w}x${h}_${H}_${state}`;
+  // style: panel — панелька, factory — цех (кирпич, ленты окон, световые фонари на крыше),
+  // barrack — барак (доски, мелкие окна), dk — Дворец культуры (светлый, колонны)
+  texture(w, h, H, state = 'ok', style = 'panel') {
+    const key = `bld_${w}x${h}_${H}_${state}_${style}`;
+    const S = STYLES[style] ?? STYLES.panel;
     if (this.scene.textures.exists(key)) return key;
     const rnd = new Phaser.Math.RandomDataGenerator([key]);
     const burning = state === 'burning';
@@ -132,13 +144,29 @@ export class Buildings {
     // Фасад: стена, ряды окон по этажам, подъезды внизу
     const floorH = 6;
     const floors = Math.floor((H - 6) / floorH);
-    g.fillStyle(0x5d6269);
+    g.fillStyle(S.wall);
     g.fillRect(0, h, w, H);
-    g.fillStyle(0x4a4f55);
+    g.fillStyle(S.base);
     g.fillRect(0, h + H - 4, w, 4); // цоколь
-    for (let f = 0; f < floors; f++) {
+    if (style === 'dk') {
+      // Колоннада по фасаду
+      for (let x = 8; x < w - 6; x += 16) {
+        g.fillStyle(0xf2ecdc).fillRect(x, h + 4, 6, H - 8);
+        g.fillStyle(0x000000, 0.18).fillRect(x + 5, h + 4, 2, H - 8);
+      }
+    }
+    if (style === 'factory') {
+      // Ленты окон во всю длину, по ленте на этаж
+      for (let wy = h + 5; wy < h + H - 8; wy += 10) {
+        g.fillStyle(shelled ? 0x1b1d20 : 0x6f8290).fillRect(4, wy, w - 8, 4);
+        g.fillStyle(0x4a3226);
+        for (let x = 4; x < w - 4; x += 12) g.fillRect(x, wy, 1, 4);
+      }
+    }
+    const windowStep = style === 'barrack' ? 16 : 9;
+    for (let f = 0; style !== 'factory' && style !== 'dk' && f < floors; f++) {
       const wy = h + 3 + f * floorH;
-      for (let wx = 5; wx < w - 5; wx += 9) {
+      for (let wx = 5; wx < w - 5; wx += windowStep) {
         const r = rnd.frac();
         // Большинство окон тёмные (эвакуация), редкие горят, редкие выбиты.
         // Горящий дом — окна в огне; после обстрела — больше выбитых
@@ -153,19 +181,34 @@ export class Buildings {
     for (let i = 0; i < sections; i++) g.fillRect((i + 0.5) * (w / sections) - 3, h + H - 9, 6, 5);
 
     // Крыша: как раньше — секции и выходы на крышу
-    g.fillStyle(P.panel);
+    g.fillStyle(S.roof);
     g.fillRect(0, 0, w, h);
+    if (style === 'factory') {
+      // Световые фонари — стеклянные полосы поперёк цеха
+      for (let x = 10; x < w - 10; x += 26) {
+        g.fillStyle(0x8fa6b0).fillRect(x, 6, 10, h - 12);
+        g.fillStyle(0x000000, 0.25).fillRect(x + 10, 6, 3, h - 12);
+      }
+    } else if (style === 'barrack') {
+      // Доски
+      g.lineStyle(1, 0x3e3224, 0.7);
+      for (let y = 4; y < h; y += 5) g.lineBetween(0, y, w, y);
+    } else if (style === 'dk') {
+      g.lineStyle(3, 0xd8d0c0).strokeRect(3, 3, w - 6, h - 6); // парапет
+      g.fillStyle(0xc03030).fillRect(w / 2 - 1, 6, 2, 16); // флагшток с флагом
+      g.fillRect(w / 2 + 1, 6, 10, 6);
+    }
     const long = w >= h;
     const len = long ? w : h;
     const sec = Math.max(1, Math.round(len / 46));
     const step = len / sec;
     g.lineStyle(1, P.panelDark, 0.7);
-    for (let i = 1; i < sec; i++) {
+    for (let i = 1; style === 'panel' && i < sec; i++) {
       if (long) g.lineBetween(i * step, 0, i * step, h);
       else g.lineBetween(0, i * step, w, i * step);
     }
     g.fillStyle(P.panelDark);
-    for (let i = 0; i < sec; i++) {
+    for (let i = 0; style === 'panel' && i < sec; i++) {
       const cx = long ? (i + 0.5) * step : w / 2;
       const cy = long ? h / 2 : (i + 0.5) * step;
       g.fillRect(cx - 4, cy - 4, 8, 8);

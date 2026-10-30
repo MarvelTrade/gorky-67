@@ -46,6 +46,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.rotation = Math.atan2(target.y - y, target.x - x);
     this.enableBody(true, x, y, true, true);
     this.body.setCircle(cfg.radius, this.width / 2 - cfg.radius, this.height / 2 - cfg.radius);
+    // Вышку толпа не сдвигает; слот пула потом может стать пехотой — сбрасываем
+    this.body.setImmovable(!!cfg.static);
+    if (cfg.noRotate) this.rotation = 0;
     this.body.setVelocity(0, 0);
     this.clearTint();
   }
@@ -95,7 +98,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const dx = t.x - this.x;
     const dy = t.y - this.y;
     const dist = Math.hypot(dx, dy) || 1;
-    if (dist > SPAWN.despawnDist && this.cfg.behavior !== 'boss') {
+    if (dist > SPAWN.despawnDist && this.cfg.behavior !== 'boss' && !this.cfg.static) {
       this.despawn();
       return;
     }
@@ -201,10 +204,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   // Зенитка: стоит, поворачивает ствол и стреляет медленным снарядом, если игрок в радиусе
   updateTurret(dt, dx, dy, dist) {
     const cfg = this.cfg;
-    this.rotation = Math.atan2(dy, dx);
+    const aim = Math.atan2(dy, dx);
+    if (!cfg.noRotate) this.rotation = aim;
     this.timer -= dt;
     if (this.timer > 0 || dist > cfg.range) return;
-    this.fireShell(this.rotation);
+    this.fireShell(aim);
     this.timer = cfg.fireInterval;
   }
 

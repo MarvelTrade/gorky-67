@@ -1,5 +1,5 @@
 import { CITY, NAV, WORLD } from '../config.js';
-import { BUILDINGS } from '../cityLayout.js';
+import { BUILDINGS, BUILDING_STYLE } from '../cityLayout.js';
 
 // Наземные враги обходят дома: сетка проходимости + карта путей (поиск в ширину от вертолёта).
 // Вертолёт летает над крышами, поэтому если он над домом, путь ведёт к стене под ним.
@@ -15,6 +15,7 @@ export class CityNav {
     this.dist = new Int32Array(n).fill(-1);
     this.queue = new Int32Array(n);
     this.rects = []; // дома в координатах мира: [x, y, w, h]
+    this.rectStyles = []; // вид дома для каждого из rects: panel / factory / barrack / dk
     this.timer = 0;
     this.goal = -1;
   }
@@ -38,6 +39,7 @@ export class CityNav {
       const ry = Math.min(...ys);
       const rect = [rx, ry, Math.max(...xs) - rx, Math.max(...ys) - ry];
       this.rects.push(rect);
+      this.rectStyles.push(BUILDING_STYLE[variant] ?? 'panel');
       this.markBlocked(rect);
     }
   }

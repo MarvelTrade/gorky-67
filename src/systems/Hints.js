@@ -32,7 +32,7 @@ export class Hints {
         break;
       case 2: { // склад — когда первый появится в кадре
         const view = gs.cameras.main.worldView;
-        const d = gs.depots.list.find((x) => x.active && view.contains(x.x, x.y));
+        const d = gs.depots.list.find((x) => x.active && !x.monument && view.contains(x.x, x.y));
         if (!this.depotSeen && !d) {
           this.text = null;
           break;

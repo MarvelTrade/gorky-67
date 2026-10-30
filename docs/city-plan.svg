@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1180" font-family="Arial, sans-serif">
+  <!-- Структурный план выдуманного закрытого города «Горький-67». Сетка игры: 10×10 кварталов по 400 px (тут клетка 90 px). -->
+  <rect width="1000" height="1180" fill="#f3eee2"/>
+  <text x="500" y="38" text-anchor="middle" font-size="26" font-weight="bold" fill="#2a2418">ГОРЬКИЙ-67 — структурный план города</text>
+  <text x="500" y="62" text-anchor="middle" font-size="14" fill="#5a5040">выдуманный закрытый город по мотивам советских «номерных» городов · север сверху · 10×10 кварталов</text>
+
+  <g transform="translate(50,80)">
+    <!-- Кварталы: x = колонка×90, y = ряд×90 -->
+    <!-- Лагерь (бараки, вышки) — лево-верх -->
+    <rect x="0" y="0" width="270" height="180" fill="#b9a27a"/>
+    <!-- Микрорайоны (панельные 5–9 эт.) — запад и юг -->
+    <rect x="0" y="180" width="180" height="720" fill="#cfd3d8"/>
+    <rect x="180" y="630" width="450" height="270" fill="#cfd3d8"/>
+    <!-- Сталинские кварталы (3–5 эт., дворы-колодцы) — вокруг центра -->
+    <rect x="180" y="180" width="450" height="450" fill="#e0c9a6"/>
+    <rect x="270" y="0" width="360" height="180" fill="#e0c9a6"/>
+    <!-- Центр: площадь со статуей, ДК, горисполком -->
+    <rect x="360" y="270" width="180" height="90" fill="#e8b4a0"/>
+    <rect x="360" y="180" width="180" height="90" fill="#f0d3a0"/>
+    <!-- Центральный парк — к югу от площади, через проспект -->
+    <rect x="360" y="450" width="180" height="180" fill="#8fbf7a"/>
+    <!-- Скверы на перекрёстках -->
+    <rect x="180" y="450" width="90" height="90" fill="#a9cf96"/>
+    <rect x="540" y="270" width="90" height="90" fill="#a9cf96"/>
+    <rect x="90" y="720" width="90" height="90" fill="#a9cf96"/>
+    <!-- Санитарная лесополоса между городом и заводом -->
+    <rect x="630" y="0" width="90" height="900" fill="#5f8a52"/>
+    <!-- Завод (объект) — справа -->
+    <rect x="720" y="0" width="180" height="900" fill="#9c8f86"/>
+    <!-- Лаборатория «Объекта 67» -->
+    <rect x="720" y="270" width="90" height="90" fill="#7a6f68"/>
+
+    <!-- Сетка кварталов -->
+    <g stroke="#ffffff" stroke-width="3">
+      <line x1="90" y1="0" x2="90" y2="900"/><line x1="180" y1="0" x2="180" y2="900"/><line x1="270" y1="0" x2="270" y2="900"/>
+      <line x1="360" y1="0" x2="360" y2="900"/><line x1="450" y1="0" x2="450" y2="900"/><line x1="540" y1="0" x2="540" y2="900"/>
+      <line x1="630" y1="0" x2="630" y2="900"/><line x1="720" y1="0" x2="720" y2="900"/><line x1="810" y1="0" x2="810" y2="900"/>
+      <line x1="0" y1="90" x2="900" y2="90"/><line x1="0" y1="180" x2="900" y2="180"/><line x1="0" y1="270" x2="900" y2="270"/>
+      <line x1="0" y1="360" x2="900" y2="360"/><line x1="0" y1="450" x2="900" y2="450"/><line x1="0" y1="540" x2="900" y2="540"/>
+      <line x1="0" y1="630" x2="900" y2="630"/><line x1="0" y1="720" x2="900" y2="720"/><line x1="0" y1="810" x2="900" y2="810"/>
+    </g>
+
+    <!-- Главный проспект (запад → восток): от КПП через площадь к проходной завода -->
+    <line x1="-20" y1="450" x2="720" y2="450" stroke="#3a3a3a" stroke-width="16"/>
+    <line x1="-20" y1="450" x2="720" y2="450" stroke="#7aa86a" stroke-width="4" stroke-dasharray="6 8"/>
+    <!-- Второй проспект (север → юг) через центр -->
+    <line x1="360" y1="0" x2="360" y2="900" stroke="#3a3a3a" stroke-width="12"/>
+    <line x1="360" y1="0" x2="360" y2="900" stroke="#7aa86a" stroke-width="3" stroke-dasharray="6 8"/>
+    <!-- Улицы поменьше -->
+    <line x1="0" y1="180" x2="630" y2="180" stroke="#6a6a6a" stroke-width="7"/>
+    <line x1="0" y1="720" x2="630" y2="720" stroke="#6a6a6a" stroke-width="7"/>
+    <line x1="180" y1="0" x2="180" y2="900" stroke="#6a6a6a" stroke-width="7"/>
+    <line x1="540" y1="0" x2="540" y2="900" stroke="#6a6a6a" stroke-width="7"/>
+    <!-- Железнодорожная ветка вдоль завода -->
+    <line x1="855" y1="0" x2="855" y2="900" stroke="#4a3a2a" stroke-width="3"/>
+    <line x1="855" y1="0" x2="855" y2="900" stroke="#4a3a2a" stroke-width="9" stroke-dasharray="1 10"/>
+    <!-- Ограда закрытого города -->
+    <rect x="-8" y="-8" width="916" height="916" fill="none" stroke="#b03024" stroke-width="3" stroke-dasharray="10 6"/>
+    <!-- Колючка лагеря -->
+    <rect x="8" y="8" width="254" height="164" fill="none" stroke="#4a3a2a" stroke-width="2" stroke-dasharray="4 3"/>
+
+    <!-- Вышки лагеря -->
+    <g fill="#4a3a2a">
+      <rect x="2" y="2" width="12" height="12"/><rect x="256" y="2" width="12" height="12"/>
+      <rect x="2" y="166" width="12" height="12"/><rect x="256" y="166" width="12" height="12"/>
+      <rect x="129" y="2" width="12" height="12"/><rect x="2" y="84" width="12" height="12"/>
+    </g>
+    <!-- Бараки -->
+    <g fill="#7a6040">
+      <rect x="30" y="30" width="60" height="16"/><rect x="110" y="30" width="60" height="16"/><rect x="190" y="30" width="50" height="16"/>
+      <rect x="30" y="70" width="60" height="16"/><rect x="110" y="70" width="60" height="16"/><rect x="190" y="70" width="50" height="16"/>
+      <rect x="30" y="110" width="60" height="16"/><rect x="110" y="110" width="60" height="16"/><rect x="190" y="110" width="50" height="16"/>
+    </g>
+
+    <!-- Памятник на площади -->
+    <circle cx="450" cy="315" r="13" fill="#2a2418"/>
+    <text x="450" y="321" text-anchor="middle" font-size="15" fill="#f3eee2">★</text>
+    <!-- КПП на въезде -->
+    <rect x="-30" y="430" width="34" height="40" fill="#b03024"/>
+    <text x="-13" y="455" text-anchor="middle" font-size="11" fill="#fff" font-weight="bold">КПП</text>
+    <!-- Проходная завода -->
+    <rect x="712" y="434" width="18" height="32" fill="#b03024"/>
+    <!-- Трубы завода -->
+    <g fill="#c0392b"><circle cx="770" cy="120" r="7"/><circle cx="860" cy="200" r="7"/><circle cx="790" cy="640" r="7"/></g>
+    <!-- Старт вертолёта -->
+    <circle cx="450" cy="450" r="9" fill="#1e88c8" stroke="#fff" stroke-width="2"/>
+
+    <!-- Подписи районов -->
+    <g font-size="15" font-weight="bold" fill="#2a2418" text-anchor="middle">
+      <text x="135" y="160">ЛАГЕРЬ (стройбат)</text>
+      <text x="450" y="80">СТАЛИНСКИЕ КВАРТАЛЫ</text>
+      <text x="450" y="230">ДК · горисполком</text>
+      <text x="450" y="352" font-size="13">ПЛОЩАДЬ</text>
+      <text x="450" y="545">ЦЕНТРАЛЬНЫЙ ПАРК</text>
+      <text x="90" y="320" transform="rotate(-90 90 320)">МИКРОРАЙОНЫ</text>
+      <text x="400" y="785">МИКРОРАЙОНЫ (панельки)</text>
+      <text x="675" y="600" transform="rotate(-90 675 600)" fill="#f3eee2">ЛЕСОПОЛОСА</text>
+      <text x="810" y="560" transform="rotate(-90 810 560)" fill="#f3eee2">ЗАВОД «ОБЪЕКТ 67»</text>
+      <text x="765" y="320" font-size="12" fill="#f3eee2">ЛАБ.</text>
+    </g>
+    <g font-size="12" fill="#2a2418">
+      <text x="40" y="440">главный проспект →</text>
+      <text x="368" y="890">проспект →</text>
+    </g>
+  </g>
+
+  <!-- Легенда -->
+  <g transform="translate(50,1010)" font-size="14" fill="#2a2418">
+    <rect x="0" y="0" width="18" height="14" fill="#b9a27a"/><text x="26" y="12">лагерь: бараки, колючка, вышки с часовыми</text>
+    <rect x="0" y="24" width="18" height="14" fill="#e0c9a6"/><text x="26" y="36">сталинские кварталы: 3–5 этажей, дворы</text>
+    <rect x="0" y="48" width="18" height="14" fill="#cfd3d8"/><text x="26" y="60">микрорайоны: панельные 5–9 этажей</text>
+    <rect x="0" y="72" width="18" height="14" fill="#e8b4a0"/><text x="26" y="84">площадь со статуей, ДК, горисполком</text>
+    <rect x="460" y="0" width="18" height="14" fill="#8fbf7a"/><text x="486" y="12">парк и скверы</text>
+    <rect x="460" y="24" width="18" height="14" fill="#5f8a52"/><text x="486" y="36">лесополоса — защитная зона у завода</text>
+    <rect x="460" y="48" width="18" height="14" fill="#9c8f86"/><text x="486" y="60">завод, лаборатория «Объекта», ж/д ветка</text>
+    <line x1="460" y1="79" x2="478" y2="79" stroke="#3a3a3a" stroke-width="8"/><text x="486" y="84">проспект (широкий, с бульваром) · улица</text>
+    <circle cx="9" cy="112" r="7" fill="#1e88c8"/><text x="26" y="117">старт вертолёта — у площади, на главном проспекте</text>
+    <rect x="460" y="104" width="18" height="14" fill="#b03024"/><text x="486" y="117">КПП въезда (запад), проходная завода (восток)</text>
+  </g>
+</svg>

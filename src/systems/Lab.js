@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { LAB } from '../config.js';
+import { LAB, CITY } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { sfx } from './Sfx.js';
 
@@ -33,6 +33,9 @@ export class Lab {
 
   // Площадь подальше от старта — дорога до лаборатории заметна; нет подходящей — самая дальняя
   pick() {
+    // По плану города — квартал L (завод с лабораторией)
+    const L = this.scene.districts?.L?.[0];
+    if (L) return { x: L.x + CITY.tile / 2, y: L.y + CITY.tile / 2 };
     const { plazas } = this.scene;
     const cx = this.scene.player.x;
     const cy = this.scene.player.y;

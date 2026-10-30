@@ -62,6 +62,13 @@ export const CULL = {
   margin: 220,          // px за краем экрана — запас, чтобы ничего не «выскакивало»
 };
 
+// Памятник на площади (Depots): выдуманный «Рабочий с шестернёй». Сбить можно — выпадет добыча
+export const MONUMENT = {
+  hp: 220,
+  money: 45,
+  parts: 2,
+};
+
 // Подсказки первых забегов (Hints): по одной, пока игрок не сделает действие
 export const HINTS = {
   runs: 2,              // забегов с подсказками
@@ -151,7 +158,8 @@ export const WORLD = {
 export const CITY = {
   tile: 400,
   road: 34,             // ширина половины дороги по краю квартала
-  variants: 4,          // сколько видов кварталов рисует BootScene
+  variants: 9,          // сколько видов кварталов рисует BootScene (0–2 жилые, 3 площадь, 4–8 районы)
+  residential: 3,       // первые N видов — жилые, из них случайный для района R
   plazaVariant: 3,      // вид «площадь с памятником» — без домов; цель артобстрела в бою с боссом
 };
 
@@ -163,7 +171,7 @@ export const AIR = {
     radio: { count: 1, radius: 30, texture: 'towerRadio' },     // решётчатая радиовышка — ориентир
     water: { count: 3, radius: 22, texture: 'towerWater' },     // водонапорная башня
     bell: { count: 2, radius: 17, texture: 'towerBell' },       // колокольня
-    chimney: { count: 3, radius: 13, texture: 'towerChimney' }, // заводская труба
+    chimney: { count: 3, radius: 13, texture: 'towerChimney', district: 'FL' }, // заводская труба — на заводе
   },
   // px — высота полёта на экране: в 3/4 вертолёт задевает башню не у основания, а там, где её ствол
   // нарисован на этой высоте (раньше круг стоял на земле — казалось, что вертолёт садится у трубы).
@@ -363,6 +371,24 @@ export const ENEMIES = {
     damage: 0,          // таранить вертолёт техника не может — он в воздухе
     xp: 2,
     radius: 11,
+  },
+  // Часовой на вышке «зоны»: стоит на месте, бьёт очередями, вышку можно сбить. Не уходит в пул вдали
+  watchtower: {
+    behavior: 'turret',
+    static: true,
+    noRotate: true,     // вышка не поворачивается — поворачивается прицел
+    hp: 160,
+    speed: 0,
+    speedJitter: 0,
+    fireInterval: 1.8,
+    range: 470,
+    shellSpeed: 230,
+    shellDamage: 9,
+    shellLife: 3,
+    shellTexture: 'shell',
+    damage: 0,
+    xp: 12,
+    radius: 18,
   },
   aa: {
     behavior: 'turret',
