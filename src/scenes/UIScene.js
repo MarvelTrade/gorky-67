@@ -32,7 +32,7 @@ export class UIScene extends Phaser.Scene {
         backgroundColor: '#ffc400',
         padding: { x: 10, y: 4 },
       })
-      .setOrigin(0.5, 1)
+      .setOrigin(0, 0)
       .setVisible(false);
     this.bars = this.add.graphics();
 
@@ -66,11 +66,6 @@ export class UIScene extends Phaser.Scene {
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
     this.timerText = this.add.text(0, 0, '', { ...style, fontSize: '28px', fontStyle: 'bold' }).setOrigin(0.5, 0);
-    // Подсказка первых забегов — внизу, над зоной большого пальца
-    this.hintText = this.add
-      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '16px', color: '#ffffff', align: 'center', backgroundColor: '#000000aa', padding: { x: 12, y: 8 } })
-      .setOrigin(0.5, 1)
-      .setVisible(false);
     // Добыча со складов за забег: рубли и запчасти — под полоской брони
     this.walletText = this.add.text(0, 0, '', { ...style, fontSize: '14px', strokeThickness: 3, color: '#f2c94c' });
     this.bossText = this.add
@@ -161,14 +156,6 @@ export class UIScene extends Phaser.Scene {
     }
 
     this.drawAlert(g, width, height, delta / 1000, gs.scene.isPaused());
-    const hint = gs.hints?.line;
-    this.hintText.setVisible(!!hint && !gs.scene.isPaused());
-    if (hint) {
-      // setWordWrapWidth перерисовывает текст при каждом вызове — только при смене ширины
-      const wrap = Math.min(420, width - 40);
-      if (this.hintText.style.wordWrapWidth !== wrap) this.hintText.setWordWrapWidth(wrap);
-      this.hintText.setText(hint).setPosition(width / 2, height * 0.8);
-    }
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
     // «Объект» за кадром — красная стрелка: видно, откуда катится
@@ -245,6 +232,7 @@ export class UIScene extends Phaser.Scene {
     const w = Math.min(440, width - 2 * PAD);
     const pad = 10;
     const accent = RADIO.callsigns[who] ?? RADIO.callsigns.beryoza;
+    this.lastWho = who; // Hints: две подсказки подряд не даём
     this.radioCall.setText(t(`radioCallsign_${who}`)).setColor(accent.text);
     this.radioText.setText(line).setWordWrapWidth(w - pad * 2 - 6);
     this.radioCall.setPosition(pad + 6, pad - 2);
@@ -377,8 +365,8 @@ export class UIScene extends Phaser.Scene {
       g.fillRect(0, 0, w, height);
       g.fillRect(width - w, 0, w, height);
     }
-    // Внизу: сверху полоска босса и радио
-    this.lowText.setPosition(width / 2, height - 30).setAlpha(0.7 + 0.3 * k);
+    // Под полоской брони — рядом с тем, о чём предупреждает; низ экрана не используем
+    this.lowText.setPosition(PAD, XP_BAR_H + PAD + 22 + HP_BAR_H + 26).setAlpha(0.7 + 0.3 * k);
   }
 
   // Трещины стекла кабины: 1–2 удара по углам (центр с вертолётом и HUD слева сверху не трогаем).
