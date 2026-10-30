@@ -52,12 +52,20 @@ export class WaveSpawner {
       this.timers[type] -= dt * refill;
       if (this.timers[type] > 0) continue;
       this.timers[type] = rule.interval / (type === 'infantry' ? this.infantryRate : 1);
+      const batch = this.batchOf(rule);
       if (alive >= maxAlive) {
-        this.stats.suppressed += rule.batch;
+        this.stats.suppressed += batch;
         continue;
       }
-      for (let i = 0; i < rule.batch; i++) this.spawn(type);
+      for (let i = 0; i < batch; i++) this.spawn(type);
     }
+  }
+
+  // batch — число или разгон по волне: [2, 3, 4] = первая треть волны по 2, вторая по 3, последняя по 4
+  batchOf(rule) {
+    if (!Array.isArray(rule.batch)) return rule.batch;
+    const part = (this.elapsed % WAVE_LENGTH) / WAVE_LENGTH;
+    return rule.batch[Math.min(rule.batch.length - 1, Math.floor(part * rule.batch.length))];
   }
 
   // Освободить в пуле место под count врагов: убрать самых дальних рядовых (без опыта).
