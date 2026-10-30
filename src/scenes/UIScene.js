@@ -167,13 +167,19 @@ export class UIScene extends Phaser.Scene {
       this.radioWave = wave;
       this.queueRadio(t(`radio_${wave + 1}`));
     }
-    // Реплики идут по очереди, а не перебивают друг друга; срочные (urgent) — сразу
-    if (this.radioLeft <= 0 && this.radioQueue.length) this.showRadio(...this.radioQueue.shift());
+    // Реплики идут по очереди, а не перебивают друг друга; срочные (urgent) — сразу.
+    // Обычные ждут, пока идёт орда или летят снаряды обстрела: в опасности — только тревога (Ходент: внимание)
+    if (this.radioLeft <= 0 && this.radioQueue.length && !this.inDanger(gs)) this.showRadio(...this.radioQueue.shift());
     if (this.radioLeft <= 0 || gs.scene.isPaused()) return;
     this.radioLeft -= dt;
     const total = RADIO.duration + RADIO.fade * 2;
     const passed = total - this.radioLeft;
     this.radio.setAlpha(Math.max(0, Math.min(1, passed / RADIO.fade, this.radioLeft / RADIO.fade)));
+  }
+
+  inDanger(gs) {
+    const horde = gs.runEvents?.hordes.some((h) => h.started && !h.done);
+    return !!horde || (gs.artillery?.zones.length ?? 0) > 0;
   }
 
   // who — позывной: 'beryoza' (диспетчер) или 'cheryomukha' (агент, своя полоска цвета)

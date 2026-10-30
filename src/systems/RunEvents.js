@@ -30,7 +30,7 @@ export class RunEvents {
     for (const h of this.hordes) {
       if (!h.warned && elapsed >= h.at - H.warn) {
         h.warned = true;
-        this.scene.events.emit('radio', t('radio_horde'));
+        this.scene.events.emit('radio', t('radio_horde'), 'beryoza', true); // тревога — сразу
         this.scene.events.emit('alert', H.warn);
       }
       if (!h.started && elapsed >= h.at) {
@@ -82,7 +82,7 @@ export class RunEvents {
   // Вторая фаза «Объекта»: вспышка, тряска, реплика и рой вокруг него
   bossPhase2(boss) {
     const S = EVENTS.bossSwarm;
-    this.scene.events.emit('radio', t('radio_bossPhase'));
+    this.scene.events.emit('radio', t('radio_bossPhase'), 'beryoza', true);
     this.bossSwarm = this.spawnRing(boss.x, boss.y, S.radius, S.count, S.speed);
   }
 
