@@ -146,6 +146,8 @@ export class UIScene extends Phaser.Scene {
     this.drawAlert(g, width, height, delta / 1000, gs.scene.isPaused());
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
+    // «Объект» за кадром — красная стрелка: видно, откуда катится
+    if (gs.boss?.active) this.drawEdgeArrow(gs, g, gs.boss.x, gs.boss.y, 0xff5a4a, 1.2);
     if (ex.active) {
       const p2 = ex.target();
       this.drawEdgeArrow(gs, g, p2.x, p2.y, EXTRACT.color, 1.4);

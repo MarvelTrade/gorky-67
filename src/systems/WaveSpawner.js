@@ -115,11 +115,19 @@ export class WaveSpawner {
       this.enemies.getFirst(true).despawn();
       boss = this.enemies.get();
     }
-    const margin = ENEMIES.boss.radius * 2;
-    const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-    const x = Phaser.Math.Clamp(this.target.x + Math.cos(angle) * BOSS_SPAWN.dist, margin, WORLD.width - margin);
-    const y = Phaser.Math.Clamp(this.target.y + Math.sin(angle) * BOSS_SPAWN.dist, margin, WORLD.height - margin);
+    // Выходит из подземной лаборатории; нет её (тесты) — рядом с игроком, как раньше
+    const lab = this.scene.lab;
+    let x;
+    let y;
+    if (lab) ({ x, y } = lab.pos);
+    else {
+      const margin = ENEMIES.boss.radius * 2;
+      const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      x = Phaser.Math.Clamp(this.target.x + Math.cos(angle) * BOSS_SPAWN.dist, margin, WORLD.width - margin);
+      y = Phaser.Math.Clamp(this.target.y + Math.sin(angle) * BOSS_SPAWN.dist, margin, WORLD.height - margin);
+    }
     boss.spawn('boss', ENEMIES.boss, x, y, this.target);
+    lab?.open(boss);
     this.scene.events.emit('boss-spawned', boss);
   }
 }

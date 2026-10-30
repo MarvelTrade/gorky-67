@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { SPAWN, EVENTS, RUINS, ORDNANCE } from '../config.js';
+import { SPAWN, EVENTS, RUINS, ORDNANCE, LAB } from '../config.js';
 import { DEPTH } from '../depth.js';
 
 const FLASH_TIME = 0.06;
@@ -220,17 +220,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.timer = cfg.fireInterval;
   }
 
-  // Босс: ползёт к игроку, часто бьёт прицельным веером и иногда — кольцом во все стороны
+  // Босс — шар-вирус: выходит из лаборатории, катится к игроку (далеко — быстро), сминая дома,
+  // часто бьёт прицельным веером и иногда — кольцом во все стороны
   updateBoss(dt, dx, dy, dist) {
     const cfg = this.cfg;
-    this.body.setVelocity((dx / dist) * this.speed, (dy / dist) * this.speed);
-    this.rotation = Math.atan2(dy, dx);
+    if (this.emerging > 0) {
+      this.emerging -= dt;
+      this.body.setVelocity(0, 0);
+      this.rotation += dt * 2; // ворочается в провале
+      return;
+    }
+    const speed = dist > LAB.farDist ? LAB.farSpeed : this.speed;
+    this.body.setVelocity((dx / dist) * speed, (dy / dist) * speed);
+    // Катится: поворот картинки — путь / радиус. Прицел — отдельно, картинка крутится
+    this.rotation += (speed / cfg.radius) * dt;
+    const aim = Math.atan2(dy, dx);
 
     this.timer -= dt;
     if (this.timer <= 0) {
       this.timer = this.volleyEvery;
       const half = (cfg.volleyCount - 1) / 2;
-      for (let i = 0; i < cfg.volleyCount; i++) this.fireShell(this.rotation + (i - half) * cfg.volleySpread);
+      for (let i = 0; i < cfg.volleyCount; i++) this.fireShell(aim + (i - half) * cfg.volleySpread);
     }
 
     this.burstTimer -= dt;

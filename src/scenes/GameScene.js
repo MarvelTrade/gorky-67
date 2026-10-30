@@ -24,6 +24,7 @@ import { Depots } from '../systems/Depots.js';
 import { Tracks } from '../systems/Tracks.js';
 import { Breakdowns } from '../systems/Breakdowns.js';
 import { Ordnance } from '../systems/Ordnance.js';
+import { Lab } from '../systems/Lab.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -90,6 +91,7 @@ export class GameScene extends Phaser.Scene {
     this.tracks = new Tracks(this);
     this.breakdowns = new Breakdowns(this, this.player);
     this.ordnance = new Ordnance(this, this.player);
+    this.lab = new Lab(this);
     this.rerolls = LEVELUP.rerolls;
     applyMeta(this); // «Ангар»: броня, калибр, двигатель, магнит, перекруты
     this.physics.add.collider(this.player.sprite, this.air.towers);
@@ -512,6 +514,7 @@ export class GameScene extends Phaser.Scene {
     this.tracks.update(dt);
     this.breakdowns.update(dt);
     this.ordnance.update(dt);
+    this.lab.update(dt);
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);
