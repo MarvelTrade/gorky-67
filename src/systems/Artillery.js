@@ -21,7 +21,8 @@ export class Artillery {
   update(dt, elapsed) {
     const A = ARTILLERY;
     const boss = this.scene.boss?.active ? this.scene.boss : null;
-    if (elapsed >= this.next && !this.scene.spawner.paused) {
+    // Во время ухода из района не бьём: идёт ядерный удар, и реплика «уходите на …» важнее
+    if (elapsed >= this.next && !this.scene.spawner.paused && !this.scene.extraction?.active) {
       this.next = elapsed + (boss ? A.bossEvery : A.every);
       this.call(boss);
     }

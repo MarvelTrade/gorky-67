@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -19,6 +19,7 @@ import { CityNav } from '../systems/CityNav.js';
 import { AirObstacles } from '../systems/AirObstacles.js';
 import { Wrecks } from '../systems/Wrecks.js';
 import { Artillery } from '../systems/Artillery.js';
+import { Extraction } from '../systems/Extraction.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -78,6 +79,7 @@ export class GameScene extends Phaser.Scene {
     this.wrecks.build();
     for (const f of this.buildings.fires) this.wrecks.addFire(f.x, f.y, f.big); // горящие дома
     this.artillery = new Artillery(this, this.player);
+    this.extraction = new Extraction(this);
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
@@ -141,6 +143,7 @@ export class GameScene extends Phaser.Scene {
       this.boss = boss;
       this.banner(t('bossIncoming'), '#ff6a5a');
       this.cameras.main.shake(400, 0.008);
+      this.events.emit('radio', t('cher_boss'), 'cheryomukha', true);
     });
     this.events.on('xp-collected', (value) => {
       sfx.play('pickup');
@@ -232,7 +235,7 @@ export class GameScene extends Phaser.Scene {
     this.scene.resume();
   }
 
-  // Конец забега: смерть или продержался RUN.duration секунд
+  // Конец забега: смерть, удар или ушёл из района
   endRun(win, cause = null, delay = RUN.endDelay) {
     if (this.ended) return;
     this.ended = true;
@@ -257,8 +260,8 @@ export class GameScene extends Phaser.Scene {
       level: this.level,
       bossSeen: !!this.boss,
       bossKilled: this.bossKilled,
-      // Концовка: убил «Объект» — колонна прошла; дожил, но босс жив — не успел; погиб
-      ending: !win ? 'lost' : this.bossKilled ? 'convoy' : 'late',
+      // Концовка: ушёл из района — с «Объектом» или без; не успел до удара; погиб
+      ending: !win ? (this.nuked ? 'nuke' : 'lost') : this.bossKilled ? 'convoy' : 'late',
     };
   }
 
@@ -374,7 +377,7 @@ export class GameScene extends Phaser.Scene {
         this.explosionFx(x + Phaser.Math.Between(-40, 40), y + Phaser.Math.Between(-40, 40), 50)
       );
     }
-    this.endRun(true);
+    this.extraction.start();
   }
 
   banner(message, color = '#ffe066') {
@@ -442,6 +445,20 @@ export class GameScene extends Phaser.Scene {
     this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);
     this.spawner.update(dt);
-    if (this.spawner.elapsed >= RUN.duration) this.endRun(true);
+    // Продержался или убил «Объект» — теперь уйти из района до удара
+    if (this.spawner.elapsed >= RUN.duration) this.extraction.start();
+    const exit = this.extraction.update(dt);
+    if (exit === 'escaped') this.endRun(true);
+    if (exit === 'nuked') this.nuke();
+  }
+
+  // Не успел: белая вспышка, и всё. Без «воскреснуть» — удар не переживают
+  nuke() {
+    this.nuked = true;
+    this.cameras.main.flash(EXTRACT.flash, 255, 255, 240);
+    this.fx.shake(FX.deathShake);
+    sfx.play('explosion');
+    this.player.hide();
+    this.endRun(false, 'nuke', EXTRACT.flash / 1000);
   }
 }

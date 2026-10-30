@@ -13,7 +13,8 @@ export default {
   telegram:
     'URGENT CLASSIFIED STOP ACCIDENT AT OBJECT 67 STOP ZARYA RELEASED AS GAS STOP\n' +
     'CORDON AFFECTED STOP NOT ANSWERING CALLSIGNS STOP TREATS FALCON AS TARGET STOP\n' +
-    'FALCON CREW TO COVER EVAC COLUMN STOP FIRE TO KILL AUTHORISED STOP',
+    'FALCON CREW TO COVER EVAC COLUMN STOP FIRE TO KILL AUTHORISED STOP\n' +
+    'DISTRICT TO BE CLOSED AFTERWARDS STOP',
   tapToContinue: 'Tap to continue',
 
   radioCallsign_beryoza: 'BERYOZA',
@@ -21,8 +22,17 @@ export default {
   cher_1: 'Misha... Vova... this is Cheryomukha... The gas is all over the city... Zarya is in the air... hold on, boys...',
   cher_2: "Mishenka... the trolleybus wires are live... don't touch them, my dears...",
   cher_3: 'Vova... the towers and chimneys are taller than you... go around early... please...',
+  cher_gas: "Vova... the gas is heavy... it creeps along the ground... it won't reach you... you're safe up there... they're down here...",
   cher_army: "Boys... the cordon breathed the gas... they don't know you anymore... to them you're a target now...",
   cher_shoot: "Shoot, Misha... they're not ours anymore... not ours, you hear?.. I know... I know...",
+  cher_nuke: "Boys... Moscow has decided... they'll cover the district... with a nuke... hold on until the order... then get out... you hear?..",
+  cher_boss: "Misha... what is that?.. we don't know... where it came from... we don't know... it's coming for you...",
+  cher_exit: 'Get out!.. Misha, Vova... head {dir}... the strike is in twenty seconds... my dears, get out!..',
+  dir_n: 'north',
+  dir_s: 'south',
+  dir_w: 'west',
+  dir_e: 'east',
+  strikeIn: 'Strike in',
   cher_artillery: "Misha!.. Vova!.. get out of the square... they're about to shell it...",
   cher_lure: 'Vovochka... drag it onto the square... let them hit it... let them...',
   cher_end: 'Comrades... remember... this never happened...',
@@ -61,8 +71,9 @@ export default {
   giveUp: 'Finish',
   adLoading: 'Loading the ad…',
   adFailed: 'The ad did not show — cannot continue',
-  ending_convoy: 'The column got through. Officially, there was no accident.',
-  ending_late: 'Falcon was too late: the Object blocked the highway, the column took a detour.',
+  ending_convoy: 'Falcon left the district before the strike. The Object is destroyed. Officially, there was no accident.',
+  ending_late: 'Falcon left the district before the strike. What became of the Object, no one knows.',
+  ending_nuke: 'Falcon did not get out of the district in time.',
   ending_lost: 'Falcon went silent. The city is closed until further notice.',
   time: 'Time',
   kills: 'Kills',
@@ -82,6 +93,7 @@ export default {
   enemy_boss: 'The Object',
   enemy_wire: 'power lines',
   enemy_artillery: 'friendly shelling',
+  enemy_nuke: 'nuclear strike',
   downedAt: 'Shot down at',
 
   levelUp: 'Level',

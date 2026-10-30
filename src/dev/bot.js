@@ -179,21 +179,33 @@ export function installBot(game) {
         fy += ((crate.y - p.y) / cd) * w;
       }
 
-      // Не прижиматься к краям мира
-      const M = 500;
-      const { width: W, height: H } = sc.physics.world.bounds;
-      if (p.x < M) fx += ((M - p.x) / M) * 2;
-      if (p.x > W - M) fx -= ((p.x - W + M) / M) * 2;
-      if (p.y < M) fy += ((M - p.y) / M) * 2;
-      if (p.y > H - M) fy -= ((p.y - H + M) / M) * 2;
+      // Уход из района перед ударом — главное; к краю тогда прижиматься можно
+      const ex = sc.extraction;
+      if (ex?.active) {
+        const to = ex.target();
+        const d = Math.hypot(to.x - p.x, to.y - p.y) || 1;
+        fx += ((to.x - p.x) / d) * 3;
+        fy += ((to.y - p.y) / d) * 3;
+      } else {
+        // Не прижиматься к краям мира
+        const M = 500;
+        const { width: W, height: H } = sc.physics.world.bounds;
+        if (p.x < M) fx += ((M - p.x) / M) * 2;
+        if (p.x > W - M) fx -= ((p.x - W + M) / M) * 2;
+        if (p.y < M) fy += ((M - p.y) / M) * 2;
+        if (p.y > H - M) fy -= ((p.y - H + M) / M) * 2;
+      }
 
       const L = Math.hypot(fx, fy);
       if (L < 0.05) {
         p.target = null;
         return;
       }
+      // От вертолёта на экране, а не от центра: у края карты камера упирается и он уже не в центре
       const cam = sc.cameras.main;
-      p.target = { x: cam.width / 2 + (fx / L) * 150, y: cam.height / 2 + (fy / L) * 150 };
+      const sx = (p.x - cam.worldView.x) * cam.zoom;
+      const sy = (p.y - cam.worldView.y) * cam.zoom;
+      p.target = { x: sx + (fx / L) * 150, y: sy + (fy / L) * 150 };
     };
 
     const timer = manual ? null : setInterval(tick, 50);

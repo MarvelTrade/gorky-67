@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE } from '../config.js';
+import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { sfx } from '../systems/Sfx.js';
@@ -99,10 +99,18 @@ export class UIScene extends Phaser.Scene {
 
     // Таймер — сколько прожито (0:00 → 5:00), как и на экране итогов; последние 30 с краснеет
     const elapsed = Math.min(gs.spawner.elapsed, RUN.duration);
-    this.timerText
-      .setPosition(width / 2, XP_BAR_H + 6)
-      .setText(`${formatTime(elapsed)} / ${formatTime(RUN.duration)}`) // цель видна: сколько осталось продержаться
-      .setColor(RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
+    const ex = gs.extraction;
+    this.timerText.setPosition(width / 2, XP_BAR_H + 6);
+    if (ex.active) {
+      // Уход из района: вместо таймера забега — отсчёт до удара, мигает
+      this.timerText
+        .setText(`${t('strikeIn')} ${formatTime(Math.max(0, ex.left))}`)
+        .setColor(Math.floor(ex.left * 3) % 2 ? '#ff6a5a' : '#ffffff');
+    } else {
+      this.timerText
+        .setText(`${formatTime(elapsed)} / ${formatTime(RUN.duration)}`) // цель видна: сколько осталось продержаться
+        .setColor(RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
+    }
 
     // HP босса — под таймером, пока он жив
     const boss = gs.boss;
@@ -125,6 +133,10 @@ export class UIScene extends Phaser.Scene {
     this.drawAlert(g, width, height, delta / 1000, gs.scene.isPaused());
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
+    if (ex.active) {
+      const p2 = ex.target();
+      this.drawEdgeArrow(gs, g, p2.x, p2.y, EXTRACT.color, 1.4);
+    }
 
     // Под экраном паузы радио не показываем — иначе тексты наложатся
     this.radio.setVisible(!this.scene.isActive('PauseScene'));
@@ -269,34 +281,37 @@ export class UIScene extends Phaser.Scene {
 
   // Стрелка у края экрана к ящику снабжения, который сейчас не виден
   drawSupplyArrows(gs, g) {
+    for (const c of gs.supply.active) this.drawEdgeArrow(gs, g, c.x, c.y, 0xffd040);
+  }
+
+  // Стрелка у края экрана к точке мира за кадром: ящик, коридор ухода из района
+  drawEdgeArrow(gs, g, wx, wy, color, scale = 1) {
     const cam = gs.cameras.main;
     const view = cam.worldView;
+    if (view.contains(wx, wy)) return;
     const { width, height } = this.scale;
-    const m = 26; // отступ от края
-    for (const c of gs.supply.active) {
-      if (view.contains(c.x, c.y)) continue;
-      const sx = (c.x - view.x) * cam.zoom;
-      const sy = (c.y - view.y) * cam.zoom;
-      const cx = width / 2;
-      const cy = height / 2;
-      const a = Math.atan2(sy - cy, sx - cx);
-      // Точка на краю экрана по направлению к ящику
-      const k = Math.min((width / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (height / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
-      const x = cx + Math.cos(a) * k;
-      const y = cy + Math.sin(a) * k;
-      const tip = 14;
-      const back = 9;
-      g.fillStyle(0x000000, 0.5);
-      g.fillCircle(x, y, 14);
-      g.fillStyle(0xffd040);
-      g.fillTriangle(
-        x + Math.cos(a) * tip,
-        y + Math.sin(a) * tip,
-        x + Math.cos(a + 2.5) * back,
-        y + Math.sin(a + 2.5) * back,
-        x + Math.cos(a - 2.5) * back,
-        y + Math.sin(a - 2.5) * back
-      );
-    }
+    const m = 26 * scale; // отступ от края
+    const sx = (wx - view.x) * cam.zoom;
+    const sy = (wy - view.y) * cam.zoom;
+    const cx = width / 2;
+    const cy = height / 2;
+    const a = Math.atan2(sy - cy, sx - cx);
+    // Точка на краю экрана по направлению к цели
+    const k = Math.min((width / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (height / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+    const x = cx + Math.cos(a) * k;
+    const y = cy + Math.sin(a) * k;
+    const tip = 14 * scale;
+    const back = 9 * scale;
+    g.fillStyle(0x000000, 0.5);
+    g.fillCircle(x, y, 14 * scale);
+    g.fillStyle(color);
+    g.fillTriangle(
+      x + Math.cos(a) * tip,
+      y + Math.sin(a) * tip,
+      x + Math.cos(a + 2.5) * back,
+      y + Math.sin(a + 2.5) * back,
+      x + Math.cos(a - 2.5) * back,
+      y + Math.sin(a - 2.5) * back
+    );
   }
 }
