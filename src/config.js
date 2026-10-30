@@ -444,4 +444,12 @@ export const SUPPLY = {
 
 export const LEVELUP = {
   inputDelay: 0.35,     // с, пока карточки не кликаются (чтобы не выбрать случайно отпущенным пальцем)
+  // Карточки — «сталь», не военная олива (олива — цвет армии-врага, Иттен); категория — рамкой и иконкой
+  cardFill: 0x23282d,
+  cardHover: 0x2f363d,
+  categories: {
+    weapon: { color: 0xff9a3c, text: '#ffc58a' },  // оружие
+    defense: { color: 0x5fe08a, text: '#a6f0bd' }, // защита — как полоска брони
+    move: { color: 0x7fe3ff, text: '#bff2ff' },    // манёвр — как вертолёт
+  },
 };
