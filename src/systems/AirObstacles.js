@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { AIR, CITY, FX, WORLD } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { sfx } from './Sfx.js';
+import { buildingHeight } from '../cityLayout.js';
 
 // Воздушные препятствия: без них небо пустое и висеть над городом можно где угодно.
 //  - Высокие сооружения (радиовышка, водонапорные башни, колокольни, трубы) — стена без урона
@@ -15,6 +16,9 @@ export class AirObstacles {
     this.towers = scene.physics.add.staticGroup();
     this.wires = [];
     this.wireGfx = scene.add.graphics().setDepth(DEPTH.wires);
+    // Ток по проводам: бегущие искры и редкие дуги — видно, что под напряжением
+    this.currentGfx = scene.add.graphics().setDepth(DEPTH.wires).setBlendMode(Phaser.BlendModes.ADD);
+    this.time = 0;
     this.cut = 0; // для замеров: сколько проводов порвал вертолёт
   }
 
@@ -56,14 +60,13 @@ export class AirObstacles {
   }
 
   addTower(kind, def, x, y) {
-    const sh = AIR.shadow;
-    this.scene.add
-      .image(x + sh.x, y + sh.y, def.texture)
-      .setTint(0x000000)
-      .setAlpha(sh.alpha)
-      .setScale(1.1, 1.6)
-      .setDepth(DEPTH.towerShadow);
-    this.scene.add.image(x, y, def.texture).setDepth(DEPTH.towers);
+    // Спрайт из Blender в 3/4 (как дома): основание внизу кадра, originY — из towers.json.
+    // Нет файла — плоский значок сверху из BootScene, центр по центру.
+    const meta = this.scene.cache.json.get('towers')?.[def.texture];
+    const originY = meta ? meta.originY : 0.5;
+    const height = meta ? meta.h * originY - def.radius : def.radius * 3;
+    this.drawTowerShadow(x, y, def.radius, height);
+    this.scene.add.image(x, y, def.texture).setOrigin(0.5, originY).setDepth(DEPTH.towers + y / 1e5);
     const zone = this.scene.add.zone(x, y, def.radius * 2, def.radius * 2);
     this.towers.add(zone);
     zone.body.setCircle(def.radius);
@@ -72,6 +75,20 @@ export class AirObstacles {
     const r = def.radius;
     this.scene.nav.rects.push([x - r, y - r, r * 2, r * 2]);
     this.scene.nav.markBlocked([x - r, y - r, r * 2, r * 2]);
+  }
+
+  // Длинная тень по земле вправо-вниз: полоса шириной в основание, длина пропорциональна высоте
+  drawTowerShadow(x, y, r, height) {
+    const sh = AIR.shadow;
+    const g = (this.shadowGfx ??= this.scene.add.graphics().setDepth(DEPTH.towerShadow));
+    const len = height * sh.length;
+    const ex = x + len * Math.cos(sh.angle);
+    const ey = y + len * Math.sin(sh.angle);
+    const nx = -Math.sin(sh.angle) * r;
+    const ny = Math.cos(sh.angle) * r;
+    g.fillStyle(0x000000, sh.alpha);
+    g.fillPoints([{ x: x + nx, y: y + ny }, { x: ex + nx * 0.6, y: ey + ny * 0.6 }, { x: ex - nx * 0.6, y: ey - ny * 0.6 }, { x: x - nx, y: y - ny }], true);
+    g.fillCircle(x, y, r);
   }
 
   // Провод тянут между стенами двух домов, стоящих друг напротив друга через улицу или двор
@@ -84,11 +101,16 @@ export class AirObstacles {
         const [ax, ay, aw, ah] = rects[i];
         const [bx, by, bw, bh] = rects[j];
         // По горизонтали: b правее a (или наоборот), перекрытие по вертикали
+        // Дома нарисованы в 3/4 (Buildings): провод висит на высоте, а не на земле —
+        // между соседями слева-справа поднят на часть высоты, с севера на юг идёт
+        // от фасада северного дома к краю крыши южного
+        const HA = buildingHeight(aw, ah);
+        const HB = buildingHeight(bw, bh);
         const oy0 = Math.max(ay, by);
         const oy1 = Math.min(ay + ah, by + bh);
         const gapX = bx > ax ? bx - (ax + aw) : ax - (bx + bw);
         if (oy1 - oy0 >= W.minOverlap && gapX >= W.minGap && gapX <= W.maxGap) {
-          const y = (oy0 + oy1) / 2;
+          const y = (oy0 + oy1) / 2 - Math.min(HA, HB) * 0.6;
           const x1 = bx > ax ? ax + aw : bx + bw;
           cands.push([x1, y, x1 + gapX, y]);
         }
@@ -97,8 +119,10 @@ export class AirObstacles {
         const gapY = by > ay ? by - (ay + ah) : ay - (by + bh);
         if (ox1 - ox0 >= W.minOverlap && gapY >= W.minGap && gapY <= W.maxGap) {
           const x = (ox0 + ox1) / 2;
-          const y1 = by > ay ? ay + ah : by + bh;
-          cands.push([x, y1, x, y1 + gapY]);
+          const [north, Hn, Hs] = by > ay ? [[ay, ah], HA, HB] : [[by, bh], HB, HA];
+          const y1 = north[0] + north[1] - Hn * 0.5;
+          const y2 = north[0] + north[1] + gapY - Hs;
+          if (y2 - y1 >= W.minGap * 0.6) cands.push([x, y1, x, y2]);
         }
       }
     }
@@ -112,7 +136,7 @@ export class AirObstacles {
       if (Math.hypot(mx - cx, my - cy) < AIR.startClear / 2) continue;
       // Не скучивать пролёты: середины не ближе 150 px
       if (this.wires.some((o) => Math.hypot((o.x1 + o.x2) / 2 - mx, (o.y1 + o.y2) / 2 - my) < 150)) continue;
-      this.wires.push({ x1: w[0], y1: w[1], x2: w[2], y2: w[3], alive: true });
+      this.wires.push({ x1: w[0], y1: w[1], x2: w[2], y2: w[3], alive: true, phase: rnd.frac() });
     }
   }
 
@@ -135,8 +159,42 @@ export class AirObstacles {
     }
   }
 
+  // Бегущие по проводам искры и случайные дуги; только для пролётов в кадре
+  drawCurrent(dt) {
+    const E = AIR.wires.current;
+    this.time += dt;
+    const g = this.currentGfx.clear();
+    const view = this.scene.cameras.main.worldView;
+    for (const w of this.wires) {
+      if (!w.alive) continue;
+      if (Math.max(w.x1, w.x2) < view.x - 20 || Math.min(w.x1, w.x2) > view.right + 20) continue;
+      if (Math.max(w.y1, w.y2) < view.y - 20 || Math.min(w.y1, w.y2) > view.bottom + 20) continue;
+      const len = Math.hypot(w.x2 - w.x1, w.y2 - w.y1);
+      const n = Math.max(1, Math.round(len / E.spacing));
+      for (let i = 0; i < n; i++) {
+        const t = ((this.time * E.speed) / len + i / n + w.phase) % 1;
+        const x = w.x1 + (w.x2 - w.x1) * t;
+        const y = w.y1 + (w.y2 - w.y1) * t;
+        g.fillStyle(0x7fd8ff, 0.35);
+        g.fillCircle(x, y, 4);
+        g.fillStyle(0xe8f8ff, 1);
+        g.fillCircle(x, y, 1.6);
+      }
+      // Дуга у изолятора: ломаная из коротких отрезков, мигает
+      if (Math.sin(this.time * 9 + w.phase * 40) > E.arcThreshold) {
+        const [ex, ey] = Math.sin(w.phase * 99) > 0 ? [w.x1, w.y1] : [w.x2, w.y2];
+        g.lineStyle(1.5, 0xbfeaff, 0.9);
+        g.beginPath();
+        g.moveTo(ex, ey);
+        for (let k = 1; k <= 3; k++) g.lineTo(ex + Phaser.Math.Between(-7, 7), ey + Phaser.Math.Between(-7, 7));
+        g.strokePath();
+      }
+    }
+  }
+
   // Пролёт через провод: урон (с обычной неуязвимостью), искры, провод рвётся
-  update() {
+  update(dt) {
+    this.drawCurrent(dt);
     const p = this.player;
     if (!p.alive) return;
     const R = this.scene.player.body.halfWidth + AIR.wires.hitPad;

@@ -1,7 +1,5 @@
-import { CITY } from './config.js';
-
 // Дома в каждом виде квартала: [x, y, ширина, высота] в координатах текстуры квартала.
-// По этой таблице BootScene рисует кварталы, а GameScene ищет крыши для ящиков снабжения.
+// По этой таблице CityNav строит пятна домов в мире (с поворотом квартала), а Buildings рисует их в 3/4.
 export const BUILDINGS = [
   // две длинные девятиэтажки и двор между ними
   [
@@ -22,15 +20,10 @@ export const BUILDINGS = [
   [],
 ];
 
-// Центры крыш квартала в координатах мира. Квартал повёрнут на quarter × 90° вокруг своего центра.
-export function roofCenters(variant, quarter, tileX, tileY) {
-  const half = CITY.tile / 2;
-  const a = (quarter * Math.PI) / 2;
-  const cos = Math.round(Math.cos(a));
-  const sin = Math.round(Math.sin(a));
-  return BUILDINGS[variant].map(([x, y, w, h]) => {
-    const lx = x + w / 2 - half;
-    const ly = y + h / 2 - half;
-    return { x: tileX + half + lx * cos - ly * sin, y: tileY + half + lx * sin + ly * cos };
-  });
+// Высота дома на экране (px) в виде 3/4: крыша поднята на столько над пятном дома, под ней — фасад.
+// Точечные башни выше длинных девятиэтажек, те — выше коротких корпусов.
+export function buildingHeight(w, h) {
+  if (w >= 100 && h >= 100) return 46;
+  if (Math.max(w, h) >= 260) return 34;
+  return 26;
 }

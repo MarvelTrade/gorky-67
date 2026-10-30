@@ -1,0 +1,22 @@
+{
+ "towerRadio": {
+  "w": 80,
+  "h": 242,
+  "originY": 0.8512
+ },
+ "towerWater": {
+  "w": 64,
+  "h": 128,
+  "originY": 0.7812
+ },
+ "towerBell": {
+  "w": 54,
+  "h": 138,
+  "originY": 0.8333
+ },
+ "towerChimney": {
+  "w": 46,
+  "h": 168,
+  "originY": 0.8869
+ }
+}

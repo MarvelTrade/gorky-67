@@ -11,12 +11,13 @@ import { MissileLauncher } from '../entities/MissileLauncher.js';
 import { WaveSpawner } from '../systems/WaveSpawner.js';
 import { Upgrades } from '../systems/Upgrades.js';
 import { Fx } from '../systems/Fx.js';
-import { roofCenters } from '../cityLayout.js';
+import { Buildings } from '../systems/Buildings.js';
 import { Supply } from '../systems/Supply.js';
 import { Flares } from '../systems/Flares.js';
 import { RunEvents } from '../systems/RunEvents.js';
 import { CityNav } from '../systems/CityNav.js';
 import { AirObstacles } from '../systems/AirObstacles.js';
+import { Wrecks } from '../systems/Wrecks.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -72,6 +73,8 @@ export class GameScene extends Phaser.Scene {
     // Высокие сооружения и провода — до стен: башни тоже станут стенами для наземных врагов
     this.air = new AirObstacles(this, this.player);
     this.air.build();
+    this.wrecks = new Wrecks(this);
+    this.wrecks.build();
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
@@ -400,10 +403,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Город: кварталы случайного вида и поворота — каждый забег улицы немного другие.
-  // Заодно собираем центры крыш — на них появляются ящики снабжения.
+  // Дома рисуются отдельно, в виде 3/4 (Buildings), по пятнам из CityNav; крыши — для ящиков снабжения.
   drawGround() {
     const s = CITY.tile;
-    this.roofs = [];
     for (let y = 0; y < WORLD.height; y += s) {
       for (let x = 0; x < WORLD.width; x += s) {
         const variant = Phaser.Math.Between(0, CITY.variants - 1);
@@ -412,17 +414,18 @@ export class GameScene extends Phaser.Scene {
           .image(x + s / 2, y + s / 2, `city${variant}`)
           .setAngle(quarter * 90)
           .setDepth(DEPTH.ground);
-        this.roofs.push(...roofCenters(variant, quarter, x, y));
         this.nav.addTile(variant, quarter, x, y);
       }
     }
+    this.roofs = new Buildings(this).build(this.nav.rects);
   }
 
   update(time, delta) {
     if (this.ended || this.dying) return;
     const dt = delta / 1000;
     this.player.update(dt);
-    this.air.update();
+    this.air.update(dt);
+    this.wrecks.update(dt);
     this.gun.update(dt);
     this.missiles.update(dt);
     this.flares.update(dt);

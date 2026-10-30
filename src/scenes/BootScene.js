@@ -1,10 +1,10 @@
 import * as Phaser from 'phaser';
 import { PALETTE as P, CITY } from '../config.js';
-import { BUILDINGS } from '../cityLayout.js';
 
 // Отрендеренные в Blender спрайты (tools/blender/make_sprites.py → public/sprites/<ключ>.png).
 // Если PNG есть — он заменяет текстуру из примитивов с тем же ключом и размером.
 const BLENDER_SPRITES = ['heli', 'rotor', 'infantry', 'jeep', 'aa', 'tank', 'boss'];
+const TOWER_SPRITES = ['towerRadio', 'towerWater', 'towerBell', 'towerChimney'];
 
 // Генерирует текстуры из примитивов; часть заменяется PNG из Blender.
 // Все спрайты смотрят вправо (угол 0).
@@ -15,6 +15,9 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     for (const key of BLENDER_SPRITES) this.load.image(key, `sprites/${key}.png`);
+    // Высокие сооружения в 3/4: PNG + где в кадре центр основания (towers.json от make_sprites.py)
+    for (const key of TOWER_SPRITES) this.load.image(key, `sprites/${key}.png`);
+    this.load.json('towers', 'sprites/towers.json');
   }
 
   create() {
@@ -376,35 +379,10 @@ export class BootScene extends Phaser.Scene {
       g.fillStyle(P.yard);
       g.fillRect(CITY.road + 6, CITY.road + 6, s - CITY.road * 2 - 12, s - CITY.road * 2 - 12);
       draw(g);
-      // Дома — из общей таблицы, по ней же GameScene находит крыши
-      for (const [x, y, w, h] of BUILDINGS[i]) this.building(g, x, y, w, h);
+      // Дома в квартал не запекаются: их рисует GameScene в виде 3/4 (Buildings) — фасад всегда к югу,
+      // а квартал поворачивается
       this.makeTexture(g, `city${i}`, s, s);
     });
-  }
-
-  // Панельный дом сверху: тень, крыша с подъездными секциями и выходами на крышу
-  building(g, x, y, w, h) {
-    g.fillStyle(0x000000, 0.28);
-    g.fillRect(x + 8, y + 8, w, h);
-    g.fillStyle(P.panel);
-    g.fillRect(x, y, w, h);
-    g.lineStyle(2, P.panelDark);
-    g.strokeRect(x, y, w, h);
-    const long = w >= h;
-    const len = long ? w : h;
-    const sections = Math.max(1, Math.round(len / 46));
-    const step = len / sections;
-    g.lineStyle(1, P.panelDark, 0.7);
-    for (let i = 1; i < sections; i++) {
-      if (long) g.lineBetween(x + i * step, y, x + i * step, y + h);
-      else g.lineBetween(x, y + i * step, x + w, y + i * step);
-    }
-    g.fillStyle(P.panelDark);
-    for (let i = 0; i < sections; i++) {
-      const cx = long ? x + (i + 0.5) * step : x + w / 2;
-      const cy = long ? y + h / 2 : y + (i + 0.5) * step;
-      g.fillRect(cx - 4, cy - 4, 8, 8);
-    }
   }
 
   tree(g, x, y, r) {
