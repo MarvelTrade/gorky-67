@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -21,6 +21,7 @@ import { Wrecks } from '../systems/Wrecks.js';
 import { Artillery } from '../systems/Artillery.js';
 import { Extraction } from '../systems/Extraction.js';
 import { Depots } from '../systems/Depots.js';
+import { Tracks } from '../systems/Tracks.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -84,11 +85,13 @@ export class GameScene extends Phaser.Scene {
     this.artillery = new Artillery(this, this.player);
     this.extraction = new Extraction(this);
     this.depots = new Depots(this, this.player);
+    this.tracks = new Tracks(this);
     this.rerolls = LEVELUP.rerolls;
     applyMeta(this); // «Ангар»: броня, калибр, двигатель, магнит, перекруты
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
-    this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
+    // Танки и «Объект» идут сквозь дома и ломают их (Tracks), остальные обходят по улицам
+    this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss' && enemy.type !== 'tank');
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
       if (bullet.only?.active && enemy !== bullet.only) return;
@@ -213,7 +216,7 @@ export class GameScene extends Phaser.Scene {
     }
     const p = this.player;
     p.hide();
-    this.explosionFx(p.x, p.y, 70);
+    this.explosionFx(p.x, p.y, 70, false);
     this.fx.debris.explode(24, p.x, p.y);
     this.fx.shake(FX.deathShake);
     sfx.play('explosion');
@@ -386,7 +389,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Взрывы редкие (раз в пару секунд), поэтому без пула
-  explosionFx(x, y, r) {
+  // Пыль от рухнувшего дома
+  dust(x, y, r) {
+    this.fx.debris?.explode(Math.round(r / 4), x, y);
+    this.cameras.main.shake(180, 0.004);
+  }
+
+  // onGround — взрыв на земле ломает дома; вертолёт взрывается в воздухе — нет
+  explosionFx(x, y, r, onGround = true) {
+    if (onGround) this.buildings.damageAt(x, y, r, r * RUINS.blast);
     const c = this.add.circle(x, y, r, 0xffa040, 0.6).setDepth(DEPTH.bullets);
     this.tweens.add({
       targets: c,
@@ -473,6 +484,7 @@ export class GameScene extends Phaser.Scene {
     this.flares.update(dt);
     this.supply.update(dt);
     this.depots.update(dt);
+    this.tracks.update(dt);
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);

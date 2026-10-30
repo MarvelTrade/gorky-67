@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { SPAWN, EVENTS } from '../config.js';
+import { SPAWN, EVENTS, RUINS } from '../config.js';
 import { DEPTH } from '../depth.js';
 
 const FLASH_TIME = 0.06;
@@ -204,9 +204,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   updateTank(dt, dx, dy, dist) {
     const cfg = this.cfg;
     const aim = Math.atan2(dy, dx);
-    // Едет по улице в обход домов, а стреляет, когда корпус смотрит на игрока
-    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, this.pathAngle(dx, dy), cfg.turnRate * dt);
-    this.body.setVelocity(Math.cos(this.rotation) * this.speed, Math.sin(this.rotation) * this.speed);
+    // Едет прямо на игрока, сквозь дома (ломает их, внутри — медленнее), стреляет, когда корпус смотрит на игрока
+    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, aim, cfg.turnRate * dt);
+    const v = this.speed * (this.inHouse ? RUINS.tankSlow : 1);
+    this.body.setVelocity(Math.cos(this.rotation) * v, Math.sin(this.rotation) * v);
 
     this.timer -= dt;
     const aimed = Math.abs(Phaser.Math.Angle.Wrap(aim - this.rotation)) < cfg.aimTolerance;

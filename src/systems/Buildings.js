@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { CHAOS, PALETTE as P } from '../config.js';
+import { CHAOS, RUINS, PALETTE as P } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { buildingHeight } from '../cityLayout.js';
 
@@ -7,6 +7,8 @@ import { buildingHeight } from '../cityLayout.js';
 // а рисуется крыша, поднятая на высоту дома, и южный фасад с окнами и подъездами под ней.
 // Вид строго сверху читался как плоские плиты, а высокие сооружения — как люки.
 // Текстура — одна на каждый размер дома; домов ~170, размеров — несколько.
+const RUIN_H = 6; // px — высота груды обломков на экране
+
 export class Buildings {
   constructor(scene) {
     this.scene = scene;
@@ -18,6 +20,7 @@ export class Buildings {
   build(rects, rnd = Phaser.Math.RND) {
     this.roofs = [];
     this.fires = [];
+    this.list = []; // дома с HP — для разрушений
     for (const [x, y, w, h] of rects) {
       const H = buildingHeight(w, h);
       const r = rnd.frac();
@@ -35,11 +38,84 @@ export class Buildings {
       this.shadows.fillStyle(0x000000, 0.3);
       this.shadows.fillRect(x + 10, y + 8, w, h);
       // Южнее — ближе к зрителю: перекрывает северного соседа (в пределах слоя домов)
-      this.scene.add.image(x, y - H, key).setOrigin(0, 0).setDepth(DEPTH.buildings + (y + h) / 1e5);
+      const img = this.scene.add.image(x, y - H, key).setOrigin(0, 0).setDepth(DEPTH.buildings + (y + h) / 1e5);
       // Центр крыши на экране — туда падают ящики снабжения
-      this.roofs.push({ x: x + w / 2, y: y + h / 2 - H });
+      const roof = { x: x + w / 2, y: y + h / 2 - H };
+      this.roofs.push(roof);
+      const maxHp = w * h * RUINS.hpPerArea;
+      // Дом «после обстрела» уже потрёпан — рушится быстрее
+      this.list.push({ x, y, w, h, H, img, roof, state, maxHp, hp: state === 'shelled' ? maxHp * RUINS.damaged : maxHp });
     }
     return this.roofs;
+  }
+
+  // Взрыв: урон всем домам, чьё пятно задевает круг
+  damageAt(x, y, r, amount) {
+    for (const b of this.list) {
+      if (b.state === 'ruined') continue;
+      const nx = Phaser.Math.Clamp(x, b.x, b.x + b.w);
+      const ny = Phaser.Math.Clamp(y, b.y, b.y + b.h);
+      if ((nx - x) ** 2 + (ny - y) ** 2 <= r * r) this.hit(b, amount);
+    }
+  }
+
+  // Дом под точкой (x, y) или null
+  at(x, y) {
+    for (const b of this.list) {
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b;
+    }
+    return null;
+  }
+
+  hit(b, amount) {
+    if (b.state === 'ruined') return;
+    b.hp -= amount;
+    if (b.hp <= 0) this.collapse(b);
+    else if (b.hp < b.maxHp * RUINS.damaged && b.state === 'ok') this.setState(b, 'shelled');
+  }
+
+  setState(b, state) {
+    b.state = state;
+    b.img.setTexture(this.texture(b.w, b.h, b.H, state));
+  }
+
+  // Руины: дом становится низкой грудой обломков на земле — ниже врагов и следов,
+  // крыши больше нет (ящики туда не падают), поднимается пыль
+  collapse(b) {
+    b.state = 'ruined';
+    b.hp = 0;
+    b.img.setTexture(this.ruinTexture(b.w, b.h)).setPosition(b.x, b.y - RUIN_H).setDepth(DEPTH.ground + 1.4);
+    const i = this.roofs.indexOf(b.roof);
+    if (i >= 0) this.roofs.splice(i, 1);
+    this.scene.dust?.(b.x + b.w / 2, b.y + b.h / 2, Math.max(b.w, b.h) / 2);
+  }
+
+  // Груда обломков на месте дома: плиты, куски стен по краю, копоть
+  ruinTexture(w, h) {
+    const key = `ruin_${w}x${h}`;
+    if (this.scene.textures.exists(key)) return key;
+    const rnd = new Phaser.Math.RandomDataGenerator([key]);
+    const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x3e4144);
+    g.fillRect(0, RUIN_H, w, h);
+    g.fillStyle(0x1c1d1f, 0.6);
+    for (let i = 0; i < 3; i++) g.fillCircle(rnd.between(6, w - 6), RUIN_H + rnd.between(6, h - 6), rnd.between(10, 20));
+    const n = Math.round((w * h) / 280); // реже — иначе груда рябит
+    for (let i = 0; i < n; i++) {
+      g.fillStyle(rnd.pick([0x8a8f95, 0x6c7176, 0x5d6269, 0x9aa0a6]));
+      g.fillRect(rnd.between(0, w - 8), RUIN_H + rnd.between(0, h - 6), rnd.between(4, 12), rnd.between(3, 7));
+    }
+    // Обломки стен по южному краю — видно, что тут стоял дом
+    g.fillStyle(0x5d6269);
+    for (let x = 2; x < w - 6; x += rnd.between(10, 22)) {
+      const sh = rnd.between(3, RUIN_H + 4);
+      g.fillRect(x, RUIN_H + h - sh, rnd.between(4, 9), sh);
+    }
+    g.lineStyle(1, 0x2a2e33, 0.8);
+    g.strokeRect(0, RUIN_H, w, h);
+    g.generateTexture(key, w, h + RUIN_H);
+    g.destroy();
+    return key;
   }
 
   texture(w, h, H, state = 'ok') {
