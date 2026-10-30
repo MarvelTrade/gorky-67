@@ -28,7 +28,7 @@ import { Lab } from '../systems/Lab.js';
 import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
 import { Train } from '../systems/Train.js';
-import { DISTRICTS, DISTRICT_VARIANT, AVENUES } from '../cityLayout.js';
+import { DISTRICTS, DISTRICT_VARIANT, AVENUES, TILE_FACING } from '../cityLayout.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -525,7 +525,7 @@ export class GameScene extends Phaser.Scene {
         (this.districts[d] ??= []).push({ x, y });
         const v = DISTRICT_VARIANT[d];
         const variant = Array.isArray(v) ? Phaser.Utils.Array.GetRandom(v) : v ?? Phaser.Math.Between(0, CITY.residential - 1);
-        const quarter = 'RPTWQY'.includes(d) ? Phaser.Math.Between(0, 3) : 0;
+        const quarter = TILE_FACING[`${x / s},${y / s}`] ?? ('RPTWQY'.includes(d) ? Phaser.Math.Between(0, 3) : 0);
         this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
         if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
@@ -638,8 +638,13 @@ export class GameScene extends Phaser.Scene {
         g.fillStyle(0x000000, 0.25).fillRect(x1 + 4, y1 + 3, x2 - x1, H);
         g.fillStyle(0xb4b2a8).fillRect(x1, y1 - H, x2 - x1, H);
         g.fillStyle(0xcfcdc4).fillRect(x1, y1 - H, x2 - x1, 2);
-        g.lineStyle(1, 0x8a887e);
-        for (let x = x1; x < x2 - 4; x += 8) g.strokeTriangle(x, y1 - H / 2, x + 4, y1 - H + 2, x + 8, y1 - H / 2).strokeTriangle(x, y1 - H / 2, x + 4, y1 - 2, x + 8, y1 - H / 2);
+        // «Ромбики» — тёмные залитые ромбы во всю высоту плиты: тонкие контуры по 8 px на телефоне
+        // сливались в штриховку
+        g.fillStyle(0x86847a);
+        for (let x = x1 + 2; x < x2 - 8; x += 10) {
+          g.fillTriangle(x, y1 - H / 2, x + 4, y1 - H + 2, x + 8, y1 - H / 2);
+          g.fillTriangle(x, y1 - H / 2, x + 4, y1 - 2, x + 8, y1 - H / 2);
+        }
         g.fillStyle(0x7a786e);
         for (let x = x1; x <= x2; x += 40) g.fillRect(x - 1, y1 - H, 3, H); // стыки плит
       } else {
