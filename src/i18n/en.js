@@ -61,6 +61,16 @@ export default {
   bossShort: 'object',
 
   pause: 'Paused',
+  settings: 'Settings',
+  sound: 'Sound',
+  volume: 'Volume',
+  shake: 'Screen shake',
+  language: 'Language',
+  on: 'on',
+  off: 'off',
+  done: 'Done',
+  upgradesTaken: 'Upgrades',
+  noneYet: 'none yet',
   resume: 'Resume',
   quitToMenu: 'Quit to menu',
 

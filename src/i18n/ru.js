@@ -66,6 +66,16 @@ export default {
 
   // Пауза
   pause: 'Пауза',
+  settings: 'Настройки',
+  sound: 'Звук',
+  volume: 'Громкость',
+  shake: 'Тряска экрана',
+  language: 'Язык',
+  on: 'вкл',
+  off: 'выкл',
+  done: 'Готово',
+  upgradesTaken: 'Улучшения',
+  noneYet: 'пока нет',
   resume: 'Продолжить',
   quitToMenu: 'Выйти в меню',
 

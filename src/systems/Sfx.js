@@ -9,6 +9,8 @@ class SfxEngine {
     this.ctx = sm.context ?? null; // нет WebAudio — играем без звука
     if (!this.ctx) return;
     this.out = this.ctx.createGain();
+    this.level = 1; // ползунок громкости из настроек, 0..1
+    this.ducked = false;
     this.out.gain.value = SFX.volume;
     this.out.connect(sm.destination ?? this.ctx.destination);
     this.last = {};
@@ -24,9 +26,20 @@ class SfxEngine {
 
   // Приглушить всё (затишье перед боссом) или вернуть громкость
   duck(on) {
+    this.ducked = on;
+    this.applyGain(0.4);
+  }
+
+  // Громкость из настроек
+  setVolume(v) {
+    this.level = v;
+    this.applyGain(0.05);
+  }
+
+  applyGain(ramp) {
     if (!this.ctx) return;
-    const v = SFX.volume * (on ? SFX.duckLevel : 1);
-    this.out.gain.setTargetAtTime(v, this.ctx.currentTime, 0.4);
+    const v = SFX.volume * this.level * (this.ducked ? SFX.duckLevel : 1);
+    this.out.gain.setTargetAtTime(Math.max(0.0001, v), this.ctx.currentTime, ramp);
   }
 
   // Не чаще SFX.minGap[name] — иначе пулемёт и пачка кристаллов сливаются в гул

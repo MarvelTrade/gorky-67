@@ -6,8 +6,13 @@ const STRINGS = { ru, en };
 
 let lang = 'ru';
 
-export function initLang() {
-  lang = platform.getLang();
+// override — язык, выбранный в настройках (иначе — платформы или браузера)
+export function initLang(override = null) {
+  lang = override ?? platform.getLang();
+}
+
+export function getLang() {
+  return lang;
 }
 
 export function t(key) {

@@ -22,6 +22,7 @@ import { Artillery } from '../systems/Artillery.js';
 import { Extraction } from '../systems/Extraction.js';
 import { Depots } from '../systems/Depots.js';
 import { meta, applyMeta } from '../meta.js';
+import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -169,6 +170,10 @@ export class GameScene extends Phaser.Scene {
     this.events.on('player-died', (cause) => this.onPlayerDied(cause));
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
+    // Тряску экрана можно выключить в настройках — проверяем при каждом вызове, чтобы работало и из паузы
+    const cam = this.cameras.main;
+    const shake = cam.shake.bind(cam);
+    cam.shake = (...args) => (settings.shake ? shake(...args) : cam);
     this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
     this.fitZoom();
     this.scale.on('resize', this.fitZoom, this);
@@ -316,6 +321,10 @@ export class GameScene extends Phaser.Scene {
     const banners = [...this.banners];
     banners.forEach((b) => b.setVisible(false));
     this.scene.launch('PauseScene', {
+      // Что уже взято за забег — чтобы на паузе спокойно посмотреть сборку
+      taken: Object.entries(this.upgrades.levels).map(([id, lv]) => `${t(`upg_${id}`)} ${lv}`),
+      time: this.spawner.elapsed,
+      kills: this.kills,
       onResume: () => {
         banners.forEach((b) => b.active && b.setVisible(true));
         this.scene.resume();
