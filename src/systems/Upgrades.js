@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { UPGRADES } from '../config.js';
+import { UPGRADES, ORDNANCE } from '../config.js';
 import { t } from '../i18n/index.js';
 
 // Что делает каждое улучшение. scene — GameScene.
@@ -28,13 +28,24 @@ const DEFS = {
     if (st.count > 0) st.cooldown *= UPGRADES.missileCooldownMul;
     st.count++;
   },
+  bombs: (s) => s.ordnance.level.bombs++,
+  napalm: (s) => s.ordnance.level.napalm++,
+  rockets: (s) => s.ordnance.level.rockets++,
+  gas: (s) => s.ordnance.level.gas++,
 };
+
+// Виды доп. оружия — их можно взять не больше ORDNANCE.slots за забег
+const SLOT_WEAPONS = ['missile', 'bombs', 'napalm', 'rockets', 'gas'];
 
 // Категория — цвет рамки и иконка карточки: оружие / защита / манёвр (Ходент: различимость выбора)
 export const CATEGORY = {
   damage: 'weapon',
   fireRate: 'weapon',
   missile: 'weapon',
+  bombs: 'weapon',
+  napalm: 'weapon',
+  rockets: 'weapon',
+  gas: 'weapon',
   hp: 'defense',
   flares: 'defense',
   speed: 'move',
@@ -43,6 +54,13 @@ export const CATEGORY = {
 
 // Крупные числа — целыми («387», не «387.2»), мелкие — с десятыми («8.4»)
 const fmt = (v) => (v >= 50 || Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1));
+
+// Подвесное оружие: «— → 3» для нового, дальше «3 → 4»
+function ordPreview(s, kind, key, unit) {
+  const lv = s.ordnance.level[kind];
+  const v = ORDNANCE[kind][key];
+  return [lv ? v[lv - 1] : '—', v[lv], unit];
+}
 
 // «Было → стало» в цифрах, а не «+25%»: игрок видит, что именно получит
 const PREVIEW = {
@@ -56,6 +74,10 @@ const PREVIEW = {
     // Первая ракета — «0 → 1», дальше растёт залп и короче перезарядка
     return st.count === 0 ? [0, 1, ''] : [st.count, st.count + 1, ''];
   },
+  bombs: (s) => ordPreview(s, 'bombs', 'count', ''),
+  napalm: (s) => ordPreview(s, 'napalm', 'dps', t('perSec')),
+  rockets: (s) => ordPreview(s, 'rockets', 'count', ''),
+  gas: (s) => ordPreview(s, 'gas', 'dps', t('perSec')),
   flares: (s) => {
     const lv = s.flares.level;
     const cd = UPGRADES.flares.cooldown;
@@ -71,7 +93,11 @@ export class Upgrades {
 
   // До n случайных разных улучшений, которые ещё не на максимуме
   roll(n) {
-    const ids = Object.keys(DEFS).filter((id) => this.level(id) < UPGRADES.maxLevel[id]);
+    // Слоты оружия заняты — новых видов не предлагаем, только прокачку взятых
+    const owned = SLOT_WEAPONS.filter((id) => this.level(id) > 0).length;
+    const ids = Object.keys(DEFS).filter(
+      (id) => this.level(id) < UPGRADES.maxLevel[id] && !(SLOT_WEAPONS.includes(id) && this.level(id) === 0 && owned >= ORDNANCE.slots)
+    );
     return Phaser.Utils.Array.Shuffle(ids)
       .slice(0, n)
       .map((id) => ({

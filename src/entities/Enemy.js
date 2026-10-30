@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { SPAWN, EVENTS, RUINS } from '../config.js';
+import { SPAWN, EVENTS, RUINS, ORDNANCE } from '../config.js';
 import { DEPTH } from '../depth.js';
 
 const FLASH_TIME = 0.06;
@@ -46,12 +46,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
   }
 
-  hit(damage) {
+  // quiet — урон тиками (огонь, реагент): без цифры, иначе экран в «13»
+  hit(damage, quiet = false) {
     if (!this.active) return false;
     this.hp -= damage;
     this.flash = FLASH_TIME;
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
-    this.scene.events.emit('enemy-hit', this, damage);
+    this.scene.events.emit('enemy-hit', this, damage, quiet);
     if (this.type === 'boss' && !this.phase2 && this.hp > 0 && this.hp <= this.maxHp * EVENTS.bossSwarm.atHpFrac) {
       this.phase2 = true;
       this.volleyEvery /= EVENTS.bossSwarm.fireRateMul;
@@ -98,7 +99,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     switch (this.cfg.behavior) {
       case 'chase': {
         const a = this.pathAngle(dx, dy);
-        this.body.setVelocity(Math.cos(a) * this.speed, Math.sin(a) * this.speed);
+        // В облаке «Нейтрализатора» — медленнее
+        if (this.slowT > 0) this.slowT -= dt;
+        const v = this.speed * (this.slowT > 0 ? ORDNANCE.slowMul : 1);
+        this.body.setVelocity(Math.cos(a) * v, Math.sin(a) * v);
         this.rotation = a;
         if (this.cfg.hopRange) this.updateHop(dt, dist);
         break;

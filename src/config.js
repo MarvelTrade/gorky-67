@@ -472,6 +472,18 @@ export const MISSILE = {
   range: 650,           // радиус поиска цели
 };
 
+// Подвесное вооружение (Ordnance) — карточки на барабанах. По уровням (индекс 0 — 1-й уровень)
+export const ORDNANCE = {
+  slots: 3,             // видов доп. оружия за забег, вместе с ракетами: всё не взять — выбираешь сборку
+  fallTime: 0.45,       // с — бомба/бак падает с высоты полёта
+  tick: 0.25,           // с — тик урона луж огня и облаков
+  slowMul: 0.55,        // скорость врага в облаке реагента
+  bombs: { cooldown: [3.5, 3.2, 2.9, 2.6], count: [3, 4, 5, 6], damage: [30, 34, 38, 42], radius: 55, spread: 70 },
+  napalm: { cooldown: [5, 4.6, 4.2, 3.8], radius: [65, 75, 85, 95], duration: [4, 4.5, 5, 5.5], dps: [18, 22, 26, 30], aim: 260 },
+  rockets: { cooldown: [3, 2.8, 2.6, 2.4], count: [4, 5, 6, 8], damage: [24, 28, 32, 36], radius: 42, speed: 620, range: 420, fan: 0.12, hitRadius: 18 },
+  gas: { cooldown: [0.45, 0.4, 0.35, 0.3], radius: [42, 48, 54, 60], dps: [9, 11, 13, 16], life: 3, slowTime: 0.4 },
+};
+
 export const UPGRADES = {
   damageMul: 1.25,
   fireRateMul: 1.2,
@@ -484,7 +496,7 @@ export const UPGRADES = {
     cooldown: [6, 5, 4, 3],     // с между отстрелами
     radius: [110, 135, 160, 185], // px вокруг вертолёта
   },
-  maxLevel: { damage: 5, fireRate: 5, speed: 4, magnet: 4, hp: 5, missile: 4, flares: 4 },
+  maxLevel: { damage: 5, fireRate: 5, speed: 4, magnet: 4, hp: 5, missile: 4, flares: 4, bombs: 4, napalm: 4, rockets: 4, gas: 4 },
 };
 
 // События забега — темп: орды, тишина перед боссом, вторая фаза босса

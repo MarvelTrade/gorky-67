@@ -306,6 +306,25 @@ function drawIcon(g, id, color) {
       }
       g.fillCircle(0, 0, 3);
       break;
+    case 'bombs': // три бомбочки
+      for (const x of [-6, 0, 6]) {
+        g.fillCircle(x, 2 + Math.abs(x) * 0.3, 3.2);
+        g.fillTriangle(x - 2, -2 + Math.abs(x) * 0.3, x + 2, -2 + Math.abs(x) * 0.3, x, -7 + Math.abs(x) * 0.3);
+      }
+      break;
+    case 'napalm': // пламя
+      g.fillTriangle(-8, 9, 8, 9, 0, -11);
+      g.fillStyle(0x000000, 0.35).fillTriangle(-4, 9, 4, 9, 0, -2);
+      break;
+    case 'rockets': // блок: три ракеты в ряд
+      for (const x of [-6, 0, 6]) {
+        g.fillRect(x - 1.5, -4, 3, 11);
+        g.fillTriangle(x - 1.5, -4, x + 1.5, -4, x, -9);
+      }
+      break;
+    case 'gas': // облако
+      g.fillCircle(-5, 2, 5).fillCircle(3, 0, 6).fillCircle(7, 4, 4).fillRect(-6, 3, 13, 5);
+      break;
     case 'speed': // шевроны
       for (const x of [-5, 3]) g.strokePoints([{ x: x - 3, y: -7 }, { x: x + 4, y: 0 }, { x: x - 3, y: 7 }]);
       break;
