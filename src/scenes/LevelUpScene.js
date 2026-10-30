@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { LEVELUP } from '../config.js';
 import { t } from '../i18n/index.js';
 import { onTap } from '../ui/tap.js';
+import { sfx } from '../systems/Sfx.js';
 
 const PAD = 12;
 const GAP = 8;
@@ -22,8 +23,9 @@ export class LevelUpScene extends Phaser.Scene {
     this.ready = false;
     this.time.delayedCall(LEVELUP.inputDelay * 1000, () => (this.ready = true));
 
-    // Затемняем только нижнюю полосу с карточками — игра сверху остаётся видна
+    // Полоса затемнения за карточками посередине экрана — игра сверху и снизу видна
     this.band = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.6).setOrigin(0);
+    this.casingRain();
     this.title = this.add
       .text(0, 0, `${t('levelUp')} ${data.level}`, {
         fontFamily: 'sans-serif',
@@ -43,6 +45,11 @@ export class LevelUpScene extends Phaser.Scene {
     });
 
     this.layout();
+    // Карточки «выпрыгивают» по очереди — награда ощущается событием, а не всплывающим меню
+    this.cards.forEach((card, i) => {
+      card.setScale(0.6).setAlpha(0);
+      this.tweens.add({ targets: card, scale: 1, alpha: 1, delay: 80 + i * 90, duration: 260, ease: 'Back.Out' });
+    });
     this.scale.on('resize', this.layout, this);
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
   }
@@ -79,13 +86,13 @@ export class LevelUpScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const n = this.cards.length;
     const cw = Math.min(CARD_MAX_W, (width - PAD * 2 - GAP * (n - 1)) / n);
-    // Вертикально — нижняя треть; на низком горизонтальном экране треть мала для текста
+    // По центру экрана (раньше — у нижнего края: палец тянулся далеко, взгляд уходил вниз)
     const ch = Math.min(CARD_MAX_H, Math.max(height * 0.3, Math.min(height * 0.48, 150)));
     const total = n * cw + (n - 1) * GAP;
-    const top = height - PAD - ch;
     const titleH = 32;
+    const top = Math.max(titleH + 14, (height - ch) / 2 + titleH / 2);
 
-    this.band.setPosition(0, top - titleH - 8).setSize(width, height - top + titleH + 8);
+    this.band.setPosition(0, top - titleH - 8).setSize(width, ch + titleH + 20);
     this.title.setPosition(width / 2, top - 6);
 
     this.cards.forEach((card, i) => {
@@ -130,7 +137,36 @@ export class LevelUpScene extends Phaser.Scene {
     });
   }
 
-  // (иконки — ниже, в drawIcon)
+  // Дождь гильз сверху на весь экран, как монеты из сундука в Vampire Survivors: короткий, за карточками
+  casingRain() {
+    if (!this.textures.exists('casing')) {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0xd9a441).fillRect(0, 2, 5, 10);  // латунная гильза
+      g.fillStyle(0xf2cf7a).fillRect(1, 2, 1, 10);  // блик
+      g.fillStyle(0x8a6420).fillRect(0, 11, 5, 2);  // донце
+      g.fillStyle(0xb98a34).fillRect(1, 0, 3, 2);   // дульце
+      g.generateTexture('casing', 5, 13);
+      g.destroy();
+    }
+    const { width } = this.scale;
+    const C = LEVELUP.casings;
+    const rain = this.add.particles(0, 0, 'casing', {
+      x: { min: 0, max: width },
+      y: -16,
+      speedY: { min: 260, max: 520 },
+      speedX: { min: -60, max: 60 },
+      gravityY: 900,
+      rotate: { start: 0, end: 720 },
+      scale: { min: 1.1, max: 1.6 },
+      lifespan: 1600,
+      frequency: C.every,
+      quantity: C.perTick,
+      emitting: true,
+    });
+    this.time.delayedCall(C.duration * 1000, () => rain.stop());
+    sfx.play('pickup');
+  }
+
   pick(index) {
     if (!this.ready || this.picked) return;
     this.picked = true;
