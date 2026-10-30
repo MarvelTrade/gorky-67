@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT } from '../config.js';
+import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT, LOW_HP } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { sfx } from '../systems/Sfx.js';
@@ -20,6 +20,11 @@ export class UIScene extends Phaser.Scene {
   create() {
     this.gs = this.scene.get('GameScene');
 
+    // Трещины на стекле и мигание при броне ≤ 20% — под HUD, чтобы цифры читались
+    this.cracks = this.add.graphics().setVisible(false);
+    this.blink = this.add.rectangle(0, 0, 10, 10, 0x000000, 0).setOrigin(0);
+    this.blinkLeft = 0;
+    this.blinkNext = 0;
     this.bars = this.add.graphics();
 
     // Пауза — справа сверху. Большая зона нажатия, чтобы попадать пальцем
@@ -88,6 +93,7 @@ export class UIScene extends Phaser.Scene {
     g.fillRect(PAD - 2, hpY - 2, hpW + 4, HP_BAR_H + 4);
     // Мало брони — полоска пульсирует: сигнал до гибели, а не после (Ходент: смерть не должна быть внезапной)
     const low = hpFrac <= 0.25 && p.alive;
+    this.updateCracks(hpFrac <= LOW_HP.crackAt && p.alive, width, height, delta / 1000);
     const pulse = low ? 0.55 + 0.45 * Math.sin(this.hudTime * 10) : 1;
     g.fillStyle(hpFrac > 0.5 ? 0x6cc04a : hpFrac > 0.25 ? 0xe0b030 : 0xe04030, pulse);
     g.fillRect(PAD, hpY, hpW * hpFrac, HP_BAR_H);
@@ -320,5 +326,58 @@ export class UIScene extends Phaser.Scene {
       x + Math.cos(a - 2.5) * back,
       y + Math.sin(a - 2.5) * back
     );
+  }
+
+  // Стекло кабины трескается, когда брони ≤ LOW_HP.crackAt: лучи от 2–3 точек удара, рисуются один раз.
+  // Свет иногда коротко пропадает — проводка повреждена. Починили (броня выше порога) — стекло снова целое
+  updateCracks(on, width, height, dt) {
+    if (on && (!this.cracks.visible || this.cracksW !== width || this.cracksH !== height)) {
+      this.drawCracks(width, height);
+    }
+    this.cracks.setVisible(on);
+    this.blink.setSize(width, height);
+    if (!on) {
+      this.blink.setFillStyle(0x000000, 0);
+      return;
+    }
+    this.blinkNext -= dt;
+    this.blinkLeft -= dt;
+    if (this.blinkNext <= 0) {
+      this.blinkNext = Phaser.Math.FloatBetween(LOW_HP.blinkEvery[0], LOW_HP.blinkEvery[1]);
+      this.blinkLeft = LOW_HP.blinkTime;
+    }
+    this.blink.setFillStyle(0x000000, this.blinkLeft > 0 ? LOW_HP.blinkAlpha : 0);
+  }
+
+  drawCracks(width, height) {
+    this.cracksW = width;
+    this.cracksH = height;
+    const g = this.cracks.clear();
+    const hits = Phaser.Math.Between(2, 3);
+    for (let h = 0; h < hits; h++) {
+      // Удары ближе к краям — центр, где вертолёт, остаётся видимым
+      const cx = Phaser.Math.Between(0, 1) ? Phaser.Math.FloatBetween(0.05, 0.3) * width : Phaser.Math.FloatBetween(0.7, 0.95) * width;
+      const cy = Phaser.Math.FloatBetween(0.2, 0.9) * height;
+      const rays = Phaser.Math.Between(6, 9);
+      for (let r = 0; r < rays; r++) {
+        let a = (r / rays) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.3, 0.3);
+        let x = cx;
+        let y = cy;
+        const len = Phaser.Math.FloatBetween(0.12, 0.3) * Math.min(width, height);
+        // Луч — ломаная из коротких отрезков
+        for (let d = 0; d < len; d += 18) {
+          a += Phaser.Math.FloatBetween(-0.35, 0.35);
+          const nx = x + Math.cos(a) * 18;
+          const ny = y + Math.sin(a) * 18;
+          g.lineStyle(3, 0x000000, 0.35).lineBetween(x, y, nx, ny);
+          g.lineStyle(1.2, 0xe8f4ff, 0.75 - (d / len) * 0.5).lineBetween(x, y, nx, ny);
+          x = nx;
+          y = ny;
+        }
+      }
+      // Кольца вокруг точки удара
+      g.lineStyle(1, 0xe8f4ff, 0.5).strokeCircle(cx, cy, 10).strokeCircle(cx, cy, 22);
+      g.fillStyle(0xffffff, 0.35).fillCircle(cx, cy, 4);
+    }
   }
 }

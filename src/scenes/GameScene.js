@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -22,6 +22,7 @@ import { Artillery } from '../systems/Artillery.js';
 import { Extraction } from '../systems/Extraction.js';
 import { Depots } from '../systems/Depots.js';
 import { Tracks } from '../systems/Tracks.js';
+import { Breakdowns } from '../systems/Breakdowns.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -86,6 +87,7 @@ export class GameScene extends Phaser.Scene {
     this.extraction = new Extraction(this);
     this.depots = new Depots(this, this.player);
     this.tracks = new Tracks(this);
+    this.breakdowns = new Breakdowns(this, this.player);
     this.rerolls = LEVELUP.rerolls;
     applyMeta(this); // «Ангар»: броня, калибр, двигатель, магнит, перекруты
     this.physics.add.collider(this.player.sprite, this.air.towers);
@@ -172,6 +174,7 @@ export class GameScene extends Phaser.Scene {
       if (this.pendingLevels > 0) this.time.delayedCall(150, () => this.openLevelUp());
     });
     this.events.on('player-died', (cause) => this.onPlayerDied(cause));
+    this.events.on('spin-crash', () => this.spinCrash());
 
     this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
     // Тряску экрана можно выключить в настройках — проверяем при каждом вызове, чтобы работало и из паузы
@@ -189,7 +192,7 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['radio', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'boss-phase2', 'alert', 'player-hurt', 'resume', 'player-died']) this.events.off(e);
+      for (const e of ['radio', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'boss-phase2', 'alert', 'player-hurt', 'resume', 'player-died', 'spin-crash']) this.events.off(e);
       this.scale.off('resize', this.fitZoom, this);
       this.scene.stop('UIScene');
       sfx.duck(false);
@@ -203,6 +206,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Вертолёт сбит: взрыв, затем — предложение воскреснуть (если можно) или итоги
+  // Пасхалка: докрутили — сели. «Вань, и зачем?» — «Да прост...» — взрыв
+  spinCrash() {
+    if (this.player.crashing || this.dying || this.ended) return;
+    this.player.crash();
+    this.events.emit('radio', t('vova_why'), 'vova', true);
+    this.time.delayedCall(1300, () => this.events.emit('radio', t('ivan_just'), 'ivan', true));
+    this.time.delayedCall(SPIN.talk * 1000, () => {
+      this.player.hp = 0;
+      this.events.emit('player-died', 'spin');
+    });
+  }
+
   onPlayerDied(cause) {
     if (this.ended || this.dying) return;
     this.dying = true;
@@ -299,6 +314,7 @@ export class GameScene extends Phaser.Scene {
       flareKills: this.flares.kills,
       wiresCut: this.air.cut,
       depots: this.depots.broken,
+      breakdowns: { ...this.breakdowns.stats },
       shelled: this.artillery.hits,
       hordes: this.runEvents.summary(),
       bossKilledAt: this.bossKilledAt,
@@ -492,6 +508,7 @@ export class GameScene extends Phaser.Scene {
     this.supply.update(dt);
     this.depots.update(dt);
     this.tracks.update(dt);
+    this.breakdowns.update(dt);
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);

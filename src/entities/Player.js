@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { PLAYER, CONTROLS, FX } from '../config.js';
+import { PLAYER, CONTROLS, FX, SPIN } from '../config.js';
 import { sfx } from '../systems/Sfx.js';
 import { DEPTH } from '../depth.js';
 
@@ -88,6 +88,11 @@ export class Player {
   revive(hpFraction, invulnTime) {
     this.hp = Math.ceil(this.maxHp * hpFraction);
     this.invuln = invulnTime;
+    this.crashing = false; // после «карусели» — снова в воздухе
+    this.spin = 0;
+    this.look.setScale(1);
+    this.rotor.setScale(1);
+    this.shadow.setScale(0.9);
     this.body.enable = true;
     this.body.setVelocity(0, 0);
     this.look.setVisible(true).setAlpha(1);
@@ -101,6 +106,11 @@ export class Player {
 
   get y() {
     return this.sprite.y;
+  }
+
+  // Скорость с учётом поломок: заглохший двигатель — еле ползёт
+  get maxSpeed() {
+    return this.stats.maxSpeed * (this.scene.breakdowns?.engineMul ?? 1);
   }
 
   get alive() {
@@ -129,17 +139,21 @@ export class Player {
 
   update(dt) {
     const s = this.sprite;
+    if (this.crashing) {
+      this.updateCrash(dt);
+      return;
+    }
     const desired = this.desired.set(0, 0);
     const key = this.readKeyboard();
 
     if (key.x || key.y) {
-      desired.set(key.x, key.y).normalize().scale(this.stats.maxSpeed);
+      desired.set(key.x, key.y).normalize().scale(this.maxSpeed);
     } else if (this.stick) {
       const dx = this.stick.x - this.stick.ax;
       const dy = this.stick.y - this.stick.ay;
       const len = Math.hypot(dx, dy);
       if (len > CONTROLS.deadZone) {
-        const speed = this.stats.maxSpeed * Math.min(1, len / CONTROLS.stickRadius);
+        const speed = this.maxSpeed * Math.min(1, len / CONTROLS.stickRadius);
         desired.set(dx / len, dy / len).scale(speed);
       }
     } else if (this.target) {
@@ -148,7 +162,7 @@ export class Player {
       const dy = world.y - s.y;
       const dist = Math.hypot(dx, dy);
       if (dist > PLAYER.stopRadius) {
-        const speed = this.stats.maxSpeed * Math.min(1, dist / PLAYER.arriveRadius);
+        const speed = this.maxSpeed * Math.min(1, dist / PLAYER.arriveRadius);
         desired.set(dx / dist, dy / dist).scale(speed);
       }
     }
@@ -173,7 +187,31 @@ export class Player {
 
     this.shadow.setPosition(s.x + 18, s.y + 26).setRotation(s.rotation);
     this.updateTilt(dt);
+    // «Карусель»: сколько накрутили за последние секунды в одну сторону (со знаком —
+    // рысканье носа влево-вправо взаимно гасится, считаются только круги)
+    this.spin = (this.spin ?? 0) * Math.exp(-dt / SPIN.tau) + Phaser.Math.Angle.Wrap(s.rotation - (this.lastRot ?? s.rotation));
+    this.lastRot = s.rotation;
+    if (Math.abs(this.spin) > SPIN.limit && this.alive) this.scene.events.emit('spin-crash');
     this.rotor.rotation += PLAYER.rotorSpeed * dt;
+  }
+
+  // Падение после «карусели»: управление не слушается, вертолёт крутит и опускает к тени
+  crash() {
+    this.crashing = true;
+    this.crashT = 0;
+    this.invuln = 99; // добивает не толпа, а шутка
+  }
+
+  updateCrash(dt) {
+    const s = this.sprite;
+    this.crashT += dt;
+    const k = Math.min(1, this.crashT / 1.2); // 0 → 1: в воздухе → на земле
+    this.body.setVelocity(this.body.velocity.x * 0.9, this.body.velocity.y * 0.9);
+    s.rotation += (1 - k) * 9 * dt;
+    this.look.setPosition(s.x + 18 * k, s.y + 26 * k).setRotation(s.rotation).setScale(1 - 0.15 * k).setAlpha(1);
+    this.shadow.setPosition(s.x + 18, s.y + 26).setRotation(s.rotation).setScale(0.9 + 0.1 * k);
+    this.rotor.setPosition(this.look.x, this.look.y).setScale(1 - 0.15 * k);
+    this.rotor.rotation += PLAYER.rotorSpeed * (1 - k) * dt;
   }
 
   // Наклоны: ускорение вдоль носа — тангаж, поворот и боковое ускорение — крен, на месте — покачивание
