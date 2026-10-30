@@ -121,9 +121,10 @@ export class Fx {
     const n = this.numbers[this.nextNumber];
     this.nextNumber = (this.nextNumber + 1) % this.numbers.length;
     this.scene.tweens.killTweensOf(n);
+    // Цвет — тинтом по белому тексту: setColor перерисовывал бы текст на каждое попадание
     n.setText(String(Math.round(amount)))
       .setPosition(x + Phaser.Math.Between(-6, 6), y - 10)
-      .setColor(big ? '#ffd040' : '#ffffff')
+      .setTint(big ? 0xffd040 : 0xffffff)
       .setScale(big ? 1.3 : 1)
       .setAlpha(1)
       .setActive(true)

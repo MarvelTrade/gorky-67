@@ -57,6 +57,11 @@ export class UIScene extends Phaser.Scene {
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
     this.timerText = this.add.text(0, 0, '', { ...style, fontSize: '28px', fontStyle: 'bold' }).setOrigin(0.5, 0);
+    // Подсказка первых забегов — внизу, над зоной большого пальца
+    this.hintText = this.add
+      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '16px', color: '#ffffff', align: 'center', backgroundColor: '#000000aa', padding: { x: 12, y: 8 } })
+      .setOrigin(0.5, 1)
+      .setVisible(false);
     // Добыча со складов за забег: рубли и запчасти — под полоской брони
     this.walletText = this.add.text(0, 0, '', { ...style, fontSize: '14px', strokeThickness: 3, color: '#f2c94c' });
     this.bossText = this.add
@@ -113,16 +118,19 @@ export class UIScene extends Phaser.Scene {
     // Таймер — сколько прожито (0:00 → 5:00), как и на экране итогов; последние 30 с краснеет
     const elapsed = Math.min(gs.spawner.elapsed, RUN.duration);
     const ex = gs.extraction;
+    // На узком экране (телефон) крупный таймер наезжал на полоску брони — мельче
     this.timerText.setPosition(width / 2, XP_BAR_H + 6);
+    // setFontSize перерисовывает текст — только когда размер правда меняется (поворот экрана)
+    const timerSize = width < 420 ? '22px' : '28px';
+    if (this.timerText.style.fontSize !== timerSize) this.timerText.setFontSize(timerSize);
     if (ex.active) {
       // Уход из района: вместо таймера забега — отсчёт до удара, мигает
-      this.timerText
-        .setText(`${t('strikeIn')} ${formatTime(Math.max(0, ex.left))}`)
-        .setColor(Math.floor(ex.left * 3) % 2 ? '#ff6a5a' : '#ffffff');
+      this.timerText.setText(`${t('strikeIn')} ${formatTime(Math.max(0, ex.left))}`);
+      setColorIfChanged(this.timerText, Math.floor(ex.left * 3) % 2 ? '#ff6a5a' : '#ffffff');
     } else {
-      this.timerText
-        .setText(`${formatTime(elapsed)} / ${formatTime(RUN.duration)}`) // цель видна: сколько осталось продержаться
-        .setColor(RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
+      // цель видна: сколько осталось продержаться
+      this.timerText.setText(`${formatTime(elapsed)} / ${formatTime(RUN.duration)}`);
+      setColorIfChanged(this.timerText, RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
     }
 
     // HP босса — под таймером, пока он жив
@@ -144,6 +152,14 @@ export class UIScene extends Phaser.Scene {
     }
 
     this.drawAlert(g, width, height, delta / 1000, gs.scene.isPaused());
+    const hint = gs.hints?.line;
+    this.hintText.setVisible(!!hint && !gs.scene.isPaused());
+    if (hint) {
+      // setWordWrapWidth перерисовывает текст при каждом вызове — только при смене ширины
+      const wrap = Math.min(420, width - 40);
+      if (this.hintText.style.wordWrapWidth !== wrap) this.hintText.setWordWrapWidth(wrap);
+      this.hintText.setText(hint).setPosition(width / 2, height * 0.8);
+    }
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
     // «Объект» за кадром — красная стрелка: видно, откуда катится
@@ -382,4 +398,10 @@ export class UIScene extends Phaser.Scene {
       g.fillStyle(0xffffff, 0.35).fillCircle(cx, cy, 4);
     }
   }
+}
+
+// Text.setColor перерисовывает текст и грузит его в видеокарту при каждом вызове, даже с тем же цветом.
+// Таймер красился каждый кадр — на телефоне это лишняя работа весь забег
+function setColorIfChanged(text, color) {
+  if (text.style.color !== color) text.setColor(color);
 }

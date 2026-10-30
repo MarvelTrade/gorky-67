@@ -182,7 +182,14 @@ export class HangarScene extends Phaser.Scene {
       r.bg.setSize(w, ROW_H - 6);
       const left = this.tab === 'livery' ? 40 : 12;
       r.name.setX(left);
-      r.desc.setX(left).setWordWrapWidth(w - btnW - left - 70);
+      // Описание — сразу под названием, не больше двух строк: на 375 px длинные шли в три и наезжали на название
+      const descW = w - btnW - left - (this.tab === 'upgrades' ? 80 : 16);
+      let size = 12;
+      r.desc.setFontSize(size).setWordWrapWidth(descW);
+      while (r.desc.height > 26 && size > 9) r.desc.setFontSize(--size);
+      const block = r.name.height + r.desc.height;
+      r.name.setOrigin(0, 0).setPosition(left, -block / 2);
+      r.desc.setOrigin(0, 0).setPosition(left, -block / 2 + r.name.height);
       r.btn.setSize(btnW, ROW_H - 14).setPosition(w - 6, 0);
       r.btn.input.hitArea.setSize(btnW, ROW_H - 14);
       r.cost.setPosition(w - 6 - btnW / 2, 0);
