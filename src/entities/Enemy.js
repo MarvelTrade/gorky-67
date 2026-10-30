@@ -12,7 +12,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(DEPTH.enemies);
   }
 
-  spawn(type, cfg, x, y, target, hpMul = 1) {
+  spawn(type, cfg, x, y, target, hpMul = 1, dmgMul = 1) {
     this.type = type;
     this.cfg = cfg;
     this.target = target;
@@ -22,7 +22,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.phase2 = false;
     this.volleyEvery = cfg.volleyInterval;
     this.ringEvery = cfg.burstInterval;
-    this.damage = cfg.damage;
+    this.damage = cfg.damage * dmgMul; // урон касанием; снаряды берут shellDamage из cfg
     this.speed = cfg.speed + Phaser.Math.FloatBetween(-cfg.speedJitter, cfg.speedJitter);
     this.flash = 0;
     this.horde = null; // RunEvents помечает заражённых из орды, чтобы потом убрать остатки

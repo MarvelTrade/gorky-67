@@ -93,7 +93,7 @@ export class WaveSpawner {
   place(enemy, type, x, y) {
     x = Phaser.Math.Clamp(x, 0, WORLD.width);
     y = Phaser.Math.Clamp(y, 0, WORLD.height);
-    enemy.spawn(type, ENEMIES[type], x, y, this.target, this.wave.hpMul);
+    enemy.spawn(type, ENEMIES[type], x, y, this.target, this.wave.hpMul, this.wave.dmgMul ?? 1);
   }
 
   // Босс не должен потеряться из-за полного пула — освобождаем место за счёт рядового врага
