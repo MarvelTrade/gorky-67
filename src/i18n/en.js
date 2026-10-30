@@ -11,19 +11,21 @@ export default {
   telegramHeader: 'TELEGRAM',
   telegramStamp: 'CLASSIFIED',
   telegram:
-    'URGENT CLASSIFIED STOP ACCIDENT AT OBJECT 67 STOP ZARYA OUTSIDE PERIMETER STOP\n' +
-    'ORDER DOME IN EFFECT STOP CITY SEALED STOP\n' +
-    'FALCON TO COVER EVAC COLUMN STOP CORDON MAY OPEN FIRE STOP',
+    'URGENT CLASSIFIED STOP ACCIDENT AT OBJECT 67 STOP ZARYA RELEASED AS GAS STOP\n' +
+    'CORDON AFFECTED STOP NOT ANSWERING CALLSIGNS STOP TREATS FALCON AS TARGET STOP\n' +
+    'FALCON CREW TO COVER EVAC COLUMN STOP FIRE TO KILL AUTHORISED STOP',
   tapToContinue: 'Tap to continue',
 
   radioCallsign_beryoza: 'BERYOZA',
   radioCallsign_cheryomukha: 'CHERYOMUKHA',
-  cher_1: 'Cheryomukha here. The city has collapsed: power, comms, transport — all down.',
-  cher_2: 'Falcon, the trolleybus grid is live. Stay off the wires.',
-  cher_3: 'Towers and chimneys are taller than you. Steer clear early.',
-  cher_artillery: 'Falcon, leave the square! Shelling incoming.',
-  cher_lure: 'Falcon, drag the Object onto the square — artillery will cover it.',
-  cher_end: 'Comrades, remember: this never happened.',
+  cher_1: 'Misha... Vova... this is Cheryomukha... The gas is all over the city... Zarya is in the air... hold on, boys...',
+  cher_2: "Mishenka... the trolleybus wires are live... don't touch them, my dears...",
+  cher_3: 'Vova... the towers and chimneys are taller than you... go around early... please...',
+  cher_army: "Boys... the cordon breathed the gas... they don't know you anymore... to them you're a target now...",
+  cher_shoot: "Shoot, Misha... they're not ours anymore... not ours, you hear?.. I know... I know...",
+  cher_artillery: "Misha!.. Vova!.. get out of the square... they're about to shell it...",
+  cher_lure: 'Vovochka... drag it onto the square... let them hit it... let them...',
+  cher_end: 'Comrades... remember... this never happened...',
   wave_1: 'The Checkpoint',
   wave_2: 'Labour Square',
   wave_3: 'The Cordon',
@@ -31,7 +33,7 @@ export default {
   wave_5: 'Object 67',
   radio_1: "Falcon, column's at the gate. Cover it.",
   radio_2: 'Vehicles on the square. Not ours anymore.',
-  radio_3: 'The cordon has its orders. Stay high.',
+  radio_3: 'The cordon is not answering callsigns. They are firing at you.',
   radio_4: 'Building B is silent. Hold the column.',
   radio_5: "The Object is out of the lab. It's yours.",
   radio_horde: "Falcon, they're surrounding you!",

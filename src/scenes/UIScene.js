@@ -172,7 +172,7 @@ export class UIScene extends Phaser.Scene {
     if (this.radioLeft <= 0 && this.radioQueue.length && !this.inDanger(gs)) this.showRadio(...this.radioQueue.shift());
     if (this.radioLeft <= 0 || gs.scene.isPaused()) return;
     this.radioLeft -= dt;
-    const total = RADIO.duration + RADIO.fade * 2;
+    const total = this.radioTotal;
     const passed = total - this.radioLeft;
     this.radio.setAlpha(Math.max(0, Math.min(1, passed / RADIO.fade, this.radioLeft / RADIO.fade)));
   }
@@ -206,7 +206,9 @@ export class UIScene extends Phaser.Scene {
       .fillRect(0, 0, 4, h);
     // Под полоской босса, чтобы не перекрывать её на 5-й волне
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
-    this.radioLeft = RADIO.duration + RADIO.fade * 2;
+    // Длинные реплики (с паузами «...») держим дольше — успеть прочитать на ходу
+    this.radioTotal = (line.length > RADIO.longChars ? RADIO.duration_long : RADIO.duration) + RADIO.fade * 2;
+    this.radioLeft = this.radioTotal;
     sfx.play('radio');
   }
 
