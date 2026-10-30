@@ -67,6 +67,7 @@ export class AirObstacles {
       const x = tx + rnd.between(AIR.roadMargin, s - AIR.roadMargin);
       const y = ty + rnd.between(AIR.roadMargin, s - AIR.roadMargin);
       if (Math.hypot(x - cx, y - cy) < AIR.startClear) continue;
+      if (this.scene.river?.contains(x, y, radius + 30)) continue; // не в реке
       if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < AIR.towerGap)) continue;
       if (rects.some(([rx, ry, rw, rh]) => x > rx - m && x < rx + rw + m && y > ry - m && y < ry + rh + m)) continue;
       return { x, y };

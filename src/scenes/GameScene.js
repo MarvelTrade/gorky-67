@@ -28,6 +28,7 @@ import { Lab } from '../systems/Lab.js';
 import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
 import { Train } from '../systems/Train.js';
+import { River } from '../systems/River.js';
 import { DISTRICTS, DISTRICT_VARIANT, AVENUES, TILE_FACING } from '../cityLayout.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
@@ -517,6 +518,7 @@ export class GameScene extends Phaser.Scene {
   drawGround() {
     const s = CITY.tile;
     this.plazas = []; // центры площадей (квартал без домов) — туда в бою с «Объектом» бьёт артиллерия
+    this.river = new River(this); // до кварталов: дома в воде не строятся
     this.districts = {}; // район → кварталы { x, y } (левый верхний угол)
     for (let y = 0; y < WORLD.height; y += s) {
       for (let x = 0; x < WORLD.width; x += s) {
@@ -532,6 +534,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.drawAvenues();
+    this.river.draw();
+    this.river.blockNav(this.nav);
     this.railX = RAIL.x;
     this.drawRailway();
     this.buildings = new Buildings(this);

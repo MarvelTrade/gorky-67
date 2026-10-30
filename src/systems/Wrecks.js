@@ -102,6 +102,7 @@ export class Wrecks {
       const dir = rnd.frac() < 0.5 ? 'v' : 'h';
       const [x, y] = dir === 'v' ? [line, along] : [along, line];
       if (Math.hypot(x - cx, y - cy) < CHAOS.startClear) continue;
+      if (this.scene.river?.contains(x, y, 40)) continue; // не в реке
       if (this.spots.some((o) => Math.hypot(o.x - x, o.y - y) < CHAOS.gap)) continue;
       this.spots.push({ x, y });
       return { x, y, dir };

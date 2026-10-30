@@ -38,6 +38,7 @@ export class Tracks {
       if (!e.active || (e.type !== 'tank' && e.type !== 'boss')) continue;
       const house = b.at(e.x, e.y);
       e.inHouse = !!house && house.state !== 'ruined';
+      e.inWater = e.type === 'tank' && !!this.scene.river?.contains(e.x, e.y); // вброд
       if (e.inHouse) b.hit(house, RUINS.crush[e.type] * dt);
       // Отпечаток: в доме — пролом, на улице — гусеницы (у «Объекта» гусениц нет)
       const inside = !!house;

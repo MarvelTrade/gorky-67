@@ -38,6 +38,7 @@ export class CityNav {
       const rx = Math.min(...xs);
       const ry = Math.min(...ys);
       const rect = [rx, ry, Math.max(...xs) - rx, Math.max(...ys) - ry];
+      if (this.scene.river?.hitsRect(rect)) continue; // в воде дом не строится — набережная
       this.rects.push(rect);
       this.rectStyles.push(BUILDING_STYLE[variant] ?? 'panel');
       this.markBlocked(rect);
