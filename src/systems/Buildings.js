@@ -18,6 +18,12 @@ const STYLES = {
   dk: { wall: 0xd8cfb8, base: 0xa89e88, roof: 0xb8b0a0 },
   stalin: { wall: 0xc9a97a, base: 0x8a6e4a, roof: 0x8c7c6c },
   church: { wall: 0xece6da, base: 0xb8b0a0, roof: 0x4a6a5a },
+  hospital: { wall: 0xe6eaea, base: 0xa8b0b0, roof: 0xc8cccc },
+  school: { wall: 0xe0b46a, base: 0x9a7a4a, roof: 0x8a8c90 },
+  kinder: { wall: 0xf0dcae, base: 0xb09a70, roof: 0x9a6a5a },
+  fire: { wall: 0xa04a3a, base: 0x6a2e24, roof: 0x7a7c80 },
+  police: { wall: 0xd8d0a8, base: 0x8a8468, roof: 0x8a8c90 },
+  shop: { wall: 0xc8ccd0, base: 0x7a7e84, roof: 0x9a9ea4 },
   station: { wall: 0x8a9298, base: 0x5a6268, roof: 0x9aa2a8 },
 };
 
@@ -167,9 +173,38 @@ export class Buildings {
       }
     }
     // Сталинка: окна реже и крупнее, карниз под крышей
-    const windowStep = style === 'barrack' ? 16 : style === 'stalin' || style === 'church' ? 11 : 9;
+    if (style === 'barrack') {
+      // Барак: стена из вертикальных досок, редкие маленькие окна в один ряд, без подъездов
+      g.lineStyle(1, 0x4a3c28, 0.8);
+      for (let x = 3; x < w; x += 4) g.lineBetween(x, h, x, h + H - 4);
+      for (let x = 14; x < w - 10; x += 26) {
+        g.fillStyle(0x2a2a24).fillRect(x, h + Math.round(H * 0.35), 5, 4);
+        g.fillStyle(0x8a7a5a).fillRect(x - 1, h + Math.round(H * 0.35) + 4, 7, 1); // подоконник
+      }
+    }
+    // Фасады общественных зданий
+    if (style === 'police') g.fillStyle(0x2a5aa8).fillRect(0, h + 3, w, 3); // синяя полоса милиции
+    if (style === 'kinder') {
+      const colors = [0xe06a5a, 0x5aa0e0, 0x6ac06a, 0xe0c05a];
+      for (let x = 4, i = 0; x < w - 8; x += 18, i++) g.fillStyle(colors[i % 4]).fillRect(x, h + 2, 10, 3); // цветные панели
+    }
+    if (style === 'fire') {
+      // Гаражные ворота пожарных машин
+      for (let x = 8; x < w - 30; x += 34) {
+        g.fillStyle(0x2a2a2e).fillRect(x, h + H - 18, 26, 14);
+        g.fillStyle(0xc03030).fillRect(x, h + H - 18, 26, 3);
+      }
+    }
+    if (style === 'shop') {
+      // Витрины во всю длину и красная вывеска над ними
+      g.fillStyle(0x8fb0c0).fillRect(3, h + H - 16, w - 6, 10);
+      g.fillStyle(0xb03024).fillRect(3, h + H - 22, w - 6, 5);
+      g.fillStyle(0xf0e0b0);
+      for (let x = 10; x < w - 14; x += 12) g.fillRect(x, h + H - 21, 6, 3); // буквы вывески
+    }
+    const windowStep = style === 'stalin' || style === 'church' || style === 'hospital' || style === 'school' ? 11 : 9;
     if (style === 'stalin') g.fillStyle(0xe8d8b8).fillRect(0, h, w, 3);
-    for (let f = 0; style !== 'factory' && style !== 'dk' && f < floors; f++) {
+    for (let f = 0; style !== 'factory' && style !== 'dk' && style !== 'barrack' && style !== 'shop' && style !== 'fire' && f < floors; f++) {
       const wy = h + 3 + f * floorH;
       for (let wx = 5; wx < w - 5; wx += windowStep) {
         const r = rnd.frac();
@@ -183,7 +218,9 @@ export class Buildings {
     }
     const sections = Math.max(1, Math.round(w / 46));
     g.fillStyle(0x2c3034);
-    for (let i = 0; i < sections; i++) g.fillRect((i + 0.5) * (w / sections) - 3, h + H - 9, 6, 5);
+    // Подъезды; у барака — одна дверь с торца
+    if (style === 'barrack') g.fillStyle(0x3a2c1c).fillRect(4, h + H - 12, 7, 8);
+    else for (let i = 0; i < sections; i++) g.fillRect((i + 0.5) * (w / sections) - 3, h + H - 9, 6, 5);
 
     // Крыша: как раньше — секции и выходы на крышу
     g.fillStyle(S.roof);
@@ -195,9 +232,14 @@ export class Buildings {
         g.fillStyle(0x000000, 0.25).fillRect(x + 10, 6, 3, h - 12);
       }
     } else if (style === 'barrack') {
-      // Доски
-      g.lineStyle(1, 0x3e3224, 0.7);
-      for (let y = 4; y < h; y += 5) g.lineBetween(0, y, w, y);
+      // Скатная крыша из рубероида: два ската, конёк посередине, полосы рулонов, печная труба
+      g.fillStyle(0x3e3a34).fillRect(0, 0, w, h / 2);
+      g.fillStyle(0x4a4640).fillRect(0, h / 2, w, h / 2);
+      g.lineStyle(1, 0x2a2622, 0.6);
+      for (let x = 8; x < w; x += 10) g.lineBetween(x, 0, x, h);
+      g.lineStyle(2, 0x5a564e).lineBetween(0, h / 2, w, h / 2); // конёк
+      g.fillStyle(0x6a3a2a).fillRect(w * 0.3, h / 2 - 6, 6, 6);  // печная труба
+      g.fillStyle(0x6a3a2a).fillRect(w * 0.7, h / 2 - 6, 6, 6);
     } else if (style === 'church') {
       // Храм: пять глав-луковиц на крыше — большая синяя со звёздами в центре, малые золотые по углам, кресты
       const dome = (x, y, r, color) => {
@@ -210,6 +252,23 @@ export class Buildings {
       dome(w / 2, h / 2, 18, 0x2e5aa8);
       g.fillStyle(0xf0d870);
       for (const [x, y] of [[-6, -4], [5, -8], [7, 5], [-4, 8]]) g.fillCircle(w / 2 + x, h / 2 + y, 1.5); // звёзды
+    } else if (style === 'hospital') {
+      // Красный крест на крыше — видно с вертолёта
+      if (w >= 120 || h >= 120) {
+        g.fillStyle(0xffffff).fillRect(w / 2 - 14, h / 2 - 14, 28, 28);
+        g.fillStyle(0xd03030).fillRect(w / 2 - 4, h / 2 - 11, 8, 22).fillRect(w / 2 - 11, h / 2 - 4, 22, 8);
+      }
+    } else if (style === 'fire') {
+      // Рукавная башня на углу и мигалка
+      g.fillStyle(0x8a3a2e).fillRect(w - 24, 2, 20, 20);
+      g.fillStyle(0x5a2a22).fillRect(w - 20, 6, 12, 12);
+      g.fillStyle(0xff4030).fillCircle(w - 14, 12, 3);
+    } else if (style === 'police') {
+      g.fillStyle(0x2a5aa8).fillRect(w / 2 - 10, h / 2 - 4, 20, 8); // антенна связи
+      g.fillStyle(0xd8dcdf).fillCircle(w / 2 + 20, h / 2, 5);
+    } else if (style === 'school') {
+      g.fillStyle(0xc03030).fillRect(w / 2 - 1, 4, 2, 14); // флаг над входом
+      g.fillRect(w / 2 + 1, 4, 9, 5);
     } else if (style === 'station') {
       g.fillStyle(0xd8dcdf);
       for (const [x, y] of [[30, h / 2], [w - 40, h / 2]]) g.fillCircle(x, y, 12); // тарелки

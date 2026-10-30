@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN, ENEMIES } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN, ENEMIES, RAIL } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -27,6 +27,7 @@ import { Ordnance } from '../systems/Ordnance.js';
 import { Lab } from '../systems/Lab.js';
 import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
+import { Train } from '../systems/Train.js';
 import { DISTRICTS, DISTRICT_VARIANT, AVENUES } from '../cityLayout.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
@@ -102,6 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.ordnance = new Ordnance(this, this.player);
     this.lab = new Lab(this);
     this.hints = new Hints(this);
+    this.train = new Train(this, this.railX);
     this.rerolls = LEVELUP.rerolls;
     applyMeta(this); // «Ангар»: броня, калибр, двигатель, магнит, перекруты
     this.physics.add.collider(this.player.sprite, this.air.towers);
@@ -523,16 +525,20 @@ export class GameScene extends Phaser.Scene {
         (this.districts[d] ??= []).push({ x, y });
         const v = DISTRICT_VARIANT[d];
         const variant = Array.isArray(v) ? Phaser.Utils.Array.GetRandom(v) : v ?? Phaser.Math.Between(0, CITY.residential - 1);
-        const quarter = 'RPTWQ'.includes(d) ? Phaser.Math.Between(0, 3) : 0;
+        const quarter = 'RPTWQY'.includes(d) ? Phaser.Math.Between(0, 3) : 0;
         this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
         if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
       }
     }
     this.drawAvenues();
+    this.railX = RAIL.x;
+    this.drawRailway();
     this.buildings = new Buildings(this);
     this.roofs = this.buildings.build(this.nav.rects);
     this.drawZoneFence();
+    this.drawFactoryFence();
+    this.drawCityFence();
   }
 
   // Проспекты: широкая проезжая часть с бульваром посередине — кусками по кварталу (их прячет Culler).
@@ -552,9 +558,9 @@ export class GameScene extends Phaser.Scene {
         this.culler.add(this.add.image(b.at, a.at, 'avenueCross').setDepth(DEPTH.ground + 0.35));
       }
     }
+    // КПП на западном въезде в город (на востоке проспект упирается в ворота завода — их ставит drawFactoryFence)
     const main = AVENUES[0];
     this.culler.add(this.add.image(main.from + 30, main.at, 'checkpoint').setDepth(DEPTH.ground + 2.5));
-    this.culler.add(this.add.image(main.to - 10, main.at, 'checkpoint').setFlipX(true).setDepth(DEPTH.ground + 2.5));
   }
 
   // «Зона»: колючая проволока по периметру района Z со столбами и воротами на юг
@@ -574,26 +580,120 @@ export class GameScene extends Phaser.Scene {
     if (!b) return;
     const g = this.add.graphics().setDepth(DEPTH.ground + 1.3);
     const gate = (b.x0 + b.x1) / 2;
-    const segs = [
-      [b.x0, b.y0, b.x1, b.y0],
-      [b.x1, b.y0, b.x1, b.y1],
-      [b.x0, b.y1, gate - 40, b.y1], // ворота на юг
-      [gate + 40, b.y1, b.x1, b.y1],
-      [b.x0, b.y0, b.x0, b.y1],
+    const gw = 44; // полуширина ворот
+    // Снаружи — деревянный забор (частокол), внутри — колючка, между ними «запретка» из взрыхлённого песка
+    const ring = (o) => [
+      [b.x0 - o, b.y0 - o, b.x1 + o, b.y0 - o],
+      [b.x1 + o, b.y0 - o, b.x1 + o, b.y1 + o],
+      [b.x0 - o, b.y1 + o, gate - gw, b.y1 + o],
+      [gate + gw, b.y1 + o, b.x1 + o, b.y1 + o],
+      [b.x0 - o, b.y0 - o, b.x0 - o, b.y1 + o],
     ];
-    for (const [x1, y1, x2, y2] of segs) {
+    for (const [x1, y1, x2, y2] of ring(6)) {
+      const horiz = y1 === y2;
+      g.fillStyle(0x8a7e60, 0.8).fillRect(Math.min(x1, x2) - (horiz ? 0 : 10), Math.min(y1, y2) - (horiz ? 10 : 0), horiz ? Math.abs(x2 - x1) : 12, horiz ? 12 : Math.abs(y2 - y1));
+    }
+    for (const [x1, y1, x2, y2] of ring(12)) {
+      // Частокол: толстая коричневая линия, торцы досок
+      g.lineStyle(5, 0x5a4630).lineBetween(x1, y1, x2, y2);
       const len = Math.hypot(x2 - x1, y2 - y1);
-      // Колючка — двойная линия с «узлами», столбы через 40 px
-      g.lineStyle(2, 0x9a9488, 0.8).lineBetween(x1, y1, x2, y2);
-      g.lineStyle(1, 0x6a645a, 0.8).lineBetween(x1 + 2, y1 + 2, x2 + 2, y2 + 2);
-      for (let d = 0; d <= len; d += 40) {
+      for (let d = 0; d <= len; d += 6) {
         const k = d / len;
-        g.fillStyle(0x3a2e22).fillRect(x1 + (x2 - x1) * k - 2, y1 + (y2 - y1) * k - 2, 5, 5);
+        g.fillStyle(0x7a6040).fillRect(x1 + (x2 - x1) * k - 1, y1 + (y2 - y1) * k - 1, 2, 2);
       }
-      for (let d = 10; d < len; d += 14) {
+    }
+    for (const [x1, y1, x2, y2] of ring(-6)) {
+      g.lineStyle(1.5, 0x9a9488, 0.9).lineBetween(x1, y1, x2, y2); // колючка
+      g.lineStyle(1, 0x6a645a, 0.9).lineBetween(x1 + 2, y1 + 2, x2 + 2, y2 + 2);
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      for (let d = 0; d <= len; d += 30) {
         const k = d / len;
-        g.fillStyle(0xb8b2a6).fillRect(x1 + (x2 - x1) * k - 1, y1 + (y2 - y1) * k - 1, 2, 2);
+        g.fillStyle(0x3a2e22).fillRect(x1 + (x2 - x1) * k - 2, y1 + (y2 - y1) * k - 2, 4, 4);
       }
+    }
+    // Вахта у ворот: будка и деревянные створки
+    this.culler.add(this.add.image(gate, b.y1 + 12, 'campGate').setDepth(DEPTH.ground + 2.5));
+  }
+
+  // Завод (районы F, L, E) — за бетонным забором по периметру: на проспекте металлические ворота,
+  // на севере и юге — железнодорожные ворота, через которые идёт ветка
+  factoryBox() {
+    const tiles = ['F', 'L', 'E'].flatMap((d) => this.districts[d] ?? []);
+    if (!tiles.length) return null;
+    const s = CITY.tile;
+    return {
+      x0: Math.min(...tiles.map((t) => t.x)) + 40,
+      y0: Math.min(...tiles.map((t) => t.y)) + 30,
+      x1: Math.max(...tiles.map((t) => t.x)) + s - 30,
+      y1: Math.max(...tiles.map((t) => t.y)) + s - 30,
+    };
+  }
+
+  // Бетонный забор (плиты с «ромбиками»): отрезки [x1, y1, x2, y2], только горизонтальные или вертикальные
+  concreteFence(g, segs) {
+    for (const [x1, y1, x2, y2] of segs) {
+      if (y1 === y2) {
+        // Вдоль — видно лицевую сторону плит: светлый бетон, «ромбики», стыки плит
+        const H = 12;
+        g.fillStyle(0x000000, 0.25).fillRect(x1 + 4, y1 + 3, x2 - x1, H);
+        g.fillStyle(0xb4b2a8).fillRect(x1, y1 - H, x2 - x1, H);
+        g.fillStyle(0xcfcdc4).fillRect(x1, y1 - H, x2 - x1, 2);
+        g.lineStyle(1, 0x8a887e);
+        for (let x = x1; x < x2 - 4; x += 8) g.strokeTriangle(x, y1 - H / 2, x + 4, y1 - H + 2, x + 8, y1 - H / 2).strokeTriangle(x, y1 - H / 2, x + 4, y1 - 2, x + 8, y1 - H / 2);
+        g.fillStyle(0x7a786e);
+        for (let x = x1; x <= x2; x += 40) g.fillRect(x - 1, y1 - H, 3, H); // стыки плит
+      } else {
+        // Поперёк взгляда — плиты видно сверху: светлая полоса и стыки
+        g.fillStyle(0x000000, 0.25).fillRect(x1 + 3, y1, 4, y2 - y1);
+        g.fillStyle(0xb4b2a8).fillRect(x1 - 2, y1, 5, y2 - y1);
+        g.fillStyle(0x7a786e);
+        for (let y = y1; y <= y2; y += 40) g.fillRect(x1 - 3, y, 7, 3);
+      }
+    }
+  }
+
+  // Город закрытый: бетонный забор по всему периметру, ворота на КПП (запад) и проёмы под ветку
+  drawCityFence() {
+    const g = this.add.graphics().setDepth(DEPTH.ground + 2.4);
+    const m = 14;
+    const W = WORLD.width - m;
+    const H = WORLD.height - m;
+    const gateY = AVENUES[0].at;
+    const rail = this.railX;
+    this.concreteFence(g, [
+      [m, m, rail - 34, m], [rail + 34, m, W, m],
+      [m, H, rail - 34, H], [rail + 34, H, W, H],
+      [m, m, m, gateY - 62], [m, gateY + 62, m, H],
+      [W, m, W, H],
+    ]);
+    this.culler.add(this.add.image(m, gateY, 'factoryGate').setDepth(DEPTH.ground + 2.5));
+  }
+
+  drawFactoryFence() {
+    const b = this.factoryBox();
+    if (!b) return;
+    const g = this.add.graphics().setDepth(DEPTH.ground + 2.4);
+    const rail = this.railX;
+    const gateY = AVENUES[0].at;
+    // Отрезки забора с проёмами: ворота на проспекте (запад) и под ветку (север, юг)
+    const segs = [
+      [b.x0, b.y0, rail - 34, b.y0], [rail + 34, b.y0, b.x1, b.y0],
+      [b.x0, b.y1, rail - 34, b.y1], [rail + 34, b.y1, b.x1, b.y1],
+      [b.x0, b.y0, b.x0, gateY - 62], [b.x0, gateY + 62, b.x0, b.y1],
+      [b.x1, b.y0, b.x1, b.y1],
+    ];
+    this.concreteFence(g, segs);
+    // Металлические ворота с красной звездой — в конце главного проспекта
+    this.culler.add(this.add.image(b.x0, gateY, 'factoryGate').setDepth(DEPTH.ground + 2.5));
+    // Ж/д ворота на севере и юге
+    for (const y of [b.y0, b.y1]) this.culler.add(this.add.image(rail, y - 6, 'railGate').setDepth(DEPTH.ground + 2.5));
+  }
+
+  // Железная дорога через завод с севера на юг: щебёночная насыпь, шпалы, рельсы; поезд ходит туда-сюда
+  drawRailway() {
+    const s = CITY.tile;
+    for (let y = 0; y < WORLD.height; y += s) {
+      this.culler.add(this.add.image(this.railX, y + s / 2, 'railway').setDepth(DEPTH.ground + 0.4));
     }
   }
 
@@ -626,6 +726,7 @@ export class GameScene extends Phaser.Scene {
     this.ordnance.update(dt);
     this.lab.update(dt);
     this.hints.update(dt);
+    this.train.update(dt);
     this.culler.update();
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);
