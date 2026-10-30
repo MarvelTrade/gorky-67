@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { ORDNANCE } from '../config.js';
 import { DEPTH } from '../depth.js';
-import { findNearest } from './AutoAim.js';
+import { findNearest, bossInRange } from './AutoAim.js';
 
 // Подвесное вооружение, берётся на барабанах (уровень 0 — не взято). Названия выдуманные:
 //  bombs   — кассетные бомбы: сыплются под вертолёт, рвутся на земле (и ломают дома)
@@ -74,8 +74,9 @@ export class Ordnance {
 
   napalm() {
     const p = this.player;
-    // Бак летит туда, где гуще: к ближайшему врагу, если он недалеко
-    const e = findNearest(this.scene.enemies, p.x, p.y, ORDNANCE.napalm.aim);
+    // Бак летит в «Объект», если он рядом, иначе к ближайшему врагу
+    const aim = ORDNANCE.napalm.aim;
+    const e = bossInRange(this.scene, p.x, p.y, aim) ?? findNearest(this.scene.enemies, p.x, p.y, aim);
     this.drop('napalm', e ? e.x : p.x, e ? e.y : p.y, 0);
   }
 
@@ -122,7 +123,9 @@ export class Ordnance {
     const p = this.player;
     const R = ORDNANCE.rockets;
     const n = this.stat('rockets', 'count');
-    const nose = p.sprite.rotation;
+    // Залп — в «Объект» или ближайшего врага; по носу шло мимо: убегая, нос смотрит от погони
+    const target = bossInRange(this.scene, p.x, p.y, R.range) ?? findNearest(this.scene.enemies, p.x, p.y, R.range);
+    const nose = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.sprite.rotation;
     for (let i = 0; i < n; i++) {
       const a = nose + (i - (n - 1) / 2) * R.fan;
       let r = this.flying.find((x) => !x.img.visible);

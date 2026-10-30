@@ -22,7 +22,7 @@ export class Lab {
         lifespan: { min: 1800, max: 2800 },
         speedX: { min: -12, max: 12 },
         speedY: { min: -12, max: 12 },
-        scale: { start: 2.5, end: 6 },
+        scale: { start: 2.8, end: 5.5 },
         alpha: { start: 0.32, end: 0 },
         tint: [0xc8d860, 0xa8c050, 0xe0e890], // жёлто-зелёный газ «Зари»
       })

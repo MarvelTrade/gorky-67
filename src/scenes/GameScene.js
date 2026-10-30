@@ -451,9 +451,14 @@ export class GameScene extends Phaser.Scene {
 
   banner(message, color = '#ffe066') {
     const { width, height } = this.scale;
+    // Новая надпись заменяет прежнюю: в 4:00 «Объект 67» и «ОБЪЕКТ» стояли столбиком
+    for (const b of [...this.banners]) {
+      this.tweens.killTweensOf(b);
+      this.removeBanner(b);
+    }
     const text = this.add
       // Не выше 200 px — там HUD, полоска босса и радио «Берёзы»
-      .text(width / 2, Math.max(height * 0.3, 200) + this.banners.length * 50, message, {
+      .text(width / 2, Math.max(height * 0.3, 200), message, {
         fontFamily: 'sans-serif',
         fontSize: '36px',
         color,

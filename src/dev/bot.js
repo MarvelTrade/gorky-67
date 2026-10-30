@@ -12,7 +12,8 @@
 // миллисекунд занимает кадр (логика + отрисовка) по минутам: до 16.7 мс — это 60 FPS.
 
 // Порядок, в котором «думающий» игрок берёт улучшения
-const PRIORITY = ['missile', 'damage', 'rockets', 'fireRate', 'bombs', 'flares', 'hp', 'napalm', 'gas', 'magnet', 'speed'];
+// Как до подвесного оружия: сначала пулемёт и ракеты — замеры сравнимы со старыми; новое — после
+const PRIORITY = ['missile', 'damage', 'fireRate', 'flares', 'hp', 'rockets', 'bombs', 'napalm', 'gas', 'magnet', 'speed'];
 
 export function installBot(game) {
   window.__startBot = ({ dodge = true, smart = false, manual = false } = {}) => {

@@ -16,6 +16,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.type = type;
     this.cfg = cfg;
     this.target = target;
+    // «Объект» — над домами и штриховкой обстрела: огромный шар, который их сминает, должен быть виден.
+    // setDepth пересортировывает сцену — только если глубина правда меняется
+    const depth = type === 'boss' ? DEPTH.buildings + 0.7 : DEPTH.enemies;
+    if (this.depth !== depth) this.setDepth(depth);
     this.hp = cfg.hp * hpMul;
     this.maxHp = this.hp;
     // «Объект»: интервалы залпов — свои, во второй фазе они короче

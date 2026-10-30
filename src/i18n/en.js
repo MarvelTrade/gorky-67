@@ -202,7 +202,7 @@ export default {
   upg_napalm: 'Incendiary tanks',
   upg_napalm_desc: 'A pool of fire on the ground burns everyone inside',
   upg_rockets: 'Rocket pod',
-  upg_rockets_desc: 'A fan of unguided rockets straight ahead',
+  upg_rockets_desc: 'A fan of unguided rockets at the nearest target',
   upg_gas: 'Neutralizer',
   upg_gas_desc: 'Anti-Zarya reagent: the trail burns and slows the infected',
   stat_bombs: 'Bombs',
