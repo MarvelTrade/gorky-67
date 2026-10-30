@@ -126,6 +126,7 @@ export default {
   levelUp: 'Level',
   reroll: 'Reroll',
   loot: 'From depots',
+  ruinedHouses: 'Houses collapsed',
   hangar: 'Hangar',
   tab_upgrades: 'Upgrades',
   tab_gear: 'Gear',

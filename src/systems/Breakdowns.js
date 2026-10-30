@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { BREAKDOWN } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { t } from '../i18n/index.js';
+import { sfx } from './Sfx.js';
 
 // Поломки подбитого вертолёта. В кабине двое: Вова стреляет, Иван рулит и чинит.
 // При попадании, когда брони мало, может начаться пожар (горит, теряет броню, пока Иван не потушит)
@@ -55,9 +56,11 @@ export class Breakdowns {
       this.fire = this.crowd() ? B.fireTimeCrowd : B.fireTime;
       this.stats.fires++;
       this.say('ivan_fire');
+      sfx.play('fire');
     } else if (r < B.fireChance + B.stallChance && this.stall <= 0) {
       this.stall = this.crowd() ? B.stallTimeCrowd : B.stallTime;
       this.stats.stalls++;
+      sfx.play('stall');
       this.say(this.crowd() ? 'ivan_stall_crowd' : 'ivan_stall');
     } else return;
     this.cooldown = B.cooldown;

@@ -135,6 +135,7 @@ export default {
   levelUp: 'Уровень',
   reroll: 'Перекрутить',
   loot: 'Со складов',
+  ruinedHouses: 'Рухнуло домов',
   hangar: 'Ангар',
   tab_upgrades: 'Улучшения',
   tab_gear: 'Снаряжение',

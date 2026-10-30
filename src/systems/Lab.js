@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { LAB } from '../config.js';
 import { DEPTH } from '../depth.js';
+import { sfx } from './Sfx.js';
 
 // Подземная лаборатория «Объекта 67»: бетонная площадка с люком на одной из площадей.
 // В 4:00 люк срывает, из-под земли выходит «Объект» — шар-вирус. Он катится к вертолёту,
@@ -83,6 +84,7 @@ export class Lab {
     boss.setAlpha(0);
     this.scene.tweens.add({ targets: boss, alpha: 1, duration: LAB.emerge * 1000 });
     this.scene.cameras.main.shake(700, 0.012);
+    sfx.play('hatch');
     this.scene.dust(this.pos.x, this.pos.y, 120);
     this.scene.explosionFx(this.pos.x, this.pos.y, 70);
   }

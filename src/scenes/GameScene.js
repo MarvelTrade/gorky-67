@@ -305,6 +305,11 @@ export class GameScene extends Phaser.Scene {
       ending: !win ? (this.nuked ? 'nuke' : 'lost') : this.bossKilled ? 'convoy' : 'late',
       money: this.depots.money,
       parts: this.depots.parts,
+      ruined: this.buildings.list.filter((b) => b.state === 'ruined').length,
+      // Взятое оружие с уровнями — для итогов: «Ракеты 3 · Бомбы 2»
+      weapons: ['missile', 'bombs', 'napalm', 'rockets', 'gas']
+        .filter((id) => this.upgrades.level(id) > 0)
+        .map((id) => `${t(`upg_${id}`)} ${this.upgrades.level(id)}`),
     };
   }
 
@@ -545,7 +550,7 @@ export class GameScene extends Phaser.Scene {
     this.nuked = true;
     this.cameras.main.flash(EXTRACT.flash, 255, 255, 240);
     this.fx.shake(FX.deathShake);
-    sfx.play('explosion');
+    sfx.play('nuke');
     this.player.hide();
     this.endRun(false, 'nuke', EXTRACT.flash / 1000);
   }

@@ -44,6 +44,8 @@ export class GameOverScene extends Phaser.Scene {
       `${t('kills')}: ${stats.kills}`,
       `${t('level')}: ${stats.level}`,
     ];
+    if (stats.ruined) lines.push(`${t('ruinedHouses')}: ${stats.ruined}`);
+    if (stats.weapons?.length) lines.push(stats.weapons.join(' · '));
     if (stats.money || stats.parts) lines.push(`${t('loot')}: +${stats.money} ₽ · +${stats.parts} ⚙`);
     if (stats.xp) lines.push(`${t('heliXp')}: +${stats.xp}`);
     // Новый уровень вертолёта — отдельной строкой под цифрами, рядом с «Объектом»
@@ -114,6 +116,8 @@ export class GameOverScene extends Phaser.Scene {
       const sep = short ? '  ·  ' : '\n';
       statsText.setText([causeLine, lines.join(sep), bossLine, heliUp].filter(Boolean).join('\n'));
       statsText.setFontSize(short ? 20 : 24);
+      // Строка оружия и склеенные цифры на телефоне лёжа шире экрана — переносим
+      statsText.setWordWrapWidth(width - 32);
       ending.setWordWrapWidth(Math.min(480, width - 40));
 
       let y = height * (short ? 0.06 : 0.12);

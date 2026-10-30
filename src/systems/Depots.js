@@ -101,6 +101,7 @@ export class Depots {
     d.img.setTexture('depotBroken').setScale(1);
     d.ring.destroy();
     this.scene.events.emit('explosion', d.x, d.y, 34);
+    sfx.play('depot');
     const sum = Phaser.Math.Between(DEPOT.money[0], DEPOT.money[1]);
     const parts = Math.random() < DEPOT.partChance ? 1 : 0;
     this.drop(d.x, d.y, sum, parts);

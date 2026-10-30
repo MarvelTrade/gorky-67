@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { CHAOS, RUINS, PALETTE as P } from '../config.js';
 import { DEPTH } from '../depth.js';
+import { sfx } from './Sfx.js';
 import { buildingHeight } from '../cityLayout.js';
 
 // Дома в виде 3/4: пятно на земле (по нему ходят враги и считаются столкновения) не меняется,
@@ -88,6 +89,7 @@ export class Buildings {
     const i = this.roofs.indexOf(b.roof);
     if (i >= 0) this.roofs.splice(i, 1);
     this.scene.dust?.(b.x + b.w / 2, b.y + b.h / 2, Math.max(b.w, b.h) / 2);
+    sfx.play('crumble');
   }
 
   // Груда обломков на месте дома: плиты, куски стен по краю, копоть

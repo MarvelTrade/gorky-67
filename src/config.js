@@ -111,7 +111,7 @@ export const FX = {
 export const SFX = {
   volume: 0.45,
   duckLevel: 0.35,      // громкость в затишье перед боссом (доля от volume)
-  minGap: { shot: 0.06, pickup: 0.035, explosion: 0.05, hit: 0.2, reelTick: 0.05 }, // с между одинаковыми звуками
+  minGap: { shot: 0.06, pickup: 0.035, explosion: 0.05, hit: 0.2, reelTick: 0.05, crumble: 0.25, depot: 0.1 }, // с между одинаковыми звуками
 };
 
 // Реклама (только в сборке для Яндекс Игр)

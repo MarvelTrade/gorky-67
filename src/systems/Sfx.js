@@ -72,6 +72,26 @@ class SfxEngine {
     return src;
   }
 
+  // Шум дольше полсекунды: буфер в секунду, поэтому по кругу
+  noiseLong(t, dur) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    src.start(t, Math.random());
+    src.stop(t + dur);
+    return src;
+  }
+
+  // Шум через фильтр, у которого частота едет от f0 к f1
+  sweep(t, type, f0, f1, dur, peak, attack = 0.005) {
+    const f = this.ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.setValueAtTime(f0, t);
+    f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    this.noiseLong(t, dur + 0.05).connect(f);
+    f.connect(this.env(t, peak, attack, dur));
+  }
+
   tone(type, t, f0, f1, dur, peak) {
     const o = this.ctx.createOscillator();
     o.type = type;
@@ -151,6 +171,52 @@ class SfxEngine {
     f.frequency.value = 2500;
     this.noiseSrc(t, 0.25).connect(f);
     f.connect(this.env(t, 0.16, 0.005, 0.22));
+  }
+
+  // Дом рухнул: долгий низкий гул и осыпь мелких обломков
+  crumble(t) {
+    this.sweep(t, 'lowpass', 700, 70, 0.9, 0.32, 0.02);
+    for (let i = 0; i < 6; i++) {
+      const at = t + 0.05 + Math.random() * 0.6;
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 900 + Math.random() * 1500;
+      f.Q.value = 3;
+      this.noiseSrc(at, 0.05).connect(f);
+      f.connect(this.env(at, 0.08, 0.002, 0.04));
+    }
+  }
+
+  // Склад разбит: треск досок и звон монет
+  depot(t) {
+    this.sweep(t, 'bandpass', 1200, 500, 0.14, 0.25);
+    this.tone('triangle', t, 300, 140, 0.12, 0.14);
+    this.tone('sine', t + 0.12, 1568, 1568, 0.08, 0.08);
+    this.tone('sine', t + 0.18, 2093, 2093, 0.1, 0.07);
+  }
+
+  // Люк лаборатории сорван: металлический лязг и гул из-под земли
+  hatch(t) {
+    this.tone('square', t, 220, 180, 0.5, 0.12);
+    this.tone('square', t, 331, 290, 0.4, 0.08);
+    this.sweep(t, 'lowpass', 300, 60, 1.4, 0.4, 0.1);
+  }
+
+  // Ядерный удар: глубокий долгий раскат
+  nuke(t) {
+    this.sweep(t, 'lowpass', 900, 35, 2.6, 0.7, 0.01);
+    this.tone('sine', t, 70, 18, 2.2, 0.6);
+  }
+
+  // Пожар на борту: вспыхнуло — шумовой «вжух» вверх
+  fire(t) {
+    this.sweep(t, 'bandpass', 400, 2200, 0.45, 0.22, 0.05);
+  }
+
+  // Двигатель заглох: чихает и стихает
+  stall(t) {
+    this.tone('sawtooth', t, 120, 40, 0.7, 0.12);
+    for (let i = 0; i < 3; i++) this.tone('square', t + 0.15 + i * 0.16, 90, 60, 0.06, 0.1);
   }
 
   // Попадание по вертолёту — глухой удар
