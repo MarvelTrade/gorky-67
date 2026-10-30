@@ -45,6 +45,9 @@ export class GameOverScene extends Phaser.Scene {
       `${t('level')}: ${stats.level}`,
     ];
     if (stats.money || stats.parts) lines.push(`${t('loot')}: +${stats.money} ₽ · +${stats.parts} ⚙`);
+    if (stats.xp) lines.push(`${t('heliXp')}: +${stats.xp}`);
+    // Новый уровень вертолёта — отдельной строкой под цифрами, рядом с «Объектом»
+    const heliUp = stats.levelUp ? `${t('heliLevelUp')} ${stats.levelUp}!` : null;
     const bossLine = stats.bossSeen ? t(stats.bossKilled ? 'bossKilled' : 'bossAlive') : null;
     const statsText = this.add
       .text(0, 0, '', {
@@ -109,7 +112,7 @@ export class GameOverScene extends Phaser.Scene {
       const { width, height } = this.scale;
       const short = height < 500;
       const sep = short ? '  ·  ' : '\n';
-      statsText.setText([causeLine, lines.join(sep), bossLine].filter(Boolean).join('\n'));
+      statsText.setText([causeLine, lines.join(sep), bossLine, heliUp].filter(Boolean).join('\n'));
       statsText.setFontSize(short ? 20 : 24);
       ending.setWordWrapWidth(Math.min(480, width - 40));
 

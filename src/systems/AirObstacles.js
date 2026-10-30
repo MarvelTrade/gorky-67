@@ -13,6 +13,7 @@ export class AirObstacles {
     this.scene = scene;
     this.player = player;
     this.towers = scene.physics.add.staticGroup();
+    this.towerImages = []; // для порядка отрисовки: вертолёт перед башней или за ней
     this.wires = [];
     this.wireGfx = scene.add.graphics().setDepth(DEPTH.wires);
     // Ток по проводам: бегущие искры и редкие дуги — видно, что под напряжением
@@ -65,8 +66,10 @@ export class AirObstacles {
     const originY = meta ? meta.originY : 0.5;
     const height = meta ? meta.h * originY - def.radius : def.radius * 3;
     this.drawTowerShadow(x, y, def.radius, height);
-    this.scene.add.image(x, y, def.texture).setOrigin(0.5, originY).setDepth(DEPTH.towers + y / 1e5);
-    const zone = this.scene.add.zone(x, y, def.radius * 2, def.radius * 2);
+    const img = this.scene.add.image(x, y, def.texture).setOrigin(0.5, originY).setDepth(DEPTH.towers + y / 1e5);
+    this.towerImages.push(img);
+    // Столкновение — на высоте полёта, выше основания по экрану; наземным врагам мешает основание (nav ниже)
+    const zone = this.scene.add.zone(x, y - AIR.flightLift, def.radius * 2, def.radius * 2);
     this.towers.add(zone);
     zone.body.setCircle(def.radius);
     zone.kind = kind;
@@ -192,6 +195,11 @@ export class AirObstacles {
   update(dt) {
     this.drawCurrent(dt);
     const p = this.player;
+    // 3/4: вертолёт южнее башни (его точка на земле ниже основания) — он перед ней, рисуем поверх
+    for (const img of this.towerImages) {
+      if (Math.abs(img.x - p.x) > 200 || Math.abs(img.y - p.y) > 300) continue;
+      img.setDepth(p.y + AIR.flightLift > img.y ? DEPTH.player - 0.5 : DEPTH.towers + img.y / 1e5);
+    }
     if (!p.alive) return;
     const R = this.scene.player.body.halfWidth + AIR.wires.hitPad;
     let changed = false;

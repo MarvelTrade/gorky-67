@@ -20,6 +20,10 @@ export class Player {
     this.sprite.body.setCircle(PLAYER.hitRadius, 35 - PLAYER.hitRadius, 24 - PLAYER.hitRadius);
     this.sprite.setDepth(DEPTH.player);
     this.body = this.sprite.body;
+    // Физика — у невидимого sprite, видно — look: его можно сжимать для наклонов, не трогая тело столкновений
+    this.sprite.setVisible(false);
+    this.look = scene.add.image(x, y, 'heli').setDepth(DEPTH.player);
+    this.tilt = { pitch: 0, roll: 0, t: Math.random() * 10, vx: 0, vy: 0, rot: 0 };
 
     this.rotor = scene.add.image(x, y, 'rotor');
     this.rotor.setDepth(DEPTH.rotor);
@@ -75,7 +79,7 @@ export class Player {
   hide() {
     this.body.setVelocity(0, 0);
     this.body.enable = false;
-    this.sprite.setVisible(false);
+    this.look.setVisible(false);
     this.rotor.setVisible(false);
     this.shadow.setVisible(false);
   }
@@ -86,7 +90,7 @@ export class Player {
     this.invuln = invulnTime;
     this.body.enable = true;
     this.body.setVelocity(0, 0);
-    this.sprite.setVisible(true).setAlpha(1);
+    this.look.setVisible(true).setAlpha(1);
     this.rotor.setVisible(true);
     this.shadow.setVisible(true);
   }
@@ -150,7 +154,7 @@ export class Player {
     }
 
     // Инерция: скорость плавно догоняет желаемую
-    const k = 1 - Math.exp(-PLAYER.accel * dt);
+    const k = 1 - Math.exp(-this.stats.accel * dt);
     const v = this.body.velocity;
     this.body.setVelocity(v.x + (desired.x - v.x) * k, v.y + (desired.y - v.y) * k);
 
@@ -158,17 +162,60 @@ export class Player {
     const speed = this.body.velocity.length();
     if (speed > 20) {
       const aim = Math.atan2(this.body.velocity.y, this.body.velocity.x);
-      s.rotation = Phaser.Math.Angle.RotateTo(s.rotation, aim, PLAYER.turnSpeed * dt);
+      s.rotation = Phaser.Math.Angle.RotateTo(s.rotation, aim, this.stats.turnSpeed * dt);
     }
 
     // Мигание во время неуязвимости
     if (this.invuln > 0) {
       this.invuln -= dt;
-      s.setAlpha(this.invuln > 0 && Math.floor(this.invuln * 20) % 2 ? 0.35 : 1);
+      this.look.setAlpha(this.invuln > 0 && Math.floor(this.invuln * 20) % 2 ? 0.35 : 1);
     }
 
     this.shadow.setPosition(s.x + 18, s.y + 26).setRotation(s.rotation);
-    this.rotor.setPosition(s.x, s.y);
+    this.updateTilt(dt);
     this.rotor.rotation += PLAYER.rotorSpeed * dt;
+  }
+
+  // Наклоны: ускорение вдоль носа — тангаж, поворот и боковое ускорение — крен, на месте — покачивание
+  updateTilt(dt) {
+    const T = PLAYER.tilt;
+    const s = this.sprite;
+    const tl = this.tilt;
+    const v = this.body.velocity;
+    tl.t += dt;
+    if (dt > 0) {
+      const ax = (v.x - tl.vx) / dt;
+      const ay = (v.y - tl.vy) / dt;
+      const fx = Math.cos(s.rotation);
+      const fy = Math.sin(s.rotation);
+      const along = ax * fx + ay * fy;     // > 0 — разгон, < 0 — торможение
+      const side = -ax * fy + ay * fx;     // вбок
+      const turn = Phaser.Math.Angle.Wrap(s.rotation - tl.rot) / dt;
+      // На месте воздух покачивает; в полёте покачивание стихает
+      const calm = Math.max(0, 1 - v.length() / 60);
+      const pitchT = Phaser.Math.Clamp(along / T.accelRef, -1, 1) + calm * T.idlePitch * Math.sin(tl.t * 1.3 + 1);
+      const rollT = Phaser.Math.Clamp(turn / T.turnRef + side / T.accelRef, -1, 1) + calm * T.idleRoll * Math.sin(tl.t * 1.9);
+      const k = 1 - Math.exp(-T.follow * dt);
+      tl.pitch += (pitchT - tl.pitch) * k;
+      tl.roll += (rollT - tl.roll) * k;
+      tl.calm = calm;
+    }
+    tl.vx = v.x;
+    tl.vy = v.y;
+    tl.rot = s.rotation;
+
+    const fx = Math.cos(s.rotation);
+    const fy = Math.sin(s.rotation);
+    const drift = (tl.calm ?? 0) * T.idleDrift;
+    const x = s.x + Math.sin(tl.t * 0.9) * drift;
+    const y = s.y + Math.cos(tl.t * 1.2) * drift;
+    // Спрайт смотрит вправо: scaleX — вдоль носа (тангаж), scaleY — поперёк (крен)
+    this.look
+      .setPosition(x, y)
+      .setRotation(s.rotation + tl.roll * T.rollYaw)
+      .setScale(1 - Math.abs(tl.pitch) * T.pitchSquash, 1 - Math.abs(tl.roll) * T.rollSquash);
+    // Диск винта наклоняется вместе с корпусом: смещён вперёд при разгоне, вбок при крене
+    const shift = T.rotorShift;
+    this.rotor.setPosition(x + fx * tl.pitch * shift - fy * tl.roll * shift, y + fy * tl.pitch * shift + fx * tl.roll * shift);
   }
 }

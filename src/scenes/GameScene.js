@@ -21,7 +21,7 @@ import { Wrecks } from '../systems/Wrecks.js';
 import { Artillery } from '../systems/Artillery.js';
 import { Extraction } from '../systems/Extraction.js';
 import { Depots } from '../systems/Depots.js';
-import { meta, applyMeta } from '../meta.js';
+import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
@@ -260,6 +260,8 @@ export class GameScene extends Phaser.Scene {
     // Добыча со складов — в кошелёк, и при гибели тоже (как в DRG: вынесенное остаётся)
     meta.money += this.depots.money;
     meta.parts += this.depots.parts;
+    // Опыт вертолёта — за любой исход; уровень открывает окраски и снаряжение
+    Object.assign(stats, addHeliXp(stats));
     recordRun(this.runRecord(stats, { cause, ending: stats.ending }));
     // Причина — на экран итогов: игрок должен понять, что его убило (Ходент: иначе смерть кажется нечестной)
     this.time.delayedCall(delay * 1000, () => this.scene.start('GameOverScene', { ...stats, cause }));
