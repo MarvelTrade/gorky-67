@@ -113,13 +113,39 @@ export class GameOverScene extends Phaser.Scene {
     const layout = () => {
       const { width, height } = this.scale;
       const short = height < 500;
-      const sep = short ? '  ·  ' : '\n';
+      // Телефон лёжа: всё в один столбик не влезало — кнопка «Ещё раз» ложилась на цифры.
+      // Две колонки: заголовок и концовка слева, цифры, рекорд и кнопки — справа
+      const wide = short && width >= 640;
+      const sep = short && !wide ? '  ·  ' : '\n';
       statsText.setText([causeLine, lines.join(sep), bossLine, heliUp].filter(Boolean).join('\n'));
-      statsText.setFontSize(short ? 20 : 24);
-      // Строка оружия и склеенные цифры на телефоне лёжа шире экрана — переносим
+      statsText.setFontSize(wide ? 15 : short ? 20 : 24).setLineSpacing(wide ? 2 : 8);
+      ending.setFontSize(wide ? 14 : 17);
+      bestText.setFontSize(wide ? 14 : 20);
+
+      if (wide) {
+        const lw = width * 0.44;
+        const lx = lw / 2 + 12;
+        const rx = lw + 12 + (width - lw - 12) / 2;
+        statsText.setWordWrapWidth(width - lw - 40);
+        ending.setWordWrapWidth(lw - 16);
+        const leftH = title.height + 10 + ending.height;
+        let y = Math.max(8, (height - leftH) / 2);
+        title.setPosition(lx, y + title.height / 2);
+        ending.setPosition(lx, y + title.height + 10);
+        y = 10;
+        statsText.setPosition(rx, y);
+        y += statsText.height + 4;
+        bestText.setPosition(rx, y);
+        y += bestText.height + 8;
+        const by = Math.min(y + 30, height - 92);
+        button.setPosition(rx, by);
+        hangar.setPosition(rx, by + 50);
+        copy.setPosition(rx, by + 80);
+        return;
+      }
+
       statsText.setWordWrapWidth(width - 32);
       ending.setWordWrapWidth(Math.min(480, width - 40));
-
       let y = height * (short ? 0.06 : 0.12);
       title.setPosition(width / 2, y + title.height / 2);
       y += title.height + 12;

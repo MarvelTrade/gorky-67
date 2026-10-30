@@ -57,19 +57,23 @@ export class PauseScene extends Phaser.Scene {
     const w = Math.min(320, width - 40);
     this.overlay.setSize(width, height);
     this.overlay.input.hitArea.setSize(width, height);
-    const step = Math.min(74, height * 0.12);
-    const top = Math.max(40, height * 0.5 - step * 2.2);
-    this.title.setPosition(width / 2, top);
-    for (const [btn, y] of [
-      [this.resumeBtn, top + step],
-      [this.settingsBtn, top + step * 2],
-      [this.quitBtn, top + step * 3],
-    ]) {
-      btn.setPosition(width / 2, y);
-      btn.bg.setSize(w, 60);
-      btn.bg.input.hitArea.setSize(w, 60);
-    }
-    this.info.setWordWrapWidth(width - 40).setPosition(width / 2, top + step * 3 + 44);
+    // Шаг — от высоты кнопки, а не от экрана: лёжа (375 px) шаг был 44 при кнопках 60 — налезали
+    const low = height < 500;
+    const btnH = low ? 44 : 60;
+    const step = btnH + (low ? 8 : 14);
+    this.title.setFontSize(low ? 30 : 40);
+    const titleH = this.title.height;
+    // Заголовок, три кнопки и строка итогов — блоком по центру
+    const block = titleH + 10 + step * 3 + 50;
+    const top = Math.max(8, (height - block) / 2);
+    this.title.setPosition(width / 2, top + titleH / 2);
+    const first = top + titleH + 10 + btnH / 2;
+    [this.resumeBtn, this.settingsBtn, this.quitBtn].forEach((btn, i) => {
+      btn.setPosition(width / 2, first + i * step);
+      btn.bg.setSize(w, btnH);
+      btn.bg.input.hitArea.setSize(w, btnH);
+    });
+    this.info.setWordWrapWidth(width - 40).setPosition(width / 2, first + 2 * step + btnH / 2 + 10);
   }
 
   showInfo() {
