@@ -23,6 +23,7 @@ export default {
   radioCallsign_cheryomukha: 'CHERYOMUKHA',
   radioCallsign_vova: 'VOVA',
   radioCallsign_ivan: 'IVAN',
+  lowArmor: '⚠ ARMOR CRITICAL',
   hint_fly: 'Touch and drag — the helicopter flies',
   hint_fly_keys: 'WASD or arrow keys to fly',
   hint_gems: 'Collect crystals to level up',

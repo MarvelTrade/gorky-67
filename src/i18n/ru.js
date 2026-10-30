@@ -25,6 +25,7 @@ export default {
   radioCallsign_cheryomukha: 'ЧЕРЁМУХА',
   radioCallsign_vova: 'ВОВА',
   radioCallsign_ivan: 'ИВАН',
+  lowArmor: '⚠ БРОНЯ НА ИСХОДЕ',
   hint_fly: 'Коснись и тяни — вертолёт полетит',
   hint_fly_keys: 'WASD или стрелки — полёт',
   hint_gems: 'Собирай кристаллы — будет новый уровень',

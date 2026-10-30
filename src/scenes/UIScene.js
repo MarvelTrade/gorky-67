@@ -22,9 +22,18 @@ export class UIScene extends Phaser.Scene {
 
     // Трещины на стекле и мигание при броне ≤ 20% — под HUD, чтобы цифры читались
     this.cracks = this.add.graphics().setVisible(false);
-    this.blink = this.add.rectangle(0, 0, 10, 10, 0x000000, 0).setOrigin(0);
-    this.blinkLeft = 0;
-    this.blinkNext = 0;
+    this.lowT = 0;
+    this.lowText = this.add
+      .text(0, 0, t('lowArmor'), {
+        fontFamily: 'sans-serif',
+        fontSize: '15px',
+        fontStyle: 'bold',
+        color: '#1b1b10',
+        backgroundColor: '#ffc400',
+        padding: { x: 10, y: 4 },
+      })
+      .setOrigin(0.5, 1)
+      .setVisible(false);
     this.bars = this.add.graphics();
 
     // Пауза — справа сверху. Большая зона нажатия, чтобы попадать пальцем
@@ -98,7 +107,7 @@ export class UIScene extends Phaser.Scene {
     g.fillRect(PAD - 2, hpY - 2, hpW + 4, HP_BAR_H + 4);
     // Мало брони — полоска пульсирует: сигнал до гибели, а не после (Ходент: смерть не должна быть внезапной)
     const low = hpFrac <= 0.25 && p.alive;
-    this.updateCracks(hpFrac <= LOW_HP.crackAt && p.alive, width, height, delta / 1000);
+    this.updateLowHp(g, hpFrac <= LOW_HP.crackAt && p.alive, width, height, delta / 1000, gs.scene.isPaused());
     const pulse = low ? 0.55 + 0.45 * Math.sin(this.hudTime * 10) : 1;
     g.fillStyle(hpFrac > 0.5 ? 0x6cc04a : hpFrac > 0.25 ? 0xe0b030 : 0xe04030, pulse);
     g.fillRect(PAD, hpY, hpW * hpFrac, HP_BAR_H);
@@ -346,56 +355,89 @@ export class UIScene extends Phaser.Scene {
     );
   }
 
-  // Стекло кабины трескается, когда брони ≤ LOW_HP.crackAt: лучи от 2–3 точек удара, рисуются один раз.
-  // Свет иногда коротко пропадает — проводка повреждена. Починили (броня выше порога) — стекло снова целое
-  updateCracks(on, width, height, dt) {
+  // Брони ≤ LOW_HP.crackAt: жёлтая кромка по краям (медленно дышит), надпись и трещины по углам стекла.
+  // Починили (броня выше порога) — всё уходит
+  updateLowHp(g, on, width, height, dt, paused) {
     if (on && (!this.cracks.visible || this.cracksW !== width || this.cracksH !== height)) {
       this.drawCracks(width, height);
     }
     this.cracks.setVisible(on);
-    this.blink.setSize(width, height);
-    if (!on) {
-      this.blink.setFillStyle(0x000000, 0);
-      return;
+    this.lowText.setVisible(on);
+    if (!on) return;
+    if (!paused) this.lowT += dt;
+    const k = 0.5 + 0.5 * Math.sin(this.lowT * LOW_HP.edgePulse);
+    const [a0, a1] = LOW_HP.edgeAlpha;
+    const a = a0 + (a1 - a0) * k;
+    // Три полосы с убывающей прозрачностью — мягкий край, как у тревоги орды
+    for (let i = 0; i < 3; i++) {
+      const w = 8 * (i + 1);
+      g.fillStyle(LOW_HP.edge, a / (i + 1));
+      g.fillRect(0, 0, width, w);
+      g.fillRect(0, height - w, width, w);
+      g.fillRect(0, 0, w, height);
+      g.fillRect(width - w, 0, w, height);
     }
-    this.blinkNext -= dt;
-    this.blinkLeft -= dt;
-    if (this.blinkNext <= 0) {
-      this.blinkNext = Phaser.Math.FloatBetween(LOW_HP.blinkEvery[0], LOW_HP.blinkEvery[1]);
-      this.blinkLeft = LOW_HP.blinkTime;
-    }
-    this.blink.setFillStyle(0x000000, this.blinkLeft > 0 ? LOW_HP.blinkAlpha : 0);
+    // Внизу: сверху полоска босса и радио
+    this.lowText.setPosition(width / 2, height - 30).setAlpha(0.7 + 0.3 * k);
   }
 
+  // Трещины стекла кабины: 1–2 удара по углам (центр с вертолётом и HUD слева сверху не трогаем).
+  // От точки удара — лучи, которые ветвятся, между лучами — «паутина» колец, как у настоящего стекла.
+  // Рисуются один раз, когда броня упала до порога
   drawCracks(width, height) {
     this.cracksW = width;
     this.cracksH = height;
     const g = this.cracks.clear();
-    const hits = Phaser.Math.Between(2, 3);
-    for (let h = 0; h < hits; h++) {
-      // Удары ближе к краям — центр, где вертолёт, остаётся видимым
-      const cx = Phaser.Math.Between(0, 1) ? Phaser.Math.FloatBetween(0.05, 0.3) * width : Phaser.Math.FloatBetween(0.7, 0.95) * width;
-      const cy = Phaser.Math.FloatBetween(0.2, 0.9) * height;
-      const rays = Phaser.Math.Between(6, 9);
+    const R = Phaser.Math.FloatBetween;
+    const corners = Phaser.Utils.Array.Shuffle([
+      [0.9, 0.12], [0.1, 0.88], [0.9, 0.88],
+    ]).slice(0, Phaser.Math.Between(1, 2));
+    const line = (x1, y1, x2, y2, w) => {
+      g.lineStyle(w + 2, 0x000000, 0.28).lineBetween(x1, y1, x2, y2);
+      g.lineStyle(w, 0xdff2ff, 0.55).lineBetween(x1, y1, x2, y2);
+    };
+    for (const [fx, fy] of corners) {
+      const cx = fx * width + R(-20, 20);
+      const cy = fy * height + R(-20, 20);
+      const size = Math.min(width, height) * R(0.22, 0.32);
+      const rays = Phaser.Math.Between(6, 8);
+      const pts = []; // точки лучей на кольцах — для «паутины»
       for (let r = 0; r < rays; r++) {
-        let a = (r / rays) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.3, 0.3);
+        let a = (r / rays) * Math.PI * 2 + R(-0.25, 0.25);
         let x = cx;
         let y = cy;
-        const len = Phaser.Math.FloatBetween(0.12, 0.3) * Math.min(width, height);
-        // Луч — ломаная из коротких отрезков
-        for (let d = 0; d < len; d += 18) {
-          a += Phaser.Math.FloatBetween(-0.35, 0.35);
-          const nx = x + Math.cos(a) * 18;
-          const ny = y + Math.sin(a) * 18;
-          g.lineStyle(3, 0x000000, 0.35).lineBetween(x, y, nx, ny);
-          g.lineStyle(1.2, 0xe8f4ff, 0.75 - (d / len) * 0.5).lineBetween(x, y, nx, ny);
+        const ring = [];
+        const segs = 6;
+        const len = size * R(0.7, 1.1);
+        for (let k = 1; k <= segs; k++) {
+          a += R(-0.18, 0.18);
+          const d = (len / segs) * k;
+          const nx = cx + Math.cos(a) * d;
+          const ny = cy + Math.sin(a) * d;
+          line(x, y, nx, ny, k < 3 ? 1.6 : 1);
+          // Ветка от луча — короткая, в сторону
+          if (k > 1 && Math.random() < 0.35) {
+            const ba = a + (Math.random() < 0.5 ? 1 : -1) * R(0.5, 0.9);
+            const bl = (len / segs) * R(0.6, 1.2);
+            line(nx, ny, nx + Math.cos(ba) * bl, ny + Math.sin(ba) * bl, 0.8);
+          }
+          ring.push([nx, ny]);
           x = nx;
           y = ny;
         }
+        pts.push(ring);
       }
-      // Кольца вокруг точки удара
-      g.lineStyle(1, 0xe8f4ff, 0.5).strokeCircle(cx, cy, 10).strokeCircle(cx, cy, 22);
-      g.fillStyle(0xffffff, 0.35).fillCircle(cx, cy, 4);
+      // «Паутина»: соединяем соседние лучи на двух кольцах — ломаные дуги
+      for (const k of [1, 3]) {
+        for (let r = 0; r < rays; r++) {
+          const p1 = pts[r][k];
+          const p2 = pts[(r + 1) % rays][k];
+          if (p1 && p2) line(p1[0], p1[1], p2[0], p2[1], 0.8);
+        }
+      }
+      // Точка удара — мелкое крошево
+      g.fillStyle(0xffffff, 0.45).fillCircle(cx, cy, 3);
+      for (let i = 0; i < 8; i++) g.fillStyle(0xffffff, 0.3).fillCircle(cx + R(-9, 9), cy + R(-9, 9), 1.2);
     }
   }
 }
