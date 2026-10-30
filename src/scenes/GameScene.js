@@ -245,7 +245,8 @@ export class GameScene extends Phaser.Scene {
     this.player.body.moves = false;
     const stats = this.runStats(win);
     recordRun(this.runRecord(stats, { cause, ending: stats.ending }));
-    this.time.delayedCall(delay * 1000, () => this.scene.start('GameOverScene', stats));
+    // Причина — на экран итогов: игрок должен понять, что его убило (Ходент: иначе смерть кажется нечестной)
+    this.time.delayedCall(delay * 1000, () => this.scene.start('GameOverScene', { ...stats, cause }));
   }
 
   runStats(win) {

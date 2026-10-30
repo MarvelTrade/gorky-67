@@ -87,6 +87,7 @@ export default {
   enemy_boss: 'Объект',
   enemy_wire: 'провода',
   enemy_artillery: 'свой обстрел',
+  downedAt: 'Сбит на',
 
   // Улучшения
   levelUp: 'Уровень',

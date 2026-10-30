@@ -64,6 +64,7 @@ export class UIScene extends Phaser.Scene {
   update(time, delta) {
     const gs = this.gs;
     if (!gs.player) return;
+    this.hudTime = time / 1000; // для пульсаций HUD (не this.time — это часы сцены Phaser)
     this.updateRadio(gs, delta / 1000);
     const { width } = this.scale;
     const p = gs.player;
@@ -83,8 +84,15 @@ export class UIScene extends Phaser.Scene {
     const hpFrac = Math.max(0, p.hp / p.maxHp);
     g.fillStyle(0x000000, 0.55);
     g.fillRect(PAD - 2, hpY - 2, hpW + 4, HP_BAR_H + 4);
-    g.fillStyle(hpFrac > 0.5 ? 0x6cc04a : hpFrac > 0.25 ? 0xe0b030 : 0xe04030);
+    // Мало брони — полоска пульсирует: сигнал до гибели, а не после (Ходент: смерть не должна быть внезапной)
+    const low = hpFrac <= 0.25 && p.alive;
+    const pulse = low ? 0.55 + 0.45 * Math.sin(this.hudTime * 10) : 1;
+    g.fillStyle(hpFrac > 0.5 ? 0x6cc04a : hpFrac > 0.25 ? 0xe0b030 : 0xe04030, pulse);
     g.fillRect(PAD, hpY, hpW * hpFrac, HP_BAR_H);
+    if (low) {
+      g.lineStyle(2, 0xff5040, pulse);
+      g.strokeRect(PAD - 2, hpY - 2, hpW + 4, HP_BAR_H + 4);
+    }
 
     this.levelText.setPosition(PAD, XP_BAR_H + 6).setText(`${t('level')} ${gs.level}`);
     this.hpText.setPosition(PAD + hpW / 2, hpY + HP_BAR_H / 2).setText(`${Math.ceil(p.hp)} / ${p.maxHp}`);
@@ -93,7 +101,7 @@ export class UIScene extends Phaser.Scene {
     const elapsed = Math.min(gs.spawner.elapsed, RUN.duration);
     this.timerText
       .setPosition(width / 2, XP_BAR_H + 6)
-      .setText(formatTime(elapsed))
+      .setText(`${formatTime(elapsed)} / ${formatTime(RUN.duration)}`) // цель видна: сколько осталось продержаться
       .setColor(RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
 
     // HP босса — под таймером, пока он жив

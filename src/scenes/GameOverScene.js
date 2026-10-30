@@ -36,6 +36,8 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 0);
 
+    // Проигрыш: что сбило и когда — «танк (снаряд)», «провода», «свой обстрел»
+    const causeLine = !stats.win && stats.cause ? `${t('downedAt')} ${formatTime(stats.time)}: ${causeText(stats.cause)}` : null;
     const lines = [
       `${t('time')}: ${formatTime(stats.time)}`,
       `${t('kills')}: ${stats.kills}`,
@@ -97,7 +99,7 @@ export class GameOverScene extends Phaser.Scene {
       const { width, height } = this.scale;
       const short = height < 500;
       const sep = short ? '  ·  ' : '\n';
-      statsText.setText([lines.join(sep), bossLine].filter(Boolean).join('\n'));
+      statsText.setText([causeLine, lines.join(sep), bossLine].filter(Boolean).join('\n'));
       statsText.setFontSize(short ? 20 : 24);
       ending.setWordWrapWidth(Math.min(480, width - 40));
 
@@ -150,4 +152,10 @@ function isBetter(a, b) {
   if (!!a.boss !== !!b.boss) return !!a.boss;
   if (a.time !== b.time) return a.boss ? a.time < b.time : a.time > b.time;
   return a.kills > b.kills;
+}
+
+// cause — «тип» или «тип:shell» (как в замерах)
+function causeText(cause) {
+  const [type, how] = cause.split(':');
+  return t(`enemy_${type}`) + (how ? ` (${t('byShell')})` : '');
 }

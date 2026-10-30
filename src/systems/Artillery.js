@@ -30,14 +30,26 @@ export class Artillery {
       z.left -= dt;
       const k = 1 - Math.max(0, z.left) / A.warn; // 0 → 1 к удару
       if (z.left > 0) {
-        // Круг краснеет и заполняется к удару; кольцо пульсирует чаще к концу
+        // Жёлто-чёрная штриховка «опасная зона» (не красная: красный — у снарядов, их нельзя путать).
+        // Штрихи плотнеют к удару, кольцо пульсирует чаще, внутреннее сжимается — отсчёт
         const pulse = 0.5 + 0.5 * Math.sin(elapsed * (6 + 14 * k));
-        g.fillStyle(0xff2d2d, 0.08 + 0.22 * k);
-        g.fillCircle(z.x, z.y, A.radius);
-        g.lineStyle(3, 0xff3b30, 0.5 + 0.5 * pulse);
-        g.strokeCircle(z.x, z.y, A.radius);
-        g.lineStyle(2, 0xff3b30, 0.8);
-        g.strokeCircle(z.x, z.y, A.radius * (1 - k)); // сжимающееся кольцо — отсчёт до удара
+        const R = A.radius;
+        g.fillStyle(A.colors.dark, 0.18 + 0.12 * k);
+        g.fillCircle(z.x, z.y, R);
+        g.lineStyle(6, A.colors.warn, 0.25 + 0.35 * k);
+        for (let d = -R; d <= R; d += 22) {
+          // диагональные штрихи, обрезанные по кругу: хорда прямой x - y = d
+          const h = Math.sqrt(Math.max(0, R * R - (d * d) / 2));
+          const mx = z.x + d / 2;
+          const my = z.y - d / 2;
+          g.lineBetween(mx - h * Math.SQRT1_2, my - h * Math.SQRT1_2, mx + h * Math.SQRT1_2, my + h * Math.SQRT1_2);
+        }
+        g.lineStyle(5, A.colors.dark, 0.9);
+        g.strokeCircle(z.x, z.y, R);
+        g.lineStyle(3, A.colors.warn, 0.55 + 0.45 * pulse);
+        g.strokeCircle(z.x, z.y, R);
+        g.lineStyle(3, A.colors.warn, 0.9);
+        g.strokeCircle(z.x, z.y, R * (1 - k)); // сжимающееся кольцо — отсчёт до удара
         continue;
       }
       // Залп: снаряды падают по кругу в течение ARTILLERY.salvo с; урон — один раз, на первом снаряде

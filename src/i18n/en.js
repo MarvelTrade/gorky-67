@@ -80,6 +80,7 @@ export default {
   enemy_boss: 'The Object',
   enemy_wire: 'power lines',
   enemy_artillery: 'friendly shelling',
+  downedAt: 'Shot down at',
 
   levelUp: 'Level',
   lvl: 'lv.',

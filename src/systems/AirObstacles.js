@@ -171,15 +171,15 @@ export class AirObstacles {
         const t = ((this.time * E.speed) / len + i / n + w.phase) % 1;
         const x = w.x1 + (w.x2 - w.x1) * t;
         const y = w.y1 + (w.y2 - w.y1) * t;
-        g.fillStyle(0x7fd8ff, 0.35);
+        g.fillStyle(E.glow, 0.35);
         g.fillCircle(x, y, 4);
-        g.fillStyle(0xe8f8ff, 1);
+        g.fillStyle(E.core, 1);
         g.fillCircle(x, y, 1.6);
       }
       // Дуга у изолятора: ломаная из коротких отрезков, мигает
       if (Math.sin(this.time * 9 + w.phase * 40) > E.arcThreshold) {
         const [ex, ey] = Math.sin(w.phase * 99) > 0 ? [w.x1, w.y1] : [w.x2, w.y2];
-        g.lineStyle(1.5, 0xbfeaff, 0.9);
+        g.lineStyle(1.5, E.arc, 0.9);
         g.beginPath();
         g.moveTo(ex, ey);
         for (let k = 1; k <= 3; k++) g.lineTo(ex + Phaser.Math.Between(-7, 7), ey + Phaser.Math.Between(-7, 7));
