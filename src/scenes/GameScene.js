@@ -16,6 +16,7 @@ import { Supply } from '../systems/Supply.js';
 import { Flares } from '../systems/Flares.js';
 import { RunEvents } from '../systems/RunEvents.js';
 import { CityNav } from '../systems/CityNav.js';
+import { AirObstacles } from '../systems/AirObstacles.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -68,6 +69,10 @@ export class GameScene extends Phaser.Scene {
     this.flares = new Flares(this, this.player, this.shells);
     this.runEvents = new RunEvents(this);
 
+    // Высокие сооружения и провода — до стен: башни тоже станут стенами для наземных врагов
+    this.air = new AirObstacles(this, this.player);
+    this.air.build();
+    this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
@@ -260,6 +265,7 @@ export class GameScene extends Phaser.Scene {
       revived: this.revived,
       crates: { ...this.supply.picked },
       flareKills: this.flares.kills,
+      wiresCut: this.air.cut,
       hordes: this.runEvents.summary(),
       bossKilledAt: this.bossKilledAt,
       bossSwarm: this.runEvents.bossSwarm ?? null,
@@ -416,6 +422,7 @@ export class GameScene extends Phaser.Scene {
     if (this.ended || this.dying) return;
     const dt = delta / 1000;
     this.player.update(dt);
+    this.air.update();
     this.gun.update(dt);
     this.missiles.update(dt);
     this.flares.update(dt);

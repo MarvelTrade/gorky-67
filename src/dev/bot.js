@@ -91,6 +91,32 @@ export function installBot(game) {
           fx += (dx / d) * w;
           fy += (dy / d) * w;
         }
+        // Высокие сооружения и провода видны — живой игрок их облетает
+        if (sc.air) {
+          for (const z of sc.air.towers.getChildren()) {
+            const dx = p.x - z.x;
+            const dy = p.y - z.y;
+            const d = Math.hypot(dx, dy) || 1;
+            const R = z.body.halfWidth + 70;
+            if (d < R) {
+              fx += (dx / d) * 2 * ((R - d) / R);
+              fy += (dy / d) * 2 * ((R - d) / R);
+            }
+          }
+          for (const w of sc.air.wires) {
+            if (!w.alive) continue;
+            const wx = w.x2 - w.x1;
+            const wy = w.y2 - w.y1;
+            const t = Math.max(0, Math.min(1, ((p.x - w.x1) * wx + (p.y - w.y1) * wy) / (wx * wx + wy * wy || 1)));
+            const dx = p.x - (w.x1 + t * wx);
+            const dy = p.y - (w.y1 + t * wy);
+            const d = Math.hypot(dx, dy) || 1;
+            if (d < 70) {
+              fx += (dx / d) * 2.5 * ((70 - d) / 70);
+              fy += (dy / d) * 2.5 * ((70 - d) / 70);
+            }
+          }
+        }
         // Шаг в сторону от снарядов, летящих в нас
         for (const s of sc.shells.getChildren()) {
           if (!s.active) continue;

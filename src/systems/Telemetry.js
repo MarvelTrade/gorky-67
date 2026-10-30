@@ -76,7 +76,8 @@ export function report() {
         `${formatTime(r.time)} · ${result}${r.revived ? ' (после воскрешения)' : ''} · ур. ${r.level} · убито ${r.kills} · ${boss}`,
       `   улучшения: ${picks}`,
       `   ящики: ${r.crates ? ['repair', 'magnet', 'bomb'].map((k) => `${t(`supply_${k}`)} ${r.crates[k]}`).join(', ') : '—'}` +
-        ` · сбито ловушками: ${r.flareKills ?? 0}`,
+        ` · сбито ловушками: ${r.flareKills ?? 0}` +
+        (r.wiresCut != null ? ` · порвано проводов: ${r.wiresCut}` : ''),
       `   ${hordes || 'орд не было'} · концовка: ${r.ending ?? '—'}`,
       // у забегов, записанных до коридора живых, этой строки нет
       r.spawn &&

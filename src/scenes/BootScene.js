@@ -32,6 +32,7 @@ export class BootScene extends Phaser.Scene {
     this.makeParticleTextures();
     this.makeSupplyTextures();
     this.makePauseTexture();
+    this.makeTowerTextures();
     this.makeCityTiles();
     this.scene.start('MenuScene');
   }
@@ -417,6 +418,71 @@ export class BootScene extends Phaser.Scene {
     for (let i = 0; i < n; i++) {
       this.tree(g, x + rnd.between(10, w - 10), y + rnd.between(10, h - 10), rnd.between(8, 13));
     }
+  }
+
+  // Высокие сооружения, вид сверху. Высоту передаёт длинная тень, которую ставит AirObstacles.
+  makeTowerTextures() {
+    // Решётчатая радиовышка: сетчатая оболочка-гиперболоид, верхняя площадка, красный огонь
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    const c = 45;
+    g.lineStyle(2, 0x9aa3ab);
+    for (const r of [40, 31, 22]) g.strokeCircle(c, c, r);
+    g.lineStyle(1.5, 0x7d868e);
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const b = a + Math.PI / 4; // наклонные стержни — сетка «крест-накрест»
+      g.lineBetween(c + Math.cos(a) * 40, c + Math.sin(a) * 40, c + Math.cos(b) * 13, c + Math.sin(b) * 13);
+      g.lineBetween(c + Math.cos(b) * 40, c + Math.sin(b) * 40, c + Math.cos(a) * 13, c + Math.sin(a) * 13);
+    }
+    g.fillStyle(0x5f676e);
+    g.fillCircle(c, c, 12);
+    g.fillStyle(0xff3b30);
+    g.fillCircle(c, c, 4);
+    g.lineStyle(2, 0x1c2126);
+    g.strokeCircle(c, c, 42);
+    this.makeTexture(g, 'towerRadio', 90, 90);
+
+    // Водонапорная башня: круглый бак с кольцами и люком
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x8f9aa3);
+    g.fillCircle(30, 30, 27);
+    g.fillStyle(0xb4bec6);
+    g.fillCircle(30, 30, 20);
+    g.lineStyle(2, 0x6c7680);
+    g.strokeCircle(30, 30, 13);
+    g.fillStyle(0x4e565d);
+    g.fillCircle(30, 30, 5);
+    g.lineStyle(2, 0x1c2126);
+    g.strokeCircle(30, 30, 28);
+    this.makeTexture(g, 'towerWater', 60, 60);
+
+    // Колокольня: белый четверик, ярус и зелёный купол со шпилем
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xd9d6cc);
+    g.fillRect(3, 3, 38, 38);
+    g.fillStyle(0xbcb8ac);
+    g.fillRect(9, 9, 26, 26);
+    g.fillStyle(0x3d6b4f);
+    g.fillCircle(22, 22, 10);
+    g.fillStyle(0xe0b84a);
+    g.fillCircle(22, 22, 3);
+    g.lineStyle(2, 0x1c2126);
+    g.strokeRect(2, 2, 40, 40);
+    this.makeTexture(g, 'towerBell', 44, 44);
+
+    // Заводская труба: красно-белые кольца и чёрное жерло
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xb8473a);
+    g.fillCircle(18, 18, 16);
+    g.fillStyle(0xe8e2d6);
+    g.fillCircle(18, 18, 12);
+    g.fillStyle(0xb8473a);
+    g.fillCircle(18, 18, 9);
+    g.fillStyle(0x141414);
+    g.fillCircle(18, 18, 6);
+    g.lineStyle(2, 0x1c2126);
+    g.strokeCircle(18, 18, 17);
+    this.makeTexture(g, 'towerChimney', 36, 36);
   }
 
   makeTexture(g, key, w, h) {

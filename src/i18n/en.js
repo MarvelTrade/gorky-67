@@ -71,6 +71,7 @@ export default {
   enemy_aa: 'AA gun',
   enemy_tank: 'tank',
   enemy_boss: 'The Object',
+  enemy_wire: 'power lines',
 
   levelUp: 'Level',
   lvl: 'lv.',

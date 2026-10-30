@@ -78,6 +78,7 @@ export default {
   enemy_aa: 'зенитка',
   enemy_tank: 'танк',
   enemy_boss: 'Объект',
+  enemy_wire: 'провода',
 
   // Улучшения
   levelUp: 'Уровень',
