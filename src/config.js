@@ -665,13 +665,26 @@ export const HELI = {
   slots: [2, 2, 2, 2, 2, 3, 3, 3],                     // ячеек снаряжения на уровне
 };
 
-// Окраски — выдуманные, в духе советской авиации; цвет умножается на спрайт (tint)
+// Окраски — выдуманные, в духе советских ВВС 70–80-х. Из каждой при загрузке рисуется своя текстура
+// вертолёта heli_<id> (systems/Livery.js): камуфляж по силуэту со светотенью спрайта, звёзды, бортовой номер.
+// base — основной цвет; spots — цвета пятен (style: 'spots' — пятна, 'stripes' — косые полосы «тигр»),
+// size — размер пятен px, count — сколько; number/numColor — бортовой номер; bands — цветные полосы
+// (полярная авиация); edging — белая окантовка по краю; bigStars — крупные звёзды (парадная)
 export const LIVERIES = [
-  { id: 'olive', tint: null, level: 1 },     // защитная, как с завода (спрайт без изменений)
-  { id: 'sand', tint: 0xffd27a, level: 2 },  // пустынная
-  { id: 'sea', tint: 0x7fa8ff, level: 3 },   // морская авиация
-  { id: 'night', tint: 0x55606a, level: 4 }, // ночная
-  { id: 'parade', tint: 0xff7a66, level: 6 }, // парадная
+  // защитная: зелёно-коричневая пятнистая, как с завода
+  { id: 'olive', level: 1, base: 0x5f6c35, spots: [0x6e5232, 0x3d4a25], size: 9, count: 9, number: '67', numColor: '#e8c84a' },
+  // пустынная, «южные округа»: песок с коричневыми пятнами
+  { id: 'sand', level: 2, base: 0xc4a66c, spots: [0x8c663a, 0xa58552], size: 8, count: 10, number: '12', numColor: '#f4f0e4' },
+  // морская авиация: серо-голубая, светлые разводы
+  { id: 'sea', level: 3, base: 0x667e92, spots: [0x93a7b6, 0x4f6476], size: 10, count: 6, number: '35', numColor: '#f4f0e4' },
+  // ночная: почти чёрная с серыми пятнами
+  { id: 'night', level: 4, base: 0x30363a, spots: [0x535b62, 0x23272a], size: 9, count: 8, number: '08', numColor: '#c8ccc8' },
+  // арктическая (полярная): бело-серая, красные полосы на хвосте и носу
+  { id: 'arctic', level: 5, base: 0xd6dadb, spots: [0x9aa3a8], size: 8, count: 7, number: '44', numColor: '#2a2e30', bands: 0xc23a26 },
+  // парадная: ровная зелёная, белая окантовка, большие звёзды
+  { id: 'parade', level: 6, base: 0x4d6e2c, spots: [], size: 0, count: 0, number: '01', numColor: '#f4f0e4', edging: 0xf0ece0, bigStars: true },
+  // пограничная: светло-зелёная с тёмными косыми полосами
+  { id: 'border', level: 7, base: 0x76884a, spots: [0x2f3f1f, 0x4c5e2c], size: 5, count: 7, style: 'stripes', number: '23', numColor: '#e8c84a' },
 ];
 
 // Снаряжение в ячейки (как в DRG: Survivor): у каждой вещи плюс и, где честно, цена в другом.
