@@ -21,6 +21,10 @@ export default {
 
   radioCallsign_beryoza: 'BERYOZA',
   radioCallsign_cheryomukha: 'CHERYOMUKHA',
+  radioCallsign_vova: 'VOVA',
+  radioCallsign_misha: 'MISHA',
+  crew_1: "Misha, get this — the radio actually works!",
+  crew_2: 'Vova... nobody said "get this" in nineteen eighty-three.',
   cher_1: 'Misha... Vova... this is Cheryomukha... The gas is all over the city... Zarya is in the air... hold on, boys...',
   cher_2: "Mishenka... the trolleybus wires are live... don't touch them, my dears...",
   cher_3: 'Vova... the towers and chimneys are taller than you... go around early... please...',

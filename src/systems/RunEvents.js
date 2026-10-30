@@ -51,10 +51,11 @@ export class RunEvents {
 
     // «Черёмуха»: город в коллапсе, берегись проводов и вышек
     this.said ??= new Set(); // не в конфиге — иначе второй забег прошёл бы молча
-    for (const line of RADIO.cheryomukha) {
+    // и разговоры экипажа (who — позывной из строки)
+    for (const line of [...RADIO.crew, ...RADIO.cheryomukha]) {
       if (!this.said.has(line.key) && elapsed >= line.at) {
         this.said.add(line.key);
-        this.scene.events.emit('radio', t(line.key), 'cheryomukha');
+        this.scene.events.emit('radio', t(line.key), line.who ?? 'cheryomukha');
       }
     }
 
