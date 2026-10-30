@@ -96,11 +96,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     switch (this.cfg.behavior) {
-      case 'chase':
-        this.body.setVelocity((dx / dist) * this.speed, (dy / dist) * this.speed);
-        this.rotation = Math.atan2(dy, dx);
+      case 'chase': {
+        const a = this.pathAngle(dx, dy);
+        this.body.setVelocity(Math.cos(a) * this.speed, Math.sin(a) * this.speed);
+        this.rotation = a;
         if (this.cfg.hopRange) this.updateHop(dt, dist);
         break;
+      }
       case 'dash':
         this.updateDash(dt, dx, dy, dist);
         break;
@@ -137,8 +139,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (this.timer <= 0) {
         this.phase = 'dash';
         this.timer = cfg.dashTime;
-        this.rotation = Math.atan2(dy, dx);
-        this.body.setVelocity((dx / dist) * cfg.dashSpeed, (dy / dist) * cfg.dashSpeed);
+        // Рывок — по улице в обход домов, если игрок за домом
+        this.rotation = this.pathAngle(dx, dy);
+        this.body.setVelocity(Math.cos(this.rotation) * cfg.dashSpeed, Math.sin(this.rotation) * cfg.dashSpeed);
       }
     } else if (this.timer <= 0) {
       this.phase = 'pause';
@@ -161,10 +164,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.hopCd = cfg.hopCooldown;
       this.setAlpha(0);
     }
+    const before = this.hopT;
     this.hopT -= dt;
     if (this.hopT <= 0) {
       this.endHop();
       return;
+    }
+    // В высшей точке прыжка заражённый достаёт вертолёт над крышей: иначе над домом он недосягаем
+    // (замер: 30 с над башней 100×100 без урона, вокруг 65 заражённых). На улице урон — только касанием.
+    const mid = cfg.hopTime / 2;
+    const t = this.target;
+    if (before > mid && this.hopT <= mid && dist <= cfg.hopRange && this.scene.nav?.isBlocked(t.x, t.y)) {
+      t.takeDamage(this.damage, this.type);
     }
     const k = Math.sin(Math.PI * (1 - this.hopT / cfg.hopTime));
     this.hopImg.setPosition(this.x, this.y).setRotation(this.rotation).setScale(1 + (cfg.hopScale - 1) * k);
@@ -193,7 +204,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   updateTank(dt, dx, dy, dist) {
     const cfg = this.cfg;
     const aim = Math.atan2(dy, dx);
-    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, aim, cfg.turnRate * dt);
+    // Едет по улице в обход домов, а стреляет, когда корпус смотрит на игрока
+    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, this.pathAngle(dx, dy), cfg.turnRate * dt);
     this.body.setVelocity(Math.cos(this.rotation) * this.speed, Math.sin(this.rotation) * this.speed);
 
     this.timer -= dt;
@@ -223,6 +235,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const offset = Phaser.Math.FloatBetween(0, Math.PI * 2);
       for (let i = 0; i < cfg.burstCount; i++) this.fireShell(offset + (i / cfg.burstCount) * Math.PI * 2);
     }
+  }
+
+  // Направление к игроку в обход домов (CityNav); рядом с игроком или без карты — напрямую
+  pathAngle(dx, dy) {
+    return this.scene.nav?.heading(this.x, this.y) ?? Math.atan2(dy, dx);
   }
 
   fireShell(angle) {

@@ -97,10 +97,12 @@ export class WaveSpawner {
     this.place(enemy, type, this.target.x + Math.cos(angle) * radius, this.target.y + Math.sin(angle) * radius);
   }
 
-  // Поставить врага в точку (в пределах мира) с живучестью текущей волны
+  // Поставить врага в точку (в пределах мира, не внутри дома) с живучестью текущей волны.
+  // «Объект» проламывает дома — его не двигаем.
   place(enemy, type, x, y) {
     x = Phaser.Math.Clamp(x, 0, WORLD.width);
     y = Phaser.Math.Clamp(y, 0, WORLD.height);
+    if (type !== 'boss' && this.scene.nav) ({ x, y } = this.scene.nav.nearestFree(x, y));
     enemy.spawn(type, ENEMIES[type], x, y, this.target, this.wave.hpMul, this.wave.dmgMul ?? 1);
   }
 

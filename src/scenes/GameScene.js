@@ -15,6 +15,7 @@ import { roofCenters } from '../cityLayout.js';
 import { Supply } from '../systems/Supply.js';
 import { Flares } from '../systems/Flares.js';
 import { RunEvents } from '../systems/RunEvents.js';
+import { CityNav } from '../systems/CityNav.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -27,6 +28,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
+    this.nav = new CityNav(this);
     this.drawGround();
 
     this.player = new Player(this, WORLD.width / 2, WORLD.height / 2);
@@ -66,6 +68,8 @@ export class GameScene extends Phaser.Scene {
     this.flares = new Flares(this, this.player, this.shells);
     this.runEvents = new RunEvents(this);
 
+    // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
+    this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
       if (bullet.only?.active && enemy !== bullet.only) return;
@@ -403,6 +407,7 @@ export class GameScene extends Phaser.Scene {
           .setAngle(quarter * 90)
           .setDepth(DEPTH.ground);
         this.roofs.push(...roofCenters(variant, quarter, x, y));
+        this.nav.addTile(variant, quarter, x, y);
       }
     }
   }
@@ -416,6 +421,7 @@ export class GameScene extends Phaser.Scene {
     this.flares.update(dt);
     this.supply.update(dt);
     this.runEvents.update(this.spawner.elapsed);
+    this.nav.update(dt, this.player.x, this.player.y);
     this.spawner.update(dt);
     if (this.spawner.elapsed >= RUN.duration) this.endRun(true);
   }
