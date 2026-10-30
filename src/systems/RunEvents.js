@@ -7,7 +7,14 @@ import { sfx } from './Sfx.js';
 export class RunEvents {
   constructor(scene) {
     this.scene = scene;
-    this.hordes = EVENTS.horde.times.map((at) => ({ at, warned: false, started: false, done: false }));
+    // У каждой орды свои числа: общие из EVENTS.horde, поверх — из EVENTS.horde.overrides[i]
+    this.hordes = EVENTS.horde.times.map((at, i) => ({
+      at,
+      cfg: { ...EVENTS.horde, ...EVENTS.horde.overrides?.[i] },
+      warned: false,
+      started: false,
+      done: false,
+    }));
     this.calm = { started: false, ended: false };
     // Урон, полученный во время орды, — без учёта лечения от ящиков и «Брони»
     scene.events.on('player-hurt', (amount) => {
@@ -30,7 +37,8 @@ export class RunEvents {
         h.started = true;
         h.damage = 0;
         h.hpBefore = Math.round(p.hp);
-        h.spawned = this.spawnRing(p.x, p.y, this.hordeRadius(), H.count, H.speed, H.hpMul, H.damage, h);
+        const c = h.cfg;
+        h.spawned = this.spawnRing(p.x, p.y, this.hordeRadius(), c.count, c.speed, c.hpMul, c.damage, h);
         spawner.infantryRate = H.spawnMul;
       }
       if (h.started && !h.done && elapsed >= h.at + H.duration) {
