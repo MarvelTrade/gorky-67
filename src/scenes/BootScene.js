@@ -36,6 +36,7 @@ export class BootScene extends Phaser.Scene {
     this.makeSupplyTextures();
     this.makeDepotTextures();
     this.makeWatchtowerTexture();
+    this.makeAvenueTextures();
     this.makeMonumentTextures();
     this.makePauseTexture();
     this.makeTowerTextures();
@@ -353,6 +354,43 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'part', 18, 18);
   }
 
+  // Кусок проспекта на квартал (400 × 120): две проезжие части, бульвар с деревьями посередине,
+  // разметка полос. Поверх обычной дороги между кварталами — проспект шире улицы
+  makeAvenueTextures() {
+    const W = CITY.tile;
+    const H = 120;
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(P.asphalt).fillRect(0, 0, W, H);
+    g.fillStyle(0x6a6d70).fillRect(0, 0, W, 3).fillRect(0, H - 3, W, 3); // бордюры
+    // Бульвар и разметка обрываются у перекрёстков (края куска — поперечные улицы), иначе лезли на них
+    const gap = 58;
+    g.fillStyle(0x3f5a34).fillRect(gap, H / 2 - 9, W - gap * 2, 18);           // бульвар
+    g.fillStyle(0x6a6d70).fillRect(gap, H / 2 - 10, W - gap * 2, 1).fillRect(gap, H / 2 + 9, W - gap * 2, 1);
+    for (let x = gap + 18; x < W - gap; x += 50) this.tree(g, x, H / 2, 9);
+    g.fillStyle(P.roadMark);
+    for (let x = gap; x < W - gap; x += 40) g.fillRect(x, 24, 22, 2).fillRect(x, H - 26, 22, 2); // полосы движения
+    // Зебры перед перекрёстками
+    g.fillStyle(0xd8d4c4);
+    for (const x0 of [gap - 22, W - gap + 6]) for (let y = 6; y < H - 6; y += 10) g.fillRect(x0, y, 16, 5);
+    this.makeTexture(g, 'avenue', W, H);
+
+    // Перекрёсток двух проспектов: чистый асфальт без бульвара
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(P.asphalt).fillRect(0, 0, H, H);
+    this.makeTexture(g, 'avenueCross', H, H);
+
+    // КПП: будка и красно-белый шлагбаум поперёк проспекта
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x000000, 0.3).fillRect(4, 4, 30, 26);
+    g.fillStyle(0x8a8c80).fillRect(0, 0, 30, 26);   // будка
+    g.fillStyle(0x6a7a86).fillRect(4, 6, 22, 8);     // окно
+    g.fillStyle(0xb03024).fillRect(0, 0, 30, 4);     // красная полоса
+    for (let y = 30; y < 118; y += 12) {
+      g.fillStyle((y / 12) % 2 ? 0xd03030 : 0xf0f0f0).fillRect(12, y, 6, 12); // шлагбаум
+    }
+    this.makeTexture(g, 'checkpoint', 36, 120);
+  }
+
   // Вышка «зоны» вид сверху: четыре опоры, площадка с навесом, часовой — тёмная точка
   makeWatchtowerTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -495,6 +533,64 @@ export class BootScene extends Phaser.Scene {
         g.fillStyle(0x8a3a3a);
         for (const x of [100, 300]) g.fillCircle(x, 280, 14);
         for (const [x, y] of [[50, 50], [350, 50], [50, 220], [350, 220]]) this.tree(g, x, y, 12);
+      },
+      // 9 — сталинский квартал с закрытым двором: деревья, детская площадка
+      (g) => {
+        g.fillStyle(0x3a4a34).fillRect(110, 110, 180, 180);
+        this.trees(g, rnd, 120, 120, 160, 70, 6);
+        g.fillStyle(0x8a6a4a).fillRect(170, 220, 60, 40); // песочница и качели
+        g.fillStyle(0xc0a060).fillRect(180, 230, 40, 20);
+      },
+      // 10 — сталинский квартал «покоем»: двор открыт на юг
+      (g) => {
+        g.fillStyle(0x3a4a34).fillRect(110, 110, 180, 240);
+        this.trees(g, rnd, 120, 120, 160, 200, 8);
+      },
+      // 11 — лесополоса: сплошь деревья
+      (g) => {
+        g.fillStyle(0x2f4a2a).fillRect(40, 40, 320, 320);
+        for (let i = 0; i < 70; i++) this.tree(g, rnd.between(48, 352), rnd.between(48, 352), rnd.between(10, 16));
+      },
+      // 12 — сквер: газон, дорожки крест-накрест, фонтан, скамейки
+      (g) => {
+        g.fillStyle(0x45603a).fillRect(40, 40, 320, 320);
+        g.lineStyle(14, 0x6e6a5c);
+        g.lineBetween(50, 50, 350, 350);
+        g.lineBetween(350, 50, 50, 350);
+        g.fillStyle(0x6e6a5c).fillCircle(200, 200, 44);
+        g.fillStyle(0x2c4a5a).fillCircle(200, 200, 30); // фонтан
+        g.fillStyle(0x7fb0c8).fillCircle(200, 200, 10);
+        g.fillStyle(0x5a4632);
+        for (const [x, y] of [[150, 120], [250, 280], [120, 250], [280, 150]]) g.fillRect(x - 10, y - 3, 20, 6);
+        for (const [x, y] of [[60, 200], [340, 200], [200, 60], [200, 340], [100, 100], [300, 300], [300, 100], [100, 300]]) this.tree(g, x, y, 13);
+      },
+      // 13 — храм: зелёный квадрат, ограда — каменные столбы и металлические прутья, дорожка к входу
+      (g) => {
+        g.fillStyle(0x45603a).fillRect(60, 60, 280, 280);
+        g.fillStyle(0x7a7468).fillRect(185, 270, 20, 70); // дорожка к ступеням с юга
+        for (let i = 0; i <= 14; i++) {
+          const k = 60 + i * 20;
+          for (const [x, y] of [[k, 60], [k, 340], [60, k], [340, k]]) g.fillStyle(0xb8b0a0).fillRect(x - 4, y - 4, 8, 8); // столбы
+        }
+        g.lineStyle(2, 0x2a2a2a);
+        g.strokeRect(60, 60, 280, 280); // прутья
+        g.fillStyle(0x45603a).fillRect(186, 336, 18, 8); // калитка
+        for (const [x, y] of [[90, 90], [90, 310], [310, 310], [110, 200], [330, 230]]) this.tree(g, x, y, 13);
+      },
+      // 14 — телецентр: бетонный двор, тарелки на крыше рисует стиль station
+      (g) => {
+        g.fillStyle(0x56585a).fillRect(40, 40, 320, 320);
+        g.lineStyle(2, 0x7a7c80).strokeRect(44, 44, 312, 312); // ограда
+        this.trees(g, rnd, 50, 50, 170, 160, 4);
+      },
+      // 15 — ТЭЦ: бетон, уголь, градирня-коробка
+      (g) => {
+        g.fillStyle(0x4a4c4e).fillRect(40, 40, 320, 320);
+        g.fillStyle(0x1e1e20).fillEllipse(110, 175, 90, 34); // угольный склад
+        g.fillStyle(0x2c2c30).fillEllipse(110, 172, 60, 20);
+        g.fillStyle(0x5c5e60).fillRect(240, 150, 90, 40);    // трансформаторы
+        g.lineStyle(1, 0x8a8c90);
+        for (let x = 248; x < 330; x += 14) g.lineBetween(x, 150, x, 190);
       },
     ];
 

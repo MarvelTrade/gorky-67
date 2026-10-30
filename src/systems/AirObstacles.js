@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { AIR, CITY, FX, WORLD } from '../config.js';
 import { DEPTH } from '../depth.js';
+import { AVENUES, TOWER_SPOTS } from '../cityLayout.js';
 import { sfx } from './Sfx.js';
 
 // Воздушные препятствия: без них небо пустое и висеть над городом можно где угодно.
@@ -27,9 +28,20 @@ export class AirObstacles {
     // Только дома: башни тоже попадут в nav.rects, но провода к ним не тянут
     this.buildings = this.scene.nav.rects.slice();
     const placed = [];
+    // Сначала — сооружения на своих местах (колокольня у храма, вышка у телецентра, трубы ТЭЦ)
+    for (const [d, spots] of Object.entries(TOWER_SPOTS)) {
+      for (const tile of this.scene.districts?.[d] ?? []) {
+        for (const sp of spots) {
+          const x = tile.x + sp.x;
+          const y = tile.y + sp.y;
+          placed.push({ x, y });
+          this.addTower(sp.kind, AIR.towers[sp.kind], x, y);
+        }
+      }
+    }
     for (const [kind, def] of Object.entries(AIR.towers)) {
       for (let i = 0; i < def.count; i++) {
-        const spot = this.findSpot(rnd, placed, def.radius, def.district);
+        const spot = this.findSpot(rnd, placed, def.radius);
         if (!spot) continue;
         placed.push(spot);
         this.addTower(kind, def, spot.x, spot.y);
@@ -40,9 +52,9 @@ export class AirObstacles {
   }
 
   // Случайная точка внутри квартала: не на улице, не в доме, не у старта и не рядом с другой башней
-  // district — строка районов («FL»): башня ставится только в их кварталы (трубы — на заводе)
-  findSpot(rnd, placed, radius, district) {
-    const tiles = district ? Object.entries(this.scene.districts ?? {}).filter(([d]) => district.includes(d)).flatMap(([, list]) => list) : null;
+  // Случайные башни (водонапорные) — только в жилых кварталах
+  findSpot(rnd, placed, radius) {
+    const tiles = this.scene.districts?.R ?? null;
     const s = CITY.tile;
     const rects = this.buildings;
     const m = AIR.buildingMargin + radius;
@@ -103,19 +115,18 @@ export class AirObstacles {
   buildWires(rnd) {
     const W = AIR.wires;
     const s = CITY.tile;
-    const lines = WORLD.width / s;
-    const mid = lines / 2;
-    const pick = (n) => rnd.shuffle(range(1, lines - 1).filter((k) => Math.abs(k - mid) > 1)).slice(0, n);
     const cx = WORLD.width / 2;
     const cy = WORLD.height / 2;
-    const routes = [...pick(W.routes.vertical).map((k) => ['v', k]), ...pick(W.routes.horizontal).map((k) => ['h', k])];
-    for (const [dir, k] of routes) {
-      for (let i = 0; i < lines; i++) {
-        const a = i * s;
+    // Троллейбус ходит только по проспектам: контактная пара над одной проезжей частью
+    // (W.laneOffset от оси проспекта), не над бульваром
+    for (const av of AVENUES) {
+      const dir = av.dir;
+      const line = av.at + W.laneOffset;
+      for (let a = av.from; a < av.to; a += s) {
         const b = a + s;
         const span = dir === 'v'
-          ? { x1: k * s, y1: a - W.lift, x2: k * s, y2: b - W.lift }
-          : { x1: a, y1: k * s - W.lift, x2: b, y2: k * s - W.lift };
+          ? { x1: line, y1: a - W.lift, x2: line, y2: b - W.lift }
+          : { x1: a, y1: line - W.lift, x2: b, y2: line - W.lift };
         if (Math.hypot((span.x1 + span.x2) / 2 - cx, (span.y1 + span.y2) / 2 - cy) < AIR.startClear) continue;
         this.wires.push({ ...span, dir, alive: true, phase: rnd.frac() });
       }
@@ -221,12 +232,6 @@ export class AirObstacles {
     }
     if (changed) this.drawWires();
   }
-}
-
-function range(a, b) {
-  const out = [];
-  for (let i = a; i <= b; i++) out.push(i);
-  return out;
 }
 
 function distToSegment(px, py, w) {

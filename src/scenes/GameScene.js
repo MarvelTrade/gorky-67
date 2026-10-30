@@ -27,7 +27,7 @@ import { Ordnance } from '../systems/Ordnance.js';
 import { Lab } from '../systems/Lab.js';
 import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
-import { DISTRICTS, DISTRICT_VARIANT } from '../cityLayout.js';
+import { DISTRICTS, DISTRICT_VARIANT, AVENUES } from '../cityLayout.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -521,16 +521,40 @@ export class GameScene extends Phaser.Scene {
         // Район — по плану города; жилые — случайного вида и поворота, остальные стоят как задуманы
         const d = DISTRICTS[y / s]?.[x / s] ?? 'R';
         (this.districts[d] ??= []).push({ x, y });
-        const variant = DISTRICT_VARIANT[d] ?? Phaser.Math.Between(0, CITY.residential - 1);
-        const quarter = d === 'R' || d === 'P' ? Phaser.Math.Between(0, 3) : 0;
+        const v = DISTRICT_VARIANT[d];
+        const variant = Array.isArray(v) ? Phaser.Utils.Array.GetRandom(v) : v ?? Phaser.Math.Between(0, CITY.residential - 1);
+        const quarter = 'RPTWQ'.includes(d) ? Phaser.Math.Between(0, 3) : 0;
         this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
         if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
       }
     }
+    this.drawAvenues();
     this.buildings = new Buildings(this);
     this.roofs = this.buildings.build(this.nav.rects);
     this.drawZoneFence();
+  }
+
+  // Проспекты: широкая проезжая часть с бульваром посередине — кусками по кварталу (их прячет Culler).
+  // КПП с шлагбаумом на западном въезде, проходная у завода в конце главного проспекта
+  drawAvenues() {
+    const s = CITY.tile;
+    for (const a of AVENUES) {
+      for (let p = a.from; p < a.to; p += s) {
+        const img = a.dir === 'h' ? this.add.image(p + s / 2, a.at, 'avenue') : this.add.image(a.at, p + s / 2, 'avenue').setAngle(90);
+        this.culler.add(img.setDepth(DEPTH.ground + 0.3));
+      }
+    }
+    // Перекрёстки проспектов — поверх, без бульвара
+    for (const a of AVENUES) {
+      for (const b of AVENUES) {
+        if (a.dir !== 'h' || b.dir !== 'v' || b.at < a.from || b.at > a.to || a.at < b.from || a.at > b.to) continue;
+        this.culler.add(this.add.image(b.at, a.at, 'avenueCross').setDepth(DEPTH.ground + 0.35));
+      }
+    }
+    const main = AVENUES[0];
+    this.culler.add(this.add.image(main.from + 30, main.at, 'checkpoint').setDepth(DEPTH.ground + 2.5));
+    this.culler.add(this.add.image(main.to - 10, main.at, 'checkpoint').setFlipX(true).setDepth(DEPTH.ground + 2.5));
   }
 
   // «Зона»: колючая проволока по периметру района Z со столбами и воротами на юг

@@ -16,6 +16,9 @@ const STYLES = {
   factory: { wall: 0x7a4e3c, base: 0x4e3226, roof: 0x5e5248 },
   barrack: { wall: 0x6b5a40, base: 0x4a3e2c, roof: 0x5b4a36 },
   dk: { wall: 0xd8cfb8, base: 0xa89e88, roof: 0xb8b0a0 },
+  stalin: { wall: 0xc9a97a, base: 0x8a6e4a, roof: 0x8c7c6c },
+  church: { wall: 0xece6da, base: 0xb8b0a0, roof: 0x4a6a5a },
+  station: { wall: 0x8a9298, base: 0x5a6268, roof: 0x9aa2a8 },
 };
 
 export class Buildings {
@@ -163,7 +166,9 @@ export class Buildings {
         for (let x = 4; x < w - 4; x += 12) g.fillRect(x, wy, 1, 4);
       }
     }
-    const windowStep = style === 'barrack' ? 16 : 9;
+    // Сталинка: окна реже и крупнее, карниз под крышей
+    const windowStep = style === 'barrack' ? 16 : style === 'stalin' || style === 'church' ? 11 : 9;
+    if (style === 'stalin') g.fillStyle(0xe8d8b8).fillRect(0, h, w, 3);
     for (let f = 0; style !== 'factory' && style !== 'dk' && f < floors; f++) {
       const wy = h + 3 + f * floorH;
       for (let wx = 5; wx < w - 5; wx += windowStep) {
@@ -193,6 +198,22 @@ export class Buildings {
       // Доски
       g.lineStyle(1, 0x3e3224, 0.7);
       for (let y = 4; y < h; y += 5) g.lineBetween(0, y, w, y);
+    } else if (style === 'church') {
+      // Храм: пять глав-луковиц на крыше — большая синяя со звёздами в центре, малые золотые по углам, кресты
+      const dome = (x, y, r, color) => {
+        g.fillStyle(0x000000, 0.25).fillCircle(x + 2, y + 3, r);
+        g.fillStyle(color).fillCircle(x, y, r);
+        g.fillStyle(0xffffff, 0.35).fillCircle(x - r * 0.35, y - r * 0.35, r * 0.35);
+        g.fillStyle(0xe8c050).fillRect(x - 1, y - r - 8, 2, 8).fillRect(x - 4, y - r - 6, 8, 2); // крест
+      };
+      for (const [x, y] of [[18, 18], [w - 18, 18], [18, h - 18], [w - 18, h - 18]]) dome(x, y, 9, 0xd8a838);
+      dome(w / 2, h / 2, 18, 0x2e5aa8);
+      g.fillStyle(0xf0d870);
+      for (const [x, y] of [[-6, -4], [5, -8], [7, 5], [-4, 8]]) g.fillCircle(w / 2 + x, h / 2 + y, 1.5); // звёзды
+    } else if (style === 'station') {
+      g.fillStyle(0xd8dcdf);
+      for (const [x, y] of [[30, h / 2], [w - 40, h / 2]]) g.fillCircle(x, y, 12); // тарелки
+      g.fillStyle(0x8a9298).fillCircle(30, h / 2, 6).fillCircle(w - 40, h / 2, 6);
     } else if (style === 'dk') {
       g.lineStyle(3, 0xd8d0c0).strokeRect(3, 3, w - 6, h - 6); // парапет
       g.fillStyle(0xc03030).fillRect(w / 2 - 1, 6, 2, 16); // флагшток с флагом
@@ -203,7 +224,7 @@ export class Buildings {
     const sec = Math.max(1, Math.round(len / 46));
     const step = len / sec;
     g.lineStyle(1, P.panelDark, 0.7);
-    for (let i = 1; style === 'panel' && i < sec; i++) {
+    for (let i = 1; (style === 'panel' || style === 'stalin') && i < sec; i++) {
       if (long) g.lineBetween(i * step, 0, i * step, h);
       else g.lineBetween(0, i * step, w, i * step);
     }
