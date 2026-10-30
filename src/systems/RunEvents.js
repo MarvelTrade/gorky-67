@@ -1,4 +1,4 @@
-import { EVENTS, SPAWN } from '../config.js';
+import { EVENTS, RADIO, SPAWN } from '../config.js';
 import { t } from '../i18n/index.js';
 import { sfx } from './Sfx.js';
 
@@ -47,6 +47,15 @@ export class RunEvents {
         spawner.infantryRate = 1;
       }
       if (h.done && elapsed >= h.at + H.duration + H.leftoverLife) this.expireLeftovers(h);
+    }
+
+    // «Черёмуха»: город в коллапсе, берегись проводов и вышек
+    this.said ??= new Set(); // не в конфиге — иначе второй забег прошёл бы молча
+    for (const line of RADIO.cheryomukha) {
+      if (!this.said.has(line.key) && elapsed >= line.at) {
+        this.said.add(line.key);
+        this.scene.events.emit('radio', t(line.key), 'cheryomukha');
+      }
     }
 
     const C = EVENTS.calm;

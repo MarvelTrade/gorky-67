@@ -18,6 +18,7 @@ import { RunEvents } from '../systems/RunEvents.js';
 import { CityNav } from '../systems/CityNav.js';
 import { AirObstacles } from '../systems/AirObstacles.js';
 import { Wrecks } from '../systems/Wrecks.js';
+import { Artillery } from '../systems/Artillery.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -75,6 +76,8 @@ export class GameScene extends Phaser.Scene {
     this.air.build();
     this.wrecks = new Wrecks(this);
     this.wrecks.build();
+    for (const f of this.buildings.fires) this.wrecks.addFire(f.x, f.y, f.big); // горящие дома
+    this.artillery = new Artillery(this, this.player);
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
@@ -269,6 +272,7 @@ export class GameScene extends Phaser.Scene {
       crates: { ...this.supply.picked },
       flareKills: this.flares.kills,
       wiresCut: this.air.cut,
+      shelled: this.artillery.hits,
       hordes: this.runEvents.summary(),
       bossKilledAt: this.bossKilledAt,
       bossSwarm: this.runEvents.bossSwarm ?? null,
@@ -406,6 +410,7 @@ export class GameScene extends Phaser.Scene {
   // Дома рисуются отдельно, в виде 3/4 (Buildings), по пятнам из CityNav; крыши — для ящиков снабжения.
   drawGround() {
     const s = CITY.tile;
+    this.plazas = []; // центры площадей (квартал без домов) — туда в бою с «Объектом» бьёт артиллерия
     for (let y = 0; y < WORLD.height; y += s) {
       for (let x = 0; x < WORLD.width; x += s) {
         const variant = Phaser.Math.Between(0, CITY.variants - 1);
@@ -415,9 +420,11 @@ export class GameScene extends Phaser.Scene {
           .setAngle(quarter * 90)
           .setDepth(DEPTH.ground);
         this.nav.addTile(variant, quarter, x, y);
+        if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
       }
     }
-    this.roofs = new Buildings(this).build(this.nav.rects);
+    this.buildings = new Buildings(this);
+    this.roofs = this.buildings.build(this.nav.rects);
   }
 
   update(time, delta) {
@@ -431,6 +438,7 @@ export class GameScene extends Phaser.Scene {
     this.flares.update(dt);
     this.supply.update(dt);
     this.runEvents.update(this.spawner.elapsed);
+    this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);
     this.spawner.update(dt);
     if (this.spawner.elapsed >= RUN.duration) this.endRun(true);

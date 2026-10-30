@@ -91,6 +91,17 @@ export function installBot(game) {
           fx += (dx / d) * w;
           fy += (dy / d) * w;
         }
+        // Круг артобстрела виден заранее — уходить из него
+        for (const z of sc.artillery?.zones ?? []) {
+          const dx = p.x - z.x;
+          const dy = p.y - z.y;
+          const d = Math.hypot(dx, dy) || 1;
+          const R = 130 + 60;
+          if (d < R) {
+            fx += (dx / d) * 4 * ((R - d) / R);
+            fy += (dy / d) * 4 * ((R - d) / R);
+          }
+        }
         // Высокие сооружения и провода видны — живой игрок их облетает
         if (sc.air) {
           for (const z of sc.air.towers.getChildren()) {

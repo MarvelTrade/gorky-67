@@ -16,7 +16,14 @@ export default {
     'FALCON TO COVER EVAC COLUMN STOP CORDON MAY OPEN FIRE STOP',
   tapToContinue: 'Tap to continue',
 
-  radioCallsign: 'BERYOZA',
+  radioCallsign_beryoza: 'BERYOZA',
+  radioCallsign_cheryomukha: 'CHERYOMUKHA',
+  cher_1: 'Cheryomukha here. The city has collapsed: power, comms, transport — all down.',
+  cher_2: 'Falcon, the trolleybus grid is live. Stay off the wires.',
+  cher_3: 'Towers and chimneys are taller than you. Steer clear early.',
+  cher_artillery: 'Falcon, leave the square! Shelling incoming.',
+  cher_lure: 'Falcon, drag the Object onto the square — artillery will cover it.',
+  cher_end: 'Comrades, remember: this never happened.',
   wave_1: 'The Checkpoint',
   wave_2: 'Labour Square',
   wave_3: 'The Cordon',
@@ -72,6 +79,7 @@ export default {
   enemy_tank: 'tank',
   enemy_boss: 'The Object',
   enemy_wire: 'power lines',
+  enemy_artillery: 'friendly shelling',
 
   levelUp: 'Level',
   lvl: 'lv.',

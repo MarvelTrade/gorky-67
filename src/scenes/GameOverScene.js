@@ -25,9 +25,9 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Концовка — одна строка по итогу забега
+    // Концовка — строка по итогу забега и последнее слово «Черёмухи» — при любом исходе
     const ending = this.add
-      .text(0, 0, t(`ending_${stats.ending}`), {
+      .text(0, 0, `${t(`ending_${stats.ending}`)}\n\n${t('radioCallsign_cheryomukha')}: «${t('cher_end')}»`, {
         fontFamily: 'monospace',
         fontSize: '17px',
         color: '#d8e0c8',

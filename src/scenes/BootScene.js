@@ -36,6 +36,7 @@ export class BootScene extends Phaser.Scene {
     this.makeSupplyTextures();
     this.makePauseTexture();
     this.makeTowerTextures();
+    this.makeStreetTextures();
     this.makeCityTiles();
     this.scene.start('MenuScene');
   }
@@ -396,6 +397,53 @@ export class BootScene extends Phaser.Scene {
     for (let i = 0; i < n; i++) {
       this.tree(g, x + rnd.between(10, w - 10), y + rnd.between(10, h - 10), rnd.between(8, 13));
     }
+  }
+
+  // Улица после катастрофы, вид сверху, нос вправо: брошенные легковушки, троллейбус, накрытое тело.
+  // Без марок и моделей — обобщённые силуэты.
+  makeStreetTextures() {
+    const cars = [0x3d6fa8, 0xc9b98a, 0x9c3a33, 0x4f7a4a, 0xd8d4c8];
+    cars.forEach((color, i) => {
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(0x1c1f22);
+      for (const [x, y] of [[4, 0], [19, 0], [4, 12], [19, 12]]) g.fillRect(x, y, 6, 2); // колёса
+      g.fillStyle(color);
+      g.fillRoundedRect(0, 1, 28, 12, 3);
+      g.fillStyle(0x24303a);
+      g.fillRect(17, 3, 4, 8); // лобовое
+      g.fillRect(6, 3, 3, 8);  // заднее
+      g.fillStyle(Phaser.Display.Color.ValueToColor(color).lighten(15).color);
+      g.fillRect(9, 3, 8, 8);  // крыша
+      g.lineStyle(1, 0x15181b);
+      g.strokeRoundedRect(0, 1, 28, 12, 3);
+      this.makeTexture(g, `car${i}`, 28, 14);
+    });
+
+    // Троллейбус: светлый кузов с красной полосой, ряд окон, штанги сорваны с проводов и висят в сторону
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xe6dcc0);
+    g.fillRoundedRect(0, 4, 66, 18, 3);
+    g.fillStyle(0xb03a2e);
+    g.fillRect(0, 11, 66, 4);
+    g.fillStyle(0x2a3540);
+    for (let x = 8; x < 58; x += 9) g.fillRect(x, 6, 6, 3);
+    g.fillRect(58, 6, 6, 14);  // лобовое
+    g.fillStyle(0x9aa0a6);
+    g.fillRect(14, 8, 30, 10); // оборудование на крыше
+    g.lineStyle(2, 0x2a2e33);
+    g.lineBetween(14, 10, 46, 1);  // штанги — задраны и сорваны
+    g.lineBetween(14, 16, 44, 25);
+    g.lineStyle(1, 0x15181b);
+    g.strokeRoundedRect(0, 4, 66, 18, 3);
+    this.makeTexture(g, 'trolley', 66, 26);
+
+    // Накрытое тело — серо-синяя ткань, без подробностей (тон игры — экшен, не хоррор)
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x6f7c86);
+    g.fillEllipse(9, 4, 18, 7);
+    g.lineStyle(1, 0x3c4349);
+    g.strokeEllipse(9, 4, 18, 7);
+    this.makeTexture(g, 'covered', 18, 8);
   }
 
   // Высокие сооружения, вид сверху. Высоту передаёт длинная тень, которую ставит AirObstacles.

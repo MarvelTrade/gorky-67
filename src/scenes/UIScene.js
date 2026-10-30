@@ -28,12 +28,13 @@ export class UIScene extends Phaser.Scene {
     this.pauseBtn.on('pointerdown', () => this.gs.openPause());
     this.stick = this.add.graphics();
 
-    // Радио «Берёзы»: позывной и одна строка
+    // Радио: позывной («Берёза» или «Черёмуха») и одна строка; реплики в очереди
     this.radioWave = -1;
     this.radioLeft = 0;
+    this.radioQueue = [];
     this.radio = this.add.container(0, 0).setAlpha(0);
     this.radioBg = this.add.graphics();
-    this.radioCall = this.add.text(0, 0, t('radioCallsign'), {
+    this.radioCall = this.add.text(0, 0, t('radioCallsign_beryoza'), {
       fontFamily: 'monospace',
       fontSize: '12px',
       color: '#d8f040',
@@ -41,8 +42,8 @@ export class UIScene extends Phaser.Scene {
     });
     this.radioText = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff' });
     this.radio.add([this.radioBg, this.radioCall, this.radioText]);
-    // Разовые реплики не по волнам (первый ящик снабжения)
-    this.gs.events.on('radio', (line) => this.showRadio(line));
+    // Разовые реплики не по волнам: emit('radio', строка, позывной?, срочно?)
+    this.gs.events.on('radio', (line, who, urgent) => this.queueRadio(line, who, urgent));
     // Красная пульсация по краям экрана перед ордой
     this.alertLeft = 0;
     this.alertT = 0;
@@ -154,8 +155,10 @@ export class UIScene extends Phaser.Scene {
     const wave = gs.spawner.waveIndex;
     if (wave >= 0 && wave !== this.radioWave) {
       this.radioWave = wave;
-      this.showRadio(t(`radio_${wave + 1}`));
+      this.queueRadio(t(`radio_${wave + 1}`));
     }
+    // Реплики идут по очереди, а не перебивают друг друга; срочные (urgent) — сразу
+    if (this.radioLeft <= 0 && this.radioQueue.length) this.showRadio(...this.radioQueue.shift());
     if (this.radioLeft <= 0 || gs.scene.isPaused()) return;
     this.radioLeft -= dt;
     const total = RADIO.duration + RADIO.fade * 2;
@@ -163,10 +166,18 @@ export class UIScene extends Phaser.Scene {
     this.radio.setAlpha(Math.max(0, Math.min(1, passed / RADIO.fade, this.radioLeft / RADIO.fade)));
   }
 
-  showRadio(line) {
+  // who — позывной: 'beryoza' (диспетчер) или 'cheryomukha' (агент, своя полоска цвета)
+  queueRadio(line, who = 'beryoza', urgent = false) {
+    if (urgent || this.radioLeft <= 0) this.showRadio(line, who);
+    else if (this.radioQueue.length < 3) this.radioQueue.push([line, who]);
+  }
+
+  showRadio(line, who = 'beryoza') {
     const { width } = this.scale;
     const w = Math.min(440, width - 2 * PAD);
     const pad = 10;
+    const accent = RADIO.callsigns[who] ?? RADIO.callsigns.beryoza;
+    this.radioCall.setText(t(`radioCallsign_${who}`)).setColor(accent.text);
     this.radioText.setText(line).setWordWrapWidth(w - pad * 2 - 6);
     this.radioCall.setPosition(pad + 6, pad - 2);
     this.radioText.setPosition(pad + 6, pad + 14);
@@ -175,7 +186,7 @@ export class UIScene extends Phaser.Scene {
       .clear()
       .fillStyle(0x0c100a, 0.78)
       .fillRoundedRect(0, 0, w, h, 6)
-      .fillStyle(0xd8f040)
+      .fillStyle(accent.bar)
       .fillRect(0, 0, 4, h);
     // Под полоской босса, чтобы не перекрывать её на 5-й волне
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
