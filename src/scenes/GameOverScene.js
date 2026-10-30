@@ -5,6 +5,7 @@ import { t } from '../i18n/index.js';
 import { platform } from '../platform/platform.js';
 import { copyReport } from '../systems/Telemetry.js';
 import { onTap } from '../ui/tap.js';
+import { metaSnapshot } from '../meta.js';
 
 // Итоги забега и «Ещё раз». data: { win, time, kills, level }
 export class GameOverScene extends Phaser.Scene {
@@ -43,6 +44,7 @@ export class GameOverScene extends Phaser.Scene {
       `${t('kills')}: ${stats.kills}`,
       `${t('level')}: ${stats.level}`,
     ];
+    if (stats.money || stats.parts) lines.push(`${t('loot')}: +${stats.money} ₽ · +${stats.parts} ⚙`);
     const bossLine = stats.bossSeen ? t(stats.bossKilled ? 'bossKilled' : 'bossAlive') : null;
     const statsText = this.add
       .text(0, 0, '', {
@@ -70,6 +72,13 @@ export class GameOverScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ENTER', () => this.restart());
     this.input.keyboard.on('keydown-SPACE', () => this.restart());
 
+    // «Ангар» — потратить добычу между забегами
+    const hangar = this.add
+      .text(0, 0, `${t('hangar')} →`, { fontFamily: 'sans-serif', fontSize: '20px', color: '#f2c94c', fontStyle: 'bold', padding: { x: 12, y: 8 } })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    onTap(hangar, () => this.ready, () => this.scene.start('HangarScene', { from: 'GameOverScene' }));
+
     // Для плейтестов: все замеры текстом в буфер обмена. В сборке для Яндекса кнопки нет —
     // игрокам каталога она ни к чему (рекомендация 6.7)
     const copy = this.add
@@ -91,7 +100,8 @@ export class GameOverScene extends Phaser.Scene {
     // Кнопки появляются, когда их уже можно нажать
     button.setAlpha(0);
     copy.setAlpha(0);
-    this.tweens.add({ targets: [button, copy], alpha: 1, delay: RUN.gameOverInputDelay * 1000, duration: 200 });
+    hangar.setAlpha(0);
+    this.tweens.add({ targets: [button, copy, hangar], alpha: 1, delay: RUN.gameOverInputDelay * 1000, duration: 200 });
 
     // Сверху вниз: заголовок, концовка, цифры, рекорд, кнопка.
     // На низком экране (телефон лёжа) цифры в одну строку, иначе кнопка не влезает.
@@ -112,9 +122,10 @@ export class GameOverScene extends Phaser.Scene {
       y += statsText.height + 12;
       bestText.setPosition(width / 2, y);
       y += bestText.height + (short ? 20 : 48);
-      const by = Math.min(y + 36, height - (short ? 70 : 90));
+      const by = Math.min(y + 36, height - (short ? 104 : 130));
       button.setPosition(width / 2, by);
-      copy.setPosition(width / 2, by + 36 + (short ? 18 : 26));
+      hangar.setPosition(width / 2, by + 36 + (short ? 18 : 26));
+      copy.setPosition(width / 2, hangar.y + (short ? 34 : 40));
     };
     layout();
     this.scale.on('resize', layout);
@@ -125,12 +136,14 @@ export class GameOverScene extends Phaser.Scene {
     const save = await platform.loadProgress();
     const best = save.best;
     const run = { time: stats.time, kills: stats.kills, boss: stats.bossKilled };
+    // Кошелёк и рекорд — одной записью (добыча уже в meta, её добавил GameScene.endRun)
     if (!best || isBetter(run, best)) {
-      await platform.saveProgress({ ...save, best: run });
+      await platform.saveProgress({ ...save, best: run, meta: metaSnapshot() });
       // Пока ждали сохранения, игрок мог уже нажать «Ещё раз» — экрана больше нет
       if (!text.scene) return;
       text.setText(t('newBest')).setColor('#ffe066');
     } else {
+      await platform.saveProgress({ ...save, meta: metaSnapshot() });
       if (!text.scene) return;
       const boss = best.boss ? ` · ${t('bossShort')}` : '';
       text.setText(`${t('best')}: ${formatTime(best.time)} · ${best.kills}${boss}`);

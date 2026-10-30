@@ -52,6 +52,8 @@ export class UIScene extends Phaser.Scene {
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
     this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
     this.timerText = this.add.text(0, 0, '', { ...style, fontSize: '28px', fontStyle: 'bold' }).setOrigin(0.5, 0);
+    // Добыча со складов за забег: рубли и запчасти — под полоской брони
+    this.walletText = this.add.text(0, 0, '', { ...style, fontSize: '14px', strokeThickness: 3, color: '#f2c94c' });
     this.bossText = this.add
       .text(0, 0, t('boss'), { ...style, fontSize: '14px', strokeThickness: 3, color: '#ffb0a0' })
       .setOrigin(0.5, 1)
@@ -96,6 +98,11 @@ export class UIScene extends Phaser.Scene {
 
     this.levelText.setPosition(PAD, XP_BAR_H + 6).setText(`${t('level')} ${gs.level}`);
     this.hpText.setPosition(PAD + hpW / 2, hpY + HP_BAR_H / 2).setText(`${Math.ceil(p.hp)} / ${p.maxHp}`);
+    const d = gs.depots;
+    this.walletText
+      .setPosition(PAD, hpY + HP_BAR_H + 6)
+      .setText(`₽ ${d.money}   ⚙ ${d.parts}`)
+      .setVisible(d.money + d.parts > 0); // до первого склада не мешает
 
     // Таймер — сколько прожито (0:00 → 5:00), как и на экране итогов; последние 30 с краснеет
     const elapsed = Math.min(gs.spawner.elapsed, RUN.duration);

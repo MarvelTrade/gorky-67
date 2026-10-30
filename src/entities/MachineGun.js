@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { GUN, AIM } from '../config.js';
+import { GUN, AIM, DEPOT } from '../config.js';
 import { findNearest, bossInRange } from '../systems/AutoAim.js';
 import { sfx } from '../systems/Sfx.js';
 
@@ -23,7 +23,10 @@ export class MachineGun {
     const st = this.stats;
     // Часть очереди — по «Объекту», остальное — по ближайшим, чтобы толпа не задавила
     const boss = Math.random() < AIM.bossGunShare ? bossInRange(this.scene, s.x, s.y, st.range) : null;
-    const target = boss ?? findNearest(this.enemies, s.x, s.y, st.range);
+    // Подлетел к складу — часть очереди по нему (пуля летит сквозь врагов, как по «Объекту»)
+    const depot = !boss && Math.random() < DEPOT.gunShare ? this.scene.depots?.target(s.x, s.y) : null;
+    const only = boss ?? depot;
+    const target = only ?? findNearest(this.enemies, s.x, s.y, st.range);
     if (!target) {
       this.cooldown = 0;
       return;
@@ -37,7 +40,7 @@ export class MachineGun {
     const angle =
       Math.atan2(target.y - my, target.x - mx) + Phaser.Math.FloatBetween(-st.spread, st.spread);
     // Пуля по боссу летит сквозь толпу — иначе её всегда ловит кто-то по пути
-    bullet.fire(mx, my, angle, st.bulletSpeed, st.damage, st.bulletLife, boss);
+    bullet.fire(mx, my, angle, st.bulletSpeed, st.damage, st.bulletLife, only);
     sfx.play('shot');
     this.cooldown = 1 / st.fireRate;
   }

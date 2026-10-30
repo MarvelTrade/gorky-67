@@ -6,6 +6,8 @@ import { GameScene } from './scenes/GameScene.js';
 import { LevelUpScene } from './scenes/LevelUpScene.js';
 import { UIScene } from './scenes/UIScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
+import { HangarScene } from './scenes/HangarScene.js';
+import { loadMeta } from './meta.js';
 import { PauseScene } from './scenes/PauseScene.js';
 import { ReviveScene } from './scenes/ReviveScene.js';
 import { platform } from './platform/platform.js';
@@ -31,7 +33,7 @@ function startGame() {
       activePointers: 2,
     },
     disableContextMenu: true,
-    scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, PauseScene, ReviveScene, GameOverScene],
+    scene: [BootScene, MenuScene, BriefingScene, GameScene, UIScene, LevelUpScene, PauseScene, ReviveScene, GameOverScene, HangarScene],
   });
 
   sfx.init(game);
@@ -78,5 +80,6 @@ function startGame() {
 platform.init().then(async () => {
   initLang();
   await loadSettings();
+  await loadMeta();
   startGame();
 });

@@ -34,6 +34,7 @@ export class BootScene extends Phaser.Scene {
     this.makeGemTexture();
     this.makeParticleTextures();
     this.makeSupplyTextures();
+    this.makeDepotTextures();
     this.makePauseTexture();
     this.makeTowerTextures();
     this.makeStreetTextures();
@@ -308,6 +309,46 @@ export class BootScene extends Phaser.Scene {
     g.lineStyle(3, 0xffd040);
     g.strokeCircle(24, 24, 21);
     this.makeTexture(g, 'beacon', 48, 48);
+  }
+
+  // Полевой склад: штабель ящиков под брезентом; разбитый — щепки и гарь.
+  // Монета (рубль) и запчасть (шестерня) — добыча со склада
+  makeDepotTextures() {
+    let g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x000000, 0.35).fillRect(5, 5, 42, 30);
+    g.fillStyle(0x6b5232).fillRect(1, 1, 42, 30);           // ящики
+    g.lineStyle(2, 0x3a2a14).strokeRect(1, 1, 42, 30);
+    g.lineBetween(15, 1, 15, 31);
+    g.lineBetween(29, 1, 29, 31);
+    g.lineBetween(1, 16, 43, 16);
+    g.fillStyle(0x4b5a3a, 0.95).fillRect(1, 1, 26, 18);    // брезент
+    g.lineStyle(1.5, 0x2e3824).strokeRect(1, 1, 26, 18);
+    g.fillStyle(0xe8e0c0).fillRect(31, 20, 10, 3);          // трафаретная метка
+    g.fillStyle(0xd04030).fillCircle(37, 8, 3.5);           // красная метка
+    this.makeTexture(g, 'depot', 48, 36);
+
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x1e1a14, 0.8).fillRect(4, 6, 38, 24);      // гарь
+    g.fillStyle(0x5a4428);
+    for (const [x, y, w, h] of [[3, 4, 12, 4], [20, 2, 4, 12], [30, 10, 12, 4], [8, 22, 14, 4], [26, 24, 4, 10], [36, 26, 9, 3]]) g.fillRect(x, y, w, h);
+    g.fillStyle(0x2e3824).fillRect(12, 12, 14, 8);           // клок брезента
+    this.makeTexture(g, 'depotBroken', 48, 36);
+
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0xb8862a).fillCircle(7, 7, 7);
+    g.fillStyle(0xf2c94c).fillCircle(7, 7, 5.5);
+    g.fillStyle(0xb8862a).fillRect(5, 4, 4, 6);
+    this.makeTexture(g, 'coin', 14, 14);
+
+    g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x9aa6ae);
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      g.fillCircle(9 + Math.cos(a) * 7, 9 + Math.sin(a) * 7, 2.4);
+    }
+    g.fillCircle(9, 9, 6.5);
+    g.fillStyle(0x3a4148).fillCircle(9, 9, 2.6);
+    this.makeTexture(g, 'part', 18, 18);
   }
 
   // Кнопка паузы: полупрозрачный круг и две полоски

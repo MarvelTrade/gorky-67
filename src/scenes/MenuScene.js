@@ -56,6 +56,12 @@ export class MenuScene extends Phaser.Scene {
     button.add([bg, label]);
     bg.setInteractive({ useHandCursor: true }).on('pointerup', () => this.scene.start('BriefingScene'));
 
+    const hangar = this.add
+      .text(0, 0, `${t('hangar')} →`, { fontFamily: 'sans-serif', fontSize: '20px', color: '#f2c94c', fontStyle: 'bold', padding: { x: 12, y: 8 } })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.scene.start('HangarScene', { from: 'MenuScene' }));
+
     const layout = () => {
       const { width, height } = this.scale;
       // Название не должно вылезать за края на узких телефонах
@@ -63,7 +69,8 @@ export class MenuScene extends Phaser.Scene {
       title.setPosition(width / 2, height * 0.28);
       subtitle.setPosition(width / 2, height * 0.28 + title.height / 2 + 16);
       button.setPosition(width / 2, height * 0.55);
-      hint.setPosition(width / 2, height * 0.55 + 52);
+      hangar.setPosition(width / 2, height * 0.55 + 62);
+      hint.setPosition(width / 2, height * 0.55 + 98);
       hint.setWordWrapWidth(width - 32);
       sound.setPosition(width - 4, 4);
     };

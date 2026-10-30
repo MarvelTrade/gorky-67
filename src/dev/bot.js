@@ -187,7 +187,24 @@ export function installBot(game) {
         fx += ((to.x - p.x) / d) * 3;
         fy += ((to.y - p.y) / d) * 3;
       } else {
-        // Не прижиматься к краям мира
+        // Склад рядом — подлететь, чтобы пулемёт разбил (игрок видит склады на улице)
+      const depot = sc.depots?.target(p.x, p.y);
+      let near = null;
+      let nd = 500;
+      for (const d of sc.depots?.list ?? []) {
+        if (!d.active) continue;
+        const dd = Math.hypot(d.x - p.x, d.y - p.y);
+        if (dd < nd) {
+          nd = dd;
+          near = d;
+        }
+      }
+      if (near && !depot) {
+        fx += ((near.x - p.x) / nd) * 0.5;
+        fy += ((near.y - p.y) / nd) * 0.5;
+      }
+
+      // Не прижиматься к краям мира
         const M = 500;
         const { width: W, height: H } = sc.physics.world.bounds;
         if (p.x < M) fx += ((M - p.x) / M) * 2;

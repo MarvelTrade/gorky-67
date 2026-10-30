@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -20,6 +20,8 @@ import { AirObstacles } from '../systems/AirObstacles.js';
 import { Wrecks } from '../systems/Wrecks.js';
 import { Artillery } from '../systems/Artillery.js';
 import { Extraction } from '../systems/Extraction.js';
+import { Depots } from '../systems/Depots.js';
+import { meta, applyMeta } from '../meta.js';
 import { sfx } from '../systems/Sfx.js';
 import { recordRun } from '../systems/Telemetry.js';
 import { platform } from '../platform/platform.js';
@@ -80,7 +82,9 @@ export class GameScene extends Phaser.Scene {
     for (const f of this.buildings.fires) this.wrecks.addFire(f.x, f.y, f.big); // горящие дома
     this.artillery = new Artillery(this, this.player);
     this.extraction = new Extraction(this);
+    this.depots = new Depots(this, this.player);
     this.rerolls = LEVELUP.rerolls;
+    applyMeta(this); // «Ангар»: броня, калибр, двигатель, магнит, перекруты
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
@@ -248,6 +252,9 @@ export class GameScene extends Phaser.Scene {
     this.player.body.setVelocity(0, 0);
     this.player.body.moves = false;
     const stats = this.runStats(win);
+    // Добыча со складов — в кошелёк, и при гибели тоже (как в DRG: вынесенное остаётся)
+    meta.money += this.depots.money;
+    meta.parts += this.depots.parts;
     recordRun(this.runRecord(stats, { cause, ending: stats.ending }));
     // Причина — на экран итогов: игрок должен понять, что его убило (Ходент: иначе смерть кажется нечестной)
     this.time.delayedCall(delay * 1000, () => this.scene.start('GameOverScene', { ...stats, cause }));
@@ -263,6 +270,8 @@ export class GameScene extends Phaser.Scene {
       bossKilled: this.bossKilled,
       // Концовка: ушёл из района — с «Объектом» или без; не успел до удара; погиб
       ending: !win ? (this.nuked ? 'nuke' : 'lost') : this.bossKilled ? 'convoy' : 'late',
+      money: this.depots.money,
+      parts: this.depots.parts,
     };
   }
 
@@ -278,6 +287,7 @@ export class GameScene extends Phaser.Scene {
       crates: { ...this.supply.picked },
       flareKills: this.flares.kills,
       wiresCut: this.air.cut,
+      depots: this.depots.broken,
       shelled: this.artillery.hits,
       hordes: this.runEvents.summary(),
       bossKilledAt: this.bossKilledAt,
@@ -386,6 +396,7 @@ export class GameScene extends Phaser.Scene {
         this.explosionFx(x + Phaser.Math.Between(-40, 40), y + Phaser.Math.Between(-40, 40), 50)
       );
     }
+    this.depots.drop(x, y, 0, DEPOT.bossParts);
     this.extraction.start();
   }
 
@@ -450,6 +461,7 @@ export class GameScene extends Phaser.Scene {
     this.missiles.update(dt);
     this.flares.update(dt);
     this.supply.update(dt);
+    this.depots.update(dt);
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);
