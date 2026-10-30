@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { RUN, CONTROLS, RADIO } from '../config.js';
+import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { sfx } from '../systems/Sfx.js';
@@ -108,6 +108,8 @@ export class UIScene extends Phaser.Scene {
     const boss = gs.boss;
     const showBoss = !!boss && boss.active;
     this.bossText.setVisible(showBoss);
+    // Пока босса нет — шкала забега с метками событий (как в DRG: «всегда знаешь, что будет»)
+    if (!showBoss) this.drawTimeline(g, width, elapsed);
     if (showBoss) {
       const bw = Math.min(400, width - 2 * PAD);
       const bx = (width - bw) / 2;
@@ -200,6 +202,43 @@ export class UIScene extends Phaser.Scene {
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
     this.radioLeft = RADIO.duration + RADIO.fade * 2;
     sfx.play('radio');
+  }
+
+  // Шкала 0:00–5:00 с метками: орды (оранжевые треугольники), затишье (серая полоса), «Объект» (ромб).
+  // Ближайшее событие за TIMELINE.soon с пульсирует — предупреждение заранее, а не в последний момент
+  drawTimeline(g, width, elapsed) {
+    const T = TIMELINE;
+    const w = Math.min(T.width, width - 2 * PAD);
+    const x0 = (width - w) / 2;
+    const y = XP_BAR_H + T.y;
+    const at = (s) => x0 + (w * s) / RUN.duration;
+    g.fillStyle(0x000000, 0.55);
+    g.fillRect(x0 - 2, y - 2, w + 4, T.h + 4);
+    g.fillStyle(0x3a4046, 1);
+    g.fillRect(x0, y, w, T.h);
+    // Затишье перед «Объектом» — светлый отрезок
+    g.fillStyle(0x8a939b, 0.8);
+    g.fillRect(at(EVENTS.calm.start), y, at(EVENTS.calm.start + EVENTS.calm.duration) - at(EVENTS.calm.start), T.h);
+    // Пройденное
+    g.fillStyle(0xe8edf0, 0.9);
+    g.fillRect(x0, y, at(elapsed) - x0, T.h);
+
+    const pulse = 0.5 + 0.5 * Math.sin(this.hudTime * 8);
+    const mark = (s, color, draw) => {
+      const passed = elapsed >= s;
+      const soon = !passed && s - elapsed <= T.soon;
+      g.fillStyle(color, passed ? 0.35 : soon ? 0.55 + 0.45 * pulse : 1);
+      draw(at(s));
+    };
+    for (const s of EVENTS.horde.times) {
+      mark(s, T.colors.horde, (x) => g.fillTriangle(x - 6, y - 3, x + 6, y - 3, x, y + T.h + 2));
+    }
+    mark(BOSS_SPAWN.at, T.colors.boss, (x) =>
+      g.fillPoints([{ x, y: y - 6 }, { x: x + 7, y: y + T.h / 2 }, { x, y: y + T.h + 6 }, { x: x - 7, y: y + T.h / 2 }], true),
+    );
+    // Бегунок «сейчас»
+    g.fillStyle(0xffffff, 1);
+    g.fillRect(at(elapsed) - 1, y - 3, 2, T.h + 6);
   }
 
   drawAlert(g, width, height, dt, paused) {
