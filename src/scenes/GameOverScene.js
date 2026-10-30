@@ -18,7 +18,7 @@ export class GameOverScene extends Phaser.Scene {
     this.time.delayedCall(RUN.gameOverInputDelay * 1000, () => (this.ready = true));
 
     const title = this.add
-      .text(0, 0, t(stats.win ? 'win' : 'lose'), {
+      .text(0, 0, t(stats.win ? 'win' : stats.ending === 'nuke' ? 'loseNuke' : 'lose'), {
         fontFamily: 'sans-serif',
         fontSize: '46px',
         color: stats.win ? '#ffe066' : '#ff6a5a',

@@ -57,9 +57,10 @@ export class Tracks {
     if (!img) {
       img = this.scene.make.image({ x: 0, y: 0, key }, false);
       this.layer.add(img);
+      this.scene.culler?.add(img);
       this.pool[this.next] = img;
     }
     this.next = (this.next + 1) % RUINS.maxDecals;
-    img.setTexture(key).setPosition(x, y).setRotation(rotation).setScale(scale).setAlpha(alpha);
+    img.setTexture(key).setPosition(x, y).setRotation(rotation).setScale(scale).setAlpha(alpha).setVisible(true); // мог быть скрыт Culler
   }
 }

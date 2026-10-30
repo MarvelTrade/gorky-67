@@ -26,6 +26,7 @@ import { Breakdowns } from '../systems/Breakdowns.js';
 import { Ordnance } from '../systems/Ordnance.js';
 import { Lab } from '../systems/Lab.js';
 import { Hints } from '../systems/Hints.js';
+import { Culler } from '../systems/Culler.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -40,6 +41,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
+    this.culler = new Culler(this); // до города: декорации регистрируются при создании
     this.nav = new CityNav(this);
     this.drawGround();
 
@@ -88,6 +90,9 @@ export class GameScene extends Phaser.Scene {
     for (const f of this.buildings.fires) this.wrecks.addFire(f.x, f.y, f.big); // горящие дома
     this.artillery = new Artillery(this, this.player);
     this.extraction = new Extraction(this);
+    // Кристаллы и враги за кадром тоже не рисуем (их сотни по карте)
+    this.culler.addGroup(this.gems);
+    this.culler.addGroup(this.enemies);
     this.depots = new Depots(this, this.player);
     this.tracks = new Tracks(this);
     this.breakdowns = new Breakdowns(this, this.player);
@@ -506,10 +511,7 @@ export class GameScene extends Phaser.Scene {
       for (let x = 0; x < WORLD.width; x += s) {
         const variant = Phaser.Math.Between(0, CITY.variants - 1);
         const quarter = Phaser.Math.Between(0, 3);
-        this.add
-          .image(x + s / 2, y + s / 2, `city${variant}`)
-          .setAngle(quarter * 90)
-          .setDepth(DEPTH.ground);
+        this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
         if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
       }
@@ -534,6 +536,7 @@ export class GameScene extends Phaser.Scene {
     this.ordnance.update(dt);
     this.lab.update(dt);
     this.hints.update(dt);
+    this.culler.update();
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);
     this.nav.update(dt, this.player.x, this.player.y);

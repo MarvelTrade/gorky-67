@@ -25,6 +25,8 @@ export class Depots {
         .image(p.x, p.y, 'depot')
         .setAngle(p.dir === 'v' ? 90 : 0)
         .setDepth(DEPTH.ground + 3);
+      scene.culler?.add(ring);
+      scene.culler?.add(img);
       this.list.push({ x: p.x, y: p.y, hp: DEPOT.hp, img, ring, active: true });
     }
   }

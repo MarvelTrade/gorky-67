@@ -40,6 +40,7 @@ export class Buildings {
       this.shadows.fillRect(x + 10, y + 8, w, h);
       // Южнее — ближе к зрителю: перекрывает северного соседа (в пределах слоя домов)
       const img = this.scene.add.image(x, y - H, key).setOrigin(0, 0).setDepth(DEPTH.buildings + (y + h) / 1e5);
+      this.scene.culler?.add(img);
       // Центр крыши на экране — туда падают ящики снабжения
       const roof = { x: x + w / 2, y: y + h / 2 - H };
       this.roofs.push(roof);

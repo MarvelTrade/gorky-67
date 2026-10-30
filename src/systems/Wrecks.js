@@ -80,10 +80,12 @@ export class Wrecks {
       this.put(`car${rnd.between(0, 4)}`, p.x - Math.cos(a) * 13, p.y - Math.sin(a) * 13, a, rnd.frac() < 0.5, true);
       this.put(`car${rnd.between(0, 4)}`, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, a + Math.PI + rnd.realInRange(-0.6, 0.6), false, rnd.frac() < 0.4);
       for (let k = rnd.between(1, 2); k > 0; k--) {
-        this.scene.add
-          .image(p.x + rnd.between(-26, 26), p.y + rnd.between(-26, 26), 'covered')
-          .setRotation(rnd.angle() * (Math.PI / 180))
-          .setDepth(DEPTH.ground + 2);
+        this.scene.culler?.add(
+          this.scene.add
+            .image(p.x + rnd.between(-26, 26), p.y + rnd.between(-26, 26), 'covered')
+            .setRotation(rnd.angle() * (Math.PI / 180))
+            .setDepth(DEPTH.ground + 2)
+        );
       }
     }
   }
@@ -110,7 +112,7 @@ export class Wrecks {
   // Машина на улице; burnt — обуглена и с копотью, burning — горит (огонь, дым, отсвет)
   put(key, x, y, angle, burnt, burning, big = false) {
     if (burnt || burning) {
-      this.scene.add.image(x, y, 'puff').setTint(0x000000).setAlpha(0.4).setScale(big ? 4.5 : 3).setDepth(DEPTH.ground + 1);
+      this.scene.culler?.add(this.scene.add.image(x, y, 'puff').setTint(0x000000).setAlpha(0.4).setScale(big ? 4.5 : 3).setDepth(DEPTH.ground + 1));
     }
     let glow = null;
     if (burning) {
@@ -120,8 +122,10 @@ export class Wrecks {
         .setBlendMode(Phaser.BlendModes.ADD)
         .setScale(big ? 6 : 4.5)
         .setDepth(DEPTH.ground + 1);
+      this.scene.culler?.add(glow);
     }
     const img = this.scene.add.image(x, y, key).setRotation(angle).setDepth(DEPTH.ground + 2);
+    this.scene.culler?.add(img);
     if (burnt || burning) img.setTint(0x3a2f2a);
     if (burning) this.list.push({ x, y, big, glow, phase: this.rnd.frac() * 10 });
   }

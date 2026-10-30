@@ -68,6 +68,7 @@ export class AirObstacles {
     this.drawTowerShadow(x, y, def.radius, height);
     const img = this.scene.add.image(x, y, def.texture).setOrigin(0.5, originY).setDepth(DEPTH.towers + y / 1e5);
     this.towerImages.push(img);
+    this.scene.culler?.add(img);
     // Столкновение — на высоте полёта, выше основания по экрану; наземным врагам мешает основание (nav ниже)
     const zone = this.scene.add.zone(x, y - AIR.flightLift, def.radius * 2, def.radius * 2);
     this.towers.add(zone);
