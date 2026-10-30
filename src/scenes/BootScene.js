@@ -2,11 +2,19 @@ import * as Phaser from 'phaser';
 import { PALETTE as P, CITY } from '../config.js';
 import { BUILDINGS } from '../cityLayout.js';
 
-// Генерирует текстуры из примитивов — внешних ассетов пока нет.
+// Отрендеренные в Blender спрайты (tools/blender/make_sprites.py → public/sprites/<ключ>.png).
+// Если PNG есть — он заменяет текстуру из примитивов с тем же ключом и размером.
+const BLENDER_SPRITES = ['heli', 'rotor', 'infantry', 'jeep', 'aa', 'tank', 'boss'];
+
+// Генерирует текстуры из примитивов; часть заменяется PNG из Blender.
 // Все спрайты смотрят вправо (угол 0).
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene');
+  }
+
+  preload() {
+    for (const key of BLENDER_SPRITES) this.load.image(key, `sprites/${key}.png`);
   }
 
   create() {
@@ -412,7 +420,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   makeTexture(g, key, w, h) {
-    g.generateTexture(key, w, h);
+    // PNG из Blender уже загружен в preload — примитивы не нужны
+    if (!this.textures.exists(key)) g.generateTexture(key, w, h);
     g.destroy();
   }
 }
