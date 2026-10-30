@@ -97,6 +97,7 @@ export default {
   downedAt: 'Shot down at',
 
   levelUp: 'Level',
+  reroll: 'Reroll',
   lvl: 'lv.',
   perSec: '/s',
   sec: 's',

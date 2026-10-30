@@ -99,6 +99,15 @@ class SfxEngine {
     this.tone('sine', t, f, f * 1.5, 0.07, 0.12);
   }
 
+  // Барабан выбора: щелчок, пока крутится, и глухой «тук», когда встал
+  reelTick(t) {
+    this.tone('square', t, 1900, 1500, 0.025, 0.025);
+  }
+
+  reelStop(t) {
+    this.tone('triangle', t, 260, 120, 0.12, 0.2);
+  }
+
   // Новый уровень: восходящее арпеджио
   levelUp(t) {
     [523, 659, 784, 1047].forEach((f, i) => this.tone('triangle', t + i * 0.07, f, f, 0.12, 0.18));

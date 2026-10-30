@@ -106,6 +106,7 @@ export default {
 
   // Улучшения
   levelUp: 'Уровень',
+  reroll: 'Перекрутить',
   lvl: 'ур.',
   perSec: '/с',
   sec: 'с',

@@ -31,7 +31,7 @@ const DEFS = {
 };
 
 // Категория — цвет рамки и иконка карточки: оружие / защита / манёвр (Ходент: различимость выбора)
-const CATEGORY = {
+export const CATEGORY = {
   damage: 'weapon',
   fireRate: 'weapon',
   missile: 'weapon',

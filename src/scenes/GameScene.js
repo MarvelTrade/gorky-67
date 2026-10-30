@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -80,6 +80,7 @@ export class GameScene extends Phaser.Scene {
     for (const f of this.buildings.fires) this.wrecks.addFire(f.x, f.y, f.big); // горящие дома
     this.artillery = new Artillery(this, this.player);
     this.extraction = new Extraction(this);
+    this.rerolls = LEVELUP.rerolls;
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss');
@@ -271,6 +272,7 @@ export class GameScene extends Phaser.Scene {
       ...stats,
       ...extra,
       picks: this.picks,
+      rerollsUsed: LEVELUP.rerolls - this.rerolls,
       firstLevelUpAt: this.firstLevelUpAt,
       revived: this.revived,
       crates: { ...this.supply.picked },
@@ -346,6 +348,13 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch('LevelUpScene', {
       level: this.level - this.pendingLevels + 1,
       choices,
+      rerolls: this.rerolls,
+      // Перекрут: те же правила, новые три; null — перекрутов не осталось
+      onReroll: () => {
+        if (this.rerolls <= 0) return null;
+        this.rerolls--;
+        return this.upgrades.roll(3);
+      },
       onPick: (id) => {
         this.upgrades.apply(id);
         this.picks.push({ id, t: Math.round(this.spawner.elapsed) });
