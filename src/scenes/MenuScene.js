@@ -92,6 +92,8 @@ export class MenuScene extends Phaser.Scene {
       }
       if (wide) wallet.setPosition(bx, by + 6);
       hint.setWordWrapWidth(wide ? BTN_W + 40 : width - 32).setPosition(bx, by + (wide ? 26 : 4));
+      // Телефон лёжа: подсказка про управление не влезает — лучше без неё, чем обрезанная
+      hint.setVisible(hint.y + hint.height <= height - 4);
       sound.setPosition(width - 4, 4);
       langs.setPosition(8, 6);
     };

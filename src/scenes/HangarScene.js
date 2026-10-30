@@ -42,6 +42,7 @@ export class HangarScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
       onTap(b, () => true, () => {
         this.tab = id;
+        this.first = 0;
         this.buildRows();
       });
       b.tabId = id;
@@ -57,6 +58,27 @@ export class HangarScene extends Phaser.Scene {
     this.back.setText(this.from === 'GameOverScene' ? `${t('again')} →` : t('back'));
     onTap(this.back, () => true, () => this.scene.start(this.from === 'GameOverScene' ? 'GameScene' : 'MenuScene'));
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
+
+    const arrow = (txt, dir) => {
+      const b = this.add
+        .text(0, 0, txt, { ...style, fontSize: '18px', color: '#c8d8b0', backgroundColor: '#2f363d', padding: { x: 14, y: 3 } })
+        .setOrigin(0.5, 0)
+        .setInteractive({ useHandCursor: true })
+        .setVisible(false);
+      onTap(b, () => true, () => this.scrollBy(dir));
+      return b;
+    };
+    this.pagerUp = arrow('▲', -1);
+    this.pagerDown = arrow('▼', 1);
+    // Свайп по списку и колесо мыши — листают на строку
+    this.input.on('wheel', (p, objs, dx, dy) => this.scrollBy(Math.sign(dy)));
+    this.input.on('pointerdown', (p) => (this.swipeY = p.y));
+    this.input.on('pointerup', (p) => {
+      if (this.swipeY == null) return;
+      const d = p.y - this.swipeY;
+      this.swipeY = null;
+      if (Math.abs(d) > 30) this.scrollBy(d < 0 ? 1 : -1);
+    });
 
     this.rows = [];
     this.buildRows();
@@ -146,42 +168,97 @@ export class HangarScene extends Phaser.Scene {
 
   layout() {
     const { width, height } = this.scale;
+    // Телефон лёжа (низкий и широкий экран): вертолёт, вкладки и «Назад» — слева, список — справа
+    const wide = height < 560 && width >= 640;
+    if (wide) this.layoutWide(width, height);
+    else this.layoutTall(width, height);
+  }
+
+  layoutTall(width, height) {
     const w = Math.min(MAX_W, width - 24);
     const x0 = (width - w) / 2;
     const short = height < 560;
     let y = Math.max(10, height * 0.03);
-    this.title.setPosition(width / 2, y);
+    this.title.setOrigin(0.5, 0).setPosition(width / 2, y);
     y += this.title.height;
-    this.wallet.setPosition(width / 2, y);
+    this.wallet.setOrigin(0.5, 0).setPosition(width / 2, y);
     y += this.wallet.height + 6;
 
     // Вертолёт слева, уровень и опыт справа от него
     const hs = short ? 1.1 : 1.6;
     const cx = x0 + 60 * hs;
     const cy = y + 38 * hs;
-    this.pad.clear().fillStyle(0x2a3326, 1).fillCircle(cx, cy, 38 * hs).lineStyle(2, 0x4a5a3a).strokeCircle(cx, cy, 38 * hs);
-    this.pad.lineStyle(2, 0xd8f040, 0.6).strokeCircle(cx, cy, 30 * hs); // «H» площадки — кольцом
-    this.heli.setPosition(cx, cy).setScale(hs);
-    this.rotor.setPosition(cx, cy).setScale(hs);
+    this.drawHeli(cx, cy, hs);
     const tx = cx + 48 * hs;
-    this.heliLv.setPosition(tx, cy - 16);
+    this.heliLv.setFontSize(18).setWordWrapWidth(null).setPosition(tx, cy - 16);
     this.heliName.setPosition(tx, cy - 36);
-    const bw = Math.max(80, x0 + w - tx);
-    this.xpBar.clear().fillStyle(0x000000, 0.5).fillRect(tx, cy + 4, bw, 8).fillStyle(0x4fd8ff).fillRect(tx, cy + 4, bw * heliProgress(), 8);
+    this.drawXp(tx, cy + 4, Math.max(80, x0 + w - tx));
     y = cy + 40 * hs + 6;
 
     const tw = w / TABS.length;
     this.tabBtns.forEach((b, i) => b.setPosition(x0 + tw * (i + 0.5), y + 16));
     y += 36;
-    this.info.setWordWrapWidth(w).setPosition(width / 2, y);
-    y += (this.info.text ? this.info.height : 0) + 8;
+    this.back.setOrigin(0.5, 0).setPosition(width / 2, height - 48);
+    this.placeList(x0, w, y, height - 52);
+  }
+
+  layoutWide(width, height) {
+    const L = 220; // левая колонка
+    const lx = 14;
+    let y = 8;
+    this.title.setOrigin(0, 0).setPosition(lx, y);
+    y += this.title.height;
+    this.wallet.setOrigin(0, 0).setPosition(lx, y);
+    y += this.wallet.height + 4;
+    const hs = 1;
+    const cx = lx + 40;
+    const cy = y + 40;
+    this.drawHeli(cx, cy, hs);
+    const tx = cx + 50;
+    this.heliName.setPosition(tx, cy - 22);
+    // Узкая колонка: «Уровень 8 · максимум» — мельче и в две строки
+    this.heliLv.setFontSize(15).setWordWrapWidth(L - (tx - lx) - 4).setPosition(tx, cy + 4);
+    this.drawXp(lx, cy + 46, L - 10);
+    y = cy + 60;
+    // Вкладки столбиком
+    this.tabBtns.forEach((b, i) => b.setPosition(lx + L / 2 - 10, y + 16 + i * 34));
+    this.back.setOrigin(0, 1).setPosition(lx - 14, height - 2);
+    const x0 = lx + L + 6;
+    this.placeList(x0, Math.min(MAX_W, width - x0 - 12), 8, height - 8);
+  }
+
+  drawHeli(cx, cy, hs) {
+    this.pad.clear().fillStyle(0x2a3326, 1).fillCircle(cx, cy, 38 * hs).lineStyle(2, 0x4a5a3a).strokeCircle(cx, cy, 38 * hs);
+    this.pad.lineStyle(2, 0xd8f040, 0.6).strokeCircle(cx, cy, 30 * hs); // «H» площадки — кольцом
+    this.heli.setPosition(cx, cy).setScale(hs);
+    this.rotor.setPosition(cx, cy).setScale(hs);
+  }
+
+  drawXp(x, y, w) {
+    this.xpBar.clear().fillStyle(0x000000, 0.5).fillRect(x, y, w, 8).fillStyle(0x4fd8ff).fillRect(x, y, w * heliProgress(), 8);
+  }
+
+  // Подсказка вкладки и строки списка между top и bottom. Не влезают — листаем страницами:
+  // ▲ ▼, свайп или колесо; лишние строки скрыты, а не налезают на шапку
+  placeList(x0, w, top, bottom) {
+    let y = top;
+    this.info.setOrigin(0.5, 0).setWordWrapWidth(w).setPosition(x0 + w / 2, y);
+    y += (this.info.text ? this.info.height : 0) + 6;
+    const perPage = Math.max(1, Math.floor((bottom - y - (this.rows.length * ROW_H > bottom - y ? 30 : 0)) / ROW_H));
+    const pages = this.rows.length > perPage;
+    this.first = Phaser.Math.Clamp(this.first ?? 0, 0, Math.max(0, this.rows.length - perPage));
+    this.listBox = { x0, w, top: y, bottom, perPage };
 
     const btnW = Math.min(124, w * 0.3);
-    for (const r of this.rows) {
-      r.setPosition(x0, y + ROW_H / 2);
+    this.rows.forEach((r, i) => {
+      const slot = i - this.first;
+      const show = slot >= 0 && slot < perPage;
+      r.setVisible(show);
+      r.btn.input.enabled = show;
+      if (!show) return;
+      r.setPosition(x0, y + slot * ROW_H + ROW_H / 2);
       r.bg.setSize(w, ROW_H - 6);
       const left = this.tab === 'livery' ? 40 : 12;
-      r.name.setX(left);
       // Описание — сразу под названием, не больше двух строк: на 375 px длинные шли в три и наезжали на название
       const descW = w - btnW - left - (this.tab === 'upgrades' ? 80 : 16);
       let size = 12;
@@ -194,9 +271,21 @@ export class HangarScene extends Phaser.Scene {
       r.btn.input.hitArea.setSize(btnW, ROW_H - 14);
       r.cost.setPosition(w - 6 - btnW / 2, 0);
       this.drawExtras(r, w - btnW - 16);
-      y += ROW_H;
-    }
-    this.back.setPosition(width / 2, Math.min(y + 4, height - 48));
+    });
+
+    // Стрелки листания — под списком
+    const py = y + perPage * ROW_H + 2;
+    this.pagerUp.setPosition(x0 + w / 2 - 40, py).setVisible(pages).setAlpha(this.first > 0 ? 1 : 0.3);
+    this.pagerDown.setPosition(x0 + w / 2 + 40, py).setVisible(pages).setAlpha(this.first + perPage < this.rows.length ? 1 : 0.3);
+  }
+
+  scrollBy(dir) {
+    const box = this.listBox;
+    if (!box) return;
+    const next = Phaser.Math.Clamp(this.first + dir, 0, Math.max(0, this.rows.length - box.perPage));
+    if (next === this.first) return;
+    this.first = next;
+    this.layout();
   }
 
   // Точки уровня у улучшений, цветной кружок у окраски
