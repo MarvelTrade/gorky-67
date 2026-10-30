@@ -139,6 +139,7 @@ export class GameScene extends Phaser.Scene {
     this.banners = []; // надписи на экране — следующая встаёт ниже
     this.boss = null;
     this.blasts = []; // пул вспышек взрывов — новый на каждый забег (сцена переиспользуется)
+    this.spinCrashes = 0;
     this.bossKilled = false;
     this.bossKilledAt = null;
     this.picks = []; // выбранные улучшения по порядку — для замеров
@@ -223,9 +224,12 @@ export class GameScene extends Phaser.Scene {
     this.player.crash();
     this.events.emit('radio', t('vova_why'), 'vova', true);
     this.time.delayedCall(1300, () => this.events.emit('radio', t('ivan_just'), 'ivan', true));
+    // Раньше тут был взрыв и конец забега — это ломало игру ради шутки. Теперь Иван заводит, и летим дальше
     this.time.delayedCall(SPIN.talk * 1000, () => {
-      this.player.hp = 0;
-      this.events.emit('player-died', 'spin');
+      if (this.ended || this.dying) return;
+      this.events.emit('radio', t('ivan_restart'), 'ivan', true);
+      this.player.takeOff();
+      this.spinCrashes = (this.spinCrashes ?? 0) + 1;
     });
   }
 
@@ -331,6 +335,7 @@ export class GameScene extends Phaser.Scene {
       flareKills: this.flares.kills,
       wiresCut: this.air.cut,
       depots: this.depots.broken,
+      spinCrashes: this.spinCrashes ?? 0,
       breakdowns: { ...this.breakdowns.stats },
       shelled: this.artillery.hits,
       hordes: this.runEvents.summary(),

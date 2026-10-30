@@ -31,6 +31,7 @@ export default {
   crew_1: 'Vova, get this — there’s a radio in here!',
   vova_why: 'Vanya... why?',
   ivan_just: 'Just because...',
+  ivan_restart: 'Fine... starting her up.',
   ivan_fire: "We're on fire! Vova, keep shooting, I've got it!",
   ivan_fire_out: 'Fire is out. We live.',
   ivan_stall: 'Engine died... hold on, hold on...',

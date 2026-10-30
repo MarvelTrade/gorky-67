@@ -196,18 +196,38 @@ export class Player {
   }
 
   // Падение после «карусели»: управление не слушается, вертолёт крутит и опускает к тени
+  // «Карусель»: сел, постоял, взлетел. На земле неуязвим — это шутка, а не смерть
   crash() {
     this.crashing = true;
+    this.crashPhase = 'land';
     this.crashT = 0;
-    this.invuln = 99; // добивает не толпа, а шутка
+    this.invuln = 99;
+  }
+
+  takeOff() {
+    this.crashPhase = 'up';
+    this.crashT = 0;
   }
 
   updateCrash(dt) {
     const s = this.sprite;
     this.crashT += dt;
-    const k = Math.min(1, this.crashT / 1.2); // 0 → 1: в воздухе → на земле
+    // k: 0 — в воздухе, 1 — на земле. Садится 1.2 с, взлетает 1 с
+    const up = this.crashPhase === 'up';
+    const k = up ? Math.max(0, 1 - this.crashT / SPIN.takeOff) : Math.min(1, this.crashT / 1.2);
     this.body.setVelocity(this.body.velocity.x * 0.9, this.body.velocity.y * 0.9);
-    s.rotation += (1 - k) * 9 * dt;
+    if (!up) s.rotation += (1 - k) * 9 * dt;
+    if (up && k === 0) {
+      // Снова в воздухе: управление вернулось, короткая неуязвимость, счётчик кругов с нуля
+      this.crashing = false;
+      this.spin = 0;
+      this.lastRot = s.rotation;
+      this.invuln = SPIN.invulnAfter;
+      this.look.setScale(1);
+      this.rotor.setScale(1);
+      this.shadow.setScale(0.9);
+      return;
+    }
     this.look.setPosition(s.x + 18 * k, s.y + 26 * k).setRotation(s.rotation).setScale(1 - 0.15 * k).setAlpha(1);
     this.shadow.setPosition(s.x + 18, s.y + 26).setRotation(s.rotation).setScale(0.9 + 0.1 * k);
     this.rotor.setPosition(this.look.x, this.look.y).setScale(1 - 0.15 * k);
