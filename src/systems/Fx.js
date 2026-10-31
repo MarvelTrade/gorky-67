@@ -95,6 +95,8 @@ export class Fx {
       case 'miner':
         this.puff.explode(7, x, y);
         break;
+      case 'workbus':
+      case 'hauler':
       case 'tractorBlue':
       case 'tractorRed':
         this.debris.explode(16, x, y);
@@ -107,6 +109,7 @@ export class Fx {
         this.smoke.explode(10, x, y);
         this.shake(FX.heavyShake);
         break;
+      case 'pig':
       case 'blaster':
       case 'cow':
       case 'bull':

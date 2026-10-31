@@ -42,6 +42,8 @@ export const RADIO = {
   // оцепление надышалось и считает вас целью (когда приходят вездеходы), «это уже не наши» (танки и зенитки)
   // Экипаж между собой — сразу после первой связи с «Берёзой», потом вступает «Черёмуха»
   crew: [{ at: 4, key: 'crew_1', who: 'ivan' }],
+  // свои реплики экипажа уровня: ключ lN_crew_2 — если у уровня нет, строка молчит
+  crew2: { at: 7, key: 'crew_2', who: 'beryoza' },
   cheryomukha: [
     { at: 9, key: 'cher_1' },
     { at: 26, key: 'cher_2' },
@@ -53,12 +55,14 @@ export const RADIO = {
   ],
   // Первая встреча с новым врагом (поле intro в ENEMIES) — короткий разговор, по разу за забег
   intros: {
-    cows: [{ key: 'vova_cows', who: 'vova' }, { key: 'beryoza_cows', who: 'beryoza' }],
-    tractor: [{ key: 'vova_tractor', who: 'vova' }, { key: 'ivan_tractor', who: 'ivan' }],
-    police: [{ key: 'vova_police', who: 'vova' }, { key: 'ivan_police', who: 'ivan' }],
-    blasters: [{ key: 'vova_blasters', who: 'vova' }, { key: 'beryoza_blasters', who: 'beryoza' }],
-    dumptruck: [{ key: 'ivan_dumptruck', who: 'ivan' }],
-    excavator: [{ key: 'vova_excavator', who: 'vova' }, { key: 'ivan_excavator', who: 'ivan' }],
+    cows: [{ key: 'vova_cows', who: 'vova' }, { key: 'beryoza_cows', who: 'beryoza' }, { key: 'cher_notours_cows', who: 'cheryomukha' }],
+    tractor: [{ key: 'vova_tractor', who: 'vova' }, { key: 'ivan_tractor', who: 'ivan' }, { key: 'cher_notours_tractor', who: 'cheryomukha' }],
+    hauler: [{ key: 'beryoza_hauler', who: 'beryoza' }, { key: 'cher_notours_hauler', who: 'cheryomukha' }],
+    police: [{ key: 'vova_police', who: 'vova' }, { key: 'ivan_police', who: 'ivan' }, { key: 'cher_notours_police', who: 'cheryomukha' }],
+    blasters: [{ key: 'vova_blasters', who: 'vova' }, { key: 'beryoza_blasters', who: 'beryoza' }, { key: 'cher_notours_blasters', who: 'cheryomukha' }],
+    workbus: [{ key: 'vova_workbus', who: 'vova' }, { key: 'cher_notours_workbus', who: 'cheryomukha' }],
+    dumptruck: [{ key: 'ivan_dumptruck', who: 'ivan' }, { key: 'cher_notours_dumptruck', who: 'cheryomukha' }],
+    excavator: [{ key: 'vova_excavator', who: 'vova' }, { key: 'ivan_excavator', who: 'ivan' }, { key: 'cher_notours_excavator', who: 'cheryomukha' }],
   },
   duration_long: 4.5,   // с на экране для длинных реплик «Черёмухи» — с паузами они читаются дольше
   longChars: 60,        // длиннее стольких знаков — реплика длинная
@@ -601,6 +605,36 @@ export const ENEMIES = {
     xp: 5,
     radius: 17,
   },
+  // Свинья: мелкая, круглая от газа, лопается часто и негромко
+  pig: {
+    behavior: 'bloat',
+    intro: 'cows',
+    hp: 22,
+    speed: 46,
+    speedJitter: 8,
+    damage: 0,
+    blastRange: 30,
+    blast: 70,
+    blastDamage: 8,
+    blastHit: 50,
+    xp: 2,
+    radius: 13,
+  },
+  // Тягач с прицепом: не к вертолёту, а к яме, где собирают «Объект», — везёт туши (газ). Довёз — «Объект»
+  // выйдет на haulBoss с раньше. Не взрывается; его надо перехватить по дороге
+  hauler: {
+    behavior: 'haul',
+    intro: 'hauler',
+    hp: 90,
+    speed: 46,
+    speedJitter: 4,
+    turnRate: 1.8,
+    haulRange: 70,      // px до ямы — разгрузился
+    haulBoss: 10,       // с — настолько раньше выйдет «Объект»
+    damage: 0,
+    xp: 6,
+    radius: 15,
+  },
   // Лошадь: быстрая, лопается слабее
   horse: {
     behavior: 'bloat',
@@ -646,6 +680,23 @@ export const ENEMIES = {
     blastHit: 70,
     xp: 2,
     radius: 9,
+  },
+  // Автобус с рабочими смены: едет к вертолёту по дорогам и высаживает горняков, не стреляет
+  workbus: {
+    behavior: 'tractor',
+    intro: 'workbus',
+    hp: 90,
+    speed: 58,
+    speedJitter: 6,
+    turnRate: 1.8,
+    fireInterval: 99,
+    range: 0,           // не стреляет
+    unloadEvery: 7,
+    unload: 4,
+    unloadType: 'miner',
+    damage: 0,
+    xp: 8,
+    radius: 15,
   },
   // Карьерный самосвал: ползёт к вертолёту, сминая дома, сам не стреляет — но в кузове заражённые,
   // и раз в unloadEvery с он высыпает их рядом. Толстый: сбить его — задача, а не мимоходом
@@ -721,6 +772,7 @@ export const LAB = {
 };
 
 export const BOSS_SPAWN = {
+  minAt: 180,           // с — раньше этого не выйдет, сколько бы туш ни довезли (тягачи, уровень 2)
   at: 230,              // с — 3:50: из лаборатории он катится ~10 с, бой начинается к 4:00, как раньше
   dist: 380,            // расстояние от игрока
 };
@@ -755,7 +807,7 @@ export const SPAWN = {
   despawnDist: 1400,    // враги дальше этого от игрока возвращаются в пул (без опыта)
   maxEnemies: 300,      // размер пула
   refillBoost: 1.5,     // во сколько раз чаще пехота, пока живых меньше минимума волны
-  disposable: ['infantry', 'jeep', 'farmer', 'cow', 'horse', 'miner', 'blaster'], // кого можно тихо убрать, чтобы освободить место орде и боссу
+  disposable: ['infantry', 'jeep', 'farmer', 'cow', 'horse', 'pig', 'miner', 'blaster'], // кого можно тихо убрать, чтобы освободить место орде и боссу
 };
 
 export const POOLS = {

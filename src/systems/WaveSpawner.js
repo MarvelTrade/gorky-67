@@ -23,6 +23,8 @@ export class WaveSpawner {
     this.stats = { suppressed: 0, freed: 0, expired: 0, poolFull: 0, maxAlive: 0 };
     this.waves = layout.WAVES ?? CITY_WAVES; // у уровня свой состав волн (деревня — тракторы и скотина)
     this.introduced = new Set(); // разговор о новом враге — по разу
+    this.bossAt = BOSS_SPAWN.at; // тягачи с тушами сдвигают раньше
+    this.hauls = 0;
   }
 
   get wave() {
@@ -39,7 +41,7 @@ export class WaveSpawner {
       this.scene.events.emit('wave-changed', index + 1);
     }
 
-    if (!this.bossSpawned && this.elapsed >= BOSS_SPAWN.at) {
+    if (!this.bossSpawned && this.elapsed >= this.bossAt) {
       this.bossSpawned = true;
       this.spawnBoss();
     }
@@ -109,6 +111,14 @@ export class WaveSpawner {
     if (type !== 'boss' && this.scene.nav) ({ x, y } = this.scene.nav.nearestFree(x, y));
     enemy.spawn(type, ENEMIES[type], x, y, this.target, this.wave.hpMul, this.wave.dmgMul ?? 1);
     this.introduce(ENEMIES[type].intro);
+  }
+
+  // Тягач довёз туши к яме: «Объект» выйдет раньше (не раньше minBossAt), Берёза предупреждает
+  hauled(sec) {
+    if (this.bossSpawned) return;
+    this.hauls++;
+    this.bossAt = Math.max(BOSS_SPAWN.minAt, this.bossAt - sec);
+    this.scene.events.emit('radio', t('beryoza_hauled'), 'beryoza', true);
   }
 
   // Первая корова — Вова спрашивает «Берёзу», что с ними; первый трактор — Вова с Иваном

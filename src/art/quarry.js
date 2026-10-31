@@ -207,4 +207,22 @@ export function makeQuarryTextures(scene) {
     g.lineStyle(2, 0x5a6248).beginPath().arc(48, 18, 5, 0.6, 4.4).strokePath(); // разорванная бочка
     g.fillStyle(0xff8a2a, 0.5).fillCircle(28, 25, 2).fillCircle(35, 21, 1.5); // тлеющие угли
   });
+
+  // Автобус смены (маленький, как районный): кремово-оранжевый, ряд окон, в окнах — головы рабочих в касках
+  tex(scene, 'workbus', 46, 24, (g) => {
+    g.fillStyle(0x000000, 0.25).fillRect(3, 4, 42, 19);
+    g.fillStyle(0x161a14).fillRect(8, 1, 7, 3).fillRect(32, 1, 7, 3).fillRect(8, 20, 7, 3).fillRect(32, 20, 7, 3);
+    g.fillStyle(0xe8dcb8).fillRect(2, 3, 42, 18); // кузов
+    g.fillStyle(0xd86a2a).fillRect(2, 3, 42, 4).fillRect(2, 17, 42, 4); // оранжевые борта
+    g.fillStyle(0xc8bc98).fillRect(6, 8, 30, 8); // крыша
+    g.fillStyle(0x6a6a5a).fillRect(14, 9, 6, 6); // люк
+    g.fillStyle(0x3a4a58).fillRect(38, 5, 5, 14); // лобовое
+    for (let x = 6; x < 36; x += 6) {
+      g.fillStyle(0x3a4a58).fillRect(x, 4, 4, 2).fillRect(x, 18, 4, 2); // окна по бортам
+      g.fillStyle(0xf0c020).fillCircle(x + 2, 5, 1.2).fillCircle(x + 2, 19, 1.2); // каски в окнах
+    }
+    g.fillStyle(P.glow).fillRect(43, 5, 2, 3).fillRect(43, 16, 2, 3); // фары
+    g.fillStyle(P.glow, 0.6).fillCircle(26, 12, 2);
+    g.lineStyle(1, 0x5a4a30, 0.9).strokeRect(2, 3, 42, 18);
+  });
 }

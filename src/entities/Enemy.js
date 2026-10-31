@@ -129,7 +129,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         break;
       case 'tank':
         this.updateTank(dt, dx, dy, dist);
-        if (this.cfg.unload) this.updateUnload(dt, dist);
+        break;
+      case 'haul':
+        this.updateHaul(dt, dx, dy);
+        if (!this.active) return; // довёз и уехал
         break;
       case 'boss':
         this.updateBoss(dt, dx, dy, dist);
@@ -137,6 +140,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       case 'tractor':
         this.updateTractor(dt, dx, dy, dist);
         break;
+    }
+    // Самосвал и автобус смены высаживают заражённых
+    if (this.cfg.unload) this.updateUnload(dt, dist);
+    switch (this.cfg.behavior) {
       case 'bloat':
         this.updateBloat(dt, dx, dy, dist);
         if (!this.active) return; // лопнула
@@ -313,6 +320,25 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const a = this.rotation + Math.PI + (i - (cfg.unload - 1) / 2) * 0.6;
       sp.place(e, cfg.unloadType, this.x + Math.cos(a) * (cfg.radius + 14), this.y + Math.sin(a) * (cfg.radius + 14));
     }
+  }
+
+  // Тягач с прицепом: едет не на вертолёт, а к яме «Объекта»; довёз туши — «Объект» выйдет раньше
+  updateHaul(dt, dx, dy) {
+    const cfg = this.cfg;
+    const pit = this.scene.lab?.pos;
+    if (!pit) {
+      this.updateTractor(dt, dx, dy, Infinity);
+      return;
+    }
+    const px = pit.x - this.x;
+    const py = pit.y - this.y;
+    if (px * px + py * py <= cfg.haulRange * cfg.haulRange) {
+      this.scene.spawner.hauled(cfg.haulBoss);
+      this.despawn();
+      return;
+    }
+    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, Math.atan2(py, px), cfg.turnRate * dt);
+    this.body.setVelocity(Math.cos(this.rotation) * this.speed, Math.sin(this.rotation) * this.speed);
   }
 
   // Трактор: едет к вертолёту по дорогам, разворачивается не сразу; фермер из кабины бьёт дробью веером

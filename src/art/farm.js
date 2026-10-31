@@ -93,6 +93,22 @@ export function makeFarmTextures(scene) {
   tex(scene, 'cow', 44, 34, (g) => beast(g, 44, 34, { body: 0xe8e4d8, spots: 0x2a2622, leg: 0x2a2622, line: 0x3a3028, head: 10 }));
   tex(scene, 'bull', 46, 36, (g) => beast(g, 46, 36, { body: 0x5a3220, leg: 0x2a1810, line: 0x1a0e08, head: 11, headCol: 0x4a2818, horns: true }));
   tex(scene, 'horse', 50, 30, (g) => beast(g, 50, 30, { body: 0x8a5a34, leg: 0x2a1a10, line: 0x3a2414, head: 10, mane: 0x2a1a10 }));
+  // Свинья: розовая, круглая от газа, пятачок
+  tex(scene, 'pig', 36, 28, (g) => beast(g, 36, 28, { body: 0xe8a0a0, leg: 0x8a5050, line: 0x7a3a3a, head: 9, headCol: 0xf0b0b0 }));
+  // Тягач с прицепом: синий трактор тянет телегу с тушами — к яме «Объекта»
+  tex(scene, 'hauler', 64, 28, (g) => {
+    g.fillStyle(0x4a3a2a).fillRect(4, 6, 30, 16); // прицеп
+    g.lineStyle(1.5, 0x2a1e14).strokeRect(4, 6, 30, 16);
+    g.fillStyle(0x1a1a16).fillRect(10, 3, 8, 3).fillRect(10, 22, 8, 3); // колёса прицепа
+    for (const [x, y, col] of [[12, 11, 0xe8e4d8], [22, 15, 0x8a5a34], [27, 10, 0xe8a0a0], [14, 17, 0x5a3220]]) {
+      g.fillStyle(col).fillEllipse(x, y, 11, 7); // туши
+    }
+    g.fillStyle(0x2a2622).fillCircle(10, 10, 1.5).fillCircle(24, 16, 1.5);
+    g.fillStyle(P.glow, 0.5).fillCircle(19, 13, 4); // газ над грузом
+    g.lineStyle(2, 0x2a2a2a).lineBetween(34, 14, 38, 14); // сцепка
+    g.translateCanvas(28, 0);
+    tractor(g, 36, 28, 0x2f6fb8, 0x1c4070);
+  });
   // «Объект» деревни: шар, слепленный из коров, лошадей и людей. Катится — ноги, рога и головы торчат
   // во все стороны, между ними — жёлтые жилы газа
   tex(scene, 'bossHerd', 100, 100, (g) => {
