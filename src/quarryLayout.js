@@ -70,7 +70,7 @@ const WAVES = [
   { hpMul: 1.2, dmgMul: 0.75, alive: [30, 90], infantry: { interval: 1.2, batch: 2 }, miner: { interval: 1.2, batch: 2 }, blaster: { interval: 5, batch: 2 }, jeep: { interval: 4, batch: 1 } },
   { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 2 }, miner: { interval: 1.0, batch: 3 }, blaster: { interval: 4, batch: 2 }, dumptruck: { interval: 20, batch: 1, from: 10 }, jeep: { interval: 3, batch: 2 } },
   { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 3 }, miner: { interval: 1.0, batch: 3 }, blaster: { interval: 3.5, batch: 2 }, dumptruck: { interval: 16, batch: 1 }, aa: { interval: 7, batch: 1 }, jeep: { interval: 3, batch: 2 } },
-  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 3 }, miner: { interval: 0.9, batch: 4 }, blaster: { interval: 3, batch: 3 }, dumptruck: { interval: 14, batch: 1 }, aa: { interval: 5, batch: 1 }, tank: { interval: 12, batch: 1 } },
+  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 3 }, miner: { interval: 0.9, batch: 4 }, blaster: { interval: 3, batch: 3 }, dumptruck: { interval: 14, batch: 1 }, aa: { interval: 5, batch: 1 }, btr: { interval: 12, batch: 1 } },
 ];
 
 export const QUARRY_LEVEL = {
@@ -89,7 +89,7 @@ export const QUARRY_LEVEL = {
   exitDir: 'n',            // к столице
   WAVES,
   hordeType: 'miner',      // орда — горняки
-  wreckKinds: ['dumptruck', 'jeep', 'jeep', 'tank'],
+  wreckKinds: ['dumptruck', 'jeep', 'jeep', 'btr'],
   train: { y: 3000, stand: 0, moving: true }, // эшелон идёт мимо горки, не останавливаясь
   // Экскаваторы на краю карьера: стоят и кидают глыбы
   staticSpawns: [

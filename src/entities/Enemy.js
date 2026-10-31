@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { SPAWN, EVENTS, RUINS, ORDNANCE, LAB } from '../config.js';
 import { RIVER } from '../cityLayout.js';
+import { layout } from '../levels.js';
 import { DEPTH } from '../depth.js';
 
 const FLASH_TIME = 0.06;
@@ -45,7 +46,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.timer = Phaser.Math.FloatBetween(0, cfg.pauseTime ?? cfg.fireInterval ?? cfg.volleyInterval ?? 0);
     this.burstTimer = cfg.burstInterval ?? 0;
 
-    this.setTexture(type);
+    this.setTexture(type === 'boss' ? layout.bossTexture ?? 'boss' : type);
     // Сразу лицом к игроку — иначе танк первые секунды ползёт мимо
     this.rotation = Math.atan2(target.y - y, target.x - x);
     this.enableBody(true, x, y, true, true);
@@ -245,11 +246,25 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const v = this.speed * (this.inHouse ? RUINS.tankSlow : 1) * (this.inWater ? RIVER.tankSlow : 1);
     this.body.setVelocity(Math.cos(this.rotation) * v, Math.sin(this.rotation) * v);
 
+    // БТР: начатая очередь дострачивается, куда смотрит корпус
+    if (this.shotsLeft > 0) {
+      this.shotTimer -= dt;
+      if (this.shotTimer <= 0) {
+        this.fireShell(this.rotation);
+        this.shotsLeft--;
+        this.shotTimer = cfg.burstInterval;
+      }
+    }
     this.timer -= dt;
     const aimed = Math.abs(Phaser.Math.Angle.Wrap(aim - this.rotation)) < cfg.aimTolerance;
     if (this.timer > 0 || dist > cfg.range || !aimed) return;
-    this.fireShell(this.rotation);
     this.timer = cfg.fireInterval;
+    if (cfg.burstCount) {
+      this.shotsLeft = cfg.burstCount;
+      this.shotTimer = 0;
+      return;
+    }
+    this.fireShell(this.rotation);
   }
 
   // Босс — шар-вирус: выходит из лаборатории, катится к игроку (далеко — быстро), сминая дома,

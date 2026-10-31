@@ -100,6 +100,7 @@ export class Fx {
         this.debris.explode(16, x, y);
         this.smoke.explode(6, x, y);
         break;
+      case 'btr':
       case 'dumptruck':
       case 'excavator':
         this.debris.explode(30, x, y);
@@ -113,6 +114,7 @@ export class Fx {
         this.puff.explode(18, x, y); // газовое облако — остальное рисует gas-blast
         break;
       case 'jeep':
+      case 'police':
         this.puff.explode(4, x, y);
         this.debris.explode(12, x, y);
         this.smoke.explode(4, x, y);

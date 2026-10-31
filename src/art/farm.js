@@ -93,6 +93,49 @@ export function makeFarmTextures(scene) {
   tex(scene, 'cow', 44, 34, (g) => beast(g, 44, 34, { body: 0xe8e4d8, spots: 0x2a2622, leg: 0x2a2622, line: 0x3a3028, head: 10 }));
   tex(scene, 'bull', 46, 36, (g) => beast(g, 46, 36, { body: 0x5a3220, leg: 0x2a1810, line: 0x1a0e08, head: 11, headCol: 0x4a2818, horns: true }));
   tex(scene, 'horse', 50, 30, (g) => beast(g, 50, 30, { body: 0x8a5a34, leg: 0x2a1a10, line: 0x3a2414, head: 10, mane: 0x2a1a10 }));
+  // «Объект» деревни: шар, слепленный из коров, лошадей и людей. Катится — ноги, рога и головы торчат
+  // во все стороны, между ними — жёлтые жилы газа
+  tex(scene, 'bossHerd', 100, 100, (g) => {
+    const c = 50;
+    g.fillStyle(P.glow, 0.25).fillCircle(c, c, 49);
+    // Торчащие ноги и копыта по кругу
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + (i % 2) * 0.12;
+      const r0 = 36;
+      const r1 = 46 + (i % 3) * 2;
+      g.lineStyle(i % 3 === 0 ? 4 : 5, i % 2 ? 0x2a2622 : 0x6a4428);
+      g.lineBetween(c + Math.cos(a) * r0, c + Math.sin(a) * r0, c + Math.cos(a) * r1, c + Math.sin(a) * r1);
+      g.fillStyle(0x161210).fillCircle(c + Math.cos(a) * r1, c + Math.sin(a) * r1, 2.5);
+    }
+    g.fillStyle(0x7a5a3a).fillCircle(c, c, 38); // туша
+    // Шкуры лоскутами: пятнистая коровья, гнедая, тёмная бычья
+    const hides = [
+      [36, 34, 22, 0xe8e4d8], [64, 40, 18, 0x8a5a34], [44, 64, 20, 0xe8e4d8], [66, 64, 16, 0x5a3220],
+      [30, 54, 14, 0x8a5a34], [52, 46, 14, 0xd8c8b0],
+    ];
+    for (const [x, y, r, col] of hides) g.fillStyle(col).fillCircle(x, y, r);
+    g.fillStyle(0x2a2622);
+    for (const [x, y, r] of [[32, 30, 6], [40, 38, 4], [48, 68, 6], [38, 60, 4]]) g.fillCircle(x, y, r); // пятна
+    // Головы: корова, лошадь, бык с рогами — и человеческие, заражённые
+    const head = (x, y, w, h, col) => {
+      g.fillStyle(col).fillEllipse(x, y, w, h);
+      g.fillStyle(P.glow).fillRect(x - 2, y - 2, 2, 1).fillRect(x + 2, y - 2, 2, 1);
+    };
+    head(70, 28, 14, 10, 0xe8e4d8);
+    head(26, 70, 16, 9, 0x8a5a34);
+    head(72, 74, 13, 10, 0x4a2818);
+    g.lineStyle(2, 0xe8e0c8).lineBetween(66, 70, 62, 64).lineBetween(78, 70, 82, 64); // рога
+    for (const [x, y] of [[54, 30], [30, 44], [60, 56], [44, 80], [80, 50]]) {
+      g.fillStyle(P.infectedHead).fillCircle(x, y, 4);
+      g.fillStyle(P.infected).fillRect(x + 3, y - 1, 6, 2); // рука наружу
+    }
+    // Вздутие и газ: жёлто-зелёные жилы, блик
+    g.lineStyle(1.5, 0xc8e040, 0.85);
+    g.lineBetween(22, 40, 40, 50).lineBetween(40, 50, 58, 38).lineBetween(58, 38, 78, 44);
+    g.lineBetween(36, 76, 52, 58).lineBetween(52, 58, 70, 62);
+    g.fillStyle(0xffffff, 0.15).fillEllipse(40, 34, 30, 16);
+    g.lineStyle(2, 0x2a1a10, 0.9).strokeCircle(c, c, 38);
+  });
   // Дробь из ружья — мелкая, тёплая, чтобы отличалась от красных снарядов оцепления
   tex(scene, 'pellet', 8, 8, (g) => {
     g.fillStyle(0xffa030).fillCircle(4, 4, 3.5);

@@ -32,6 +32,7 @@ import { River } from '../systems/River.js';
 import { layout, setLevel, lt } from '../levels.js';
 import { makeFarmTextures } from '../art/farm.js';
 import { makeQuarryTextures } from '../art/quarry.js';
+import { makeArmyTextures } from '../art/army.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -49,6 +50,7 @@ export class GameScene extends Phaser.Scene {
     this.levelDef = setLevel(this.registry.get('level') ?? 1);
     makeFarmTextures(this); // один раз за игру: есть — пропускает
     makeQuarryTextures(this);
+    makeArmyTextures(this);
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.culler = new Culler(this); // до города: декорации регистрируются при создании
     this.nav = new CityNav(this);

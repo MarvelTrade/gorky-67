@@ -55,6 +55,7 @@ export const RADIO = {
   intros: {
     cows: [{ key: 'vova_cows', who: 'vova' }, { key: 'beryoza_cows', who: 'beryoza' }],
     tractor: [{ key: 'vova_tractor', who: 'vova' }, { key: 'ivan_tractor', who: 'ivan' }],
+    police: [{ key: 'vova_police', who: 'vova' }, { key: 'ivan_police', who: 'ivan' }],
     blasters: [{ key: 'vova_blasters', who: 'vova' }, { key: 'beryoza_blasters', who: 'beryoza' }],
     dumptruck: [{ key: 'ivan_dumptruck', who: 'ivan' }],
     excavator: [{ key: 'vova_excavator', who: 'vova' }, { key: 'ivan_excavator', who: 'ivan' }],
@@ -257,7 +258,7 @@ export const RUINS = {
   hpPerArea: 1 / 35,    // HP дома = площадь пятна / 35 (дом 120×60 ≈ 200)
   damaged: 0.55,        // доля HP: ниже — пробоины и выбитые окна
   blast: 1.5,           // урон дому = радиус взрыва × blast (ракета 55 → 82; снаряд обстрела 60 → 90)
-  crush: { boss: 260, tank: 70, dumptruck: 50 }, // урон дому в секунду, пока по нему едут
+  crush: { boss: 260, tank: 70, dumptruck: 50, btr: 45 }, // урон дому в секунду, пока по нему едут
   tankSlow: 0.6,        // скорость танка внутри дома
   trackEvery: 14,       // px между отпечатками гусениц
   trailEvery: 20,       // px между пятнами «пролома» в доме
@@ -463,6 +464,51 @@ export const ENEMIES = {
     damage: 0,          // урон только снарядами
     xp: 6,
     radius: 18,
+  },
+  // ── До танков (уровни 1–3): танки — позже, на военной базе (уровень 4) ──
+  // Милицейская машина: первая техника в городе — рывками, как вездеход, но слабее и бьёт из пистолетов
+  police: {
+    behavior: 'dash',
+    intro: 'police',
+    hp: 14,
+    speed: 0,
+    speedJitter: 0,
+    dashSpeed: 320,
+    dashTime: 0.6,
+    pauseTime: 1.0,
+    pauseDrag: 4,
+    burstDelay: 0.3,
+    burstCount: 2,
+    burstInterval: 0.15,
+    range: 400,
+    shellSpeed: 280,
+    shellDamage: 2,
+    shellLife: 1.5,
+    shellTexture: 'jeepShell',
+    damage: 0,
+    xp: 2,
+    radius: 11,
+  },
+  // Бронетранспортёр оцепления: на колёсах — быстрее танка, ломает дома, доворачивает башенку и бьёт
+  // из крупнокалиберного очередью по burstCount (направление — куда смотрит корпус, можно уйти вбок)
+  btr: {
+    behavior: 'tank',
+    hp: 140,
+    speed: 32,
+    speedJitter: 4,
+    turnRate: 1.2,
+    fireInterval: 3.2,
+    range: 560,
+    aimTolerance: 0.3,
+    burstCount: 4,
+    burstInterval: 0.12,
+    shellSpeed: 320,
+    shellDamage: 6,
+    shellLife: 2.2,
+    shellTexture: 'tankShell',
+    damage: 0,
+    xp: 6,
+    radius: 16,
   },
   // ── Деревня (уровень 2) ──
   // Заражённый колхозник — та же пехота, чуть крепче (телогрейка)
@@ -694,14 +740,14 @@ export const WAVES = [
   // Минимум 20 на 1-й волне удваивал пехоту с первой секунды (живых-то ноль) — бот-новичок гиб на 0:15–0:30.
   // batch массивом — разгон по третям волны. Пулемёт на старте убивает ~3,5 пехотинца/с, а шло 4/с с нуля.
   // Замер (8 забегов): новичок медиана смерти 1:18 → 2:08; случайная сборка и умный бот — в пределах разброса.
-  { hpMul: 1.0, dmgMul: 0.5, alive: [0, 60], infantry: { interval: 1.0, batch: [2, 3, 4] } },
-  { hpMul: 1.2, dmgMul: 0.75, alive: [30, 90], infantry: { interval: 1.0, batch: 4 }, jeep: { interval: 3.0, batch: 2 } },
+  { hpMul: 1.0, dmgMul: 0.5, alive: [0, 60], infantry: { interval: 1.0, batch: [2, 3, 4] }, police: { interval: 9, batch: 1, from: 30 } },
+  { hpMul: 1.2, dmgMul: 0.75, alive: [30, 90], infantry: { interval: 1.0, batch: 4 }, police: { interval: 5, batch: 1 }, jeep: { interval: 3.5, batch: 2, from: 20 } },
   // Замер ботом (шаг 9): на 3-й волне всё новое приходило разом — скачок урона;
   // с 4-й волны пул в 300 врагов забивался к ~3:45. Новые типы теперь вводятся по очереди,
   // пехоты на 4–5-й волне меньше.
-  { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 2.5, batch: 2 }, tank: { interval: 14, batch: 1, from: 15 }, aa: { interval: 7, batch: 1, from: 30 } },
-  { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 6 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 11, batch: 1 } },
-  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 7 }, jeep: { interval: 1.8, batch: 3 }, aa: { interval: 4, batch: 2 }, tank: { interval: 9, batch: 2 } },
+  { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 5 }, jeep: { interval: 2.5, batch: 2 }, btr: { interval: 12, batch: 1, from: 15 }, aa: { interval: 7, batch: 1, from: 30 } },
+  { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 6 }, jeep: { interval: 2.0, batch: 3 }, aa: { interval: 5, batch: 1 }, btr: { interval: 9, batch: 1 } },
+  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 7 }, jeep: { interval: 1.8, batch: 3 }, aa: { interval: 4, batch: 2 }, btr: { interval: 7, batch: 2 } },
 ];
 
 export const SPAWN = {

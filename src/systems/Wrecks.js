@@ -46,8 +46,8 @@ export class Wrecks {
       const p = this.roadPoint();
       if (!p) break;
       // В деревне вместо брошенной брони — сгоревшие тракторы (и редкий армейский вездеход)
-      const key = layout.wreckKinds ? rnd.pick(layout.wreckKinds) : rnd.frac() < 0.3 ? 'tank' : 'jeep';
-      this.put(key, p.x, p.y, rnd.angle() * (Math.PI / 180), true, true, key === 'tank');
+      const key = rnd.pick(layout.wreckKinds ?? ['btr', 'jeep', 'jeep', 'police']);
+      this.put(key, p.x, p.y, rnd.angle() * (Math.PI / 180), true, true, key === 'tank' || key === 'btr' || key === 'dumptruck');
     }
     // Троллейбусы встали под оборванной сетью: под пролётами троллейбусных маршрутов
     // Троллейбусы стоят под троллейбусной сетью; в деревне провода — ЛЭП, троллейбусов нет

@@ -65,7 +65,7 @@ const WAVES = [
   { hpMul: 1.2, dmgMul: 0.75, alive: [30, 90], infantry: { interval: 1.2, batch: 2 }, farmer: { interval: 1.2, batch: 2 }, tractorBlue: { interval: 6, batch: 1 }, cow: { interval: 6, batch: 3 } },
   { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 2 }, farmer: { interval: 1.0, batch: 3 }, tractorBlue: { interval: 5, batch: 1 }, tractorRed: { interval: 12, batch: 1, from: 15 }, horse: { interval: 7, batch: 2 }, cow: { interval: 8, batch: 2 } },
   { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 3 }, farmer: { interval: 1.0, batch: 3 }, tractorBlue: { interval: 4, batch: 1 }, tractorRed: { interval: 9, batch: 1 }, bull: { interval: 8, batch: 1 }, horse: { interval: 7, batch: 2 }, aa: { interval: 7, batch: 1, from: 20 } },
-  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 3 }, farmer: { interval: 0.9, batch: 4 }, tractorBlue: { interval: 3.5, batch: 2 }, tractorRed: { interval: 7, batch: 1 }, bull: { interval: 6, batch: 2 }, cow: { interval: 6, batch: 3 }, aa: { interval: 5, batch: 1 }, tank: { interval: 12, batch: 1 } },
+  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 3 }, farmer: { interval: 0.9, batch: 4 }, tractorBlue: { interval: 3.5, batch: 2 }, tractorRed: { interval: 7, batch: 1 }, bull: { interval: 6, batch: 2 }, cow: { interval: 6, batch: 3 }, aa: { interval: 5, batch: 1 }, btr: { interval: 12, batch: 1 } },
 ];
 
 export const VILLAGE_LEVEL = {
@@ -84,6 +84,8 @@ export const VILLAGE_LEVEL = {
   exitDir: 'n',            // уходим на север — к столице
   WAVES,
   hordeType: 'farmer',
+  bossTexture: 'bossHerd',           // «Объект» деревни — шар из коров, лошадей и людей
+  bossSwarm: ['cow', 'horse', 'cow', 'farmer'], // во второй фазе зовёт к себе стадо (оно лопается)
   wreckKinds: ['tractorBlue', 'tractorRed', 'tractorBlue', 'jeep'], // сгоревшая техника на дорогах     // орда — колхозники
   train: { y: 2400, stand: 0, moving: true }, // поезд из города уже идёт мимо, на север
   plazaVariants: [33, 36], // поля и луг — туда артиллерия, заманить «Объект»

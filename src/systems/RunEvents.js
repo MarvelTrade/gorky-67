@@ -85,11 +85,12 @@ export class RunEvents {
   bossPhase2(boss) {
     const S = EVENTS.bossSwarm;
     this.scene.events.emit('radio', lt('radio_bossPhase'), 'beryoza', true);
-    this.bossSwarm = this.spawnRing(boss.x, boss.y, S.radius, S.count, S.speed);
+    this.bossSwarm = this.spawnRing(boss.x, boss.y, S.radius, S.count, S.speed, 1, null, null, layout.bossSwarm);
   }
 
   // Заражённые кольцом вокруг точки. Место в пуле освобождается заранее за счёт дальних рядовых
-  spawnRing(cx, cy, radius, count, speed, hpMul = 1, damage = null, horde = null) {
+  // types — список типов по кругу (рой «Объекта» деревни — скотина); по умолчанию орда уровня
+  spawnRing(cx, cy, radius, count, speed, hpMul = 1, damage = null, horde = null, types = null) {
     const { enemies, spawner } = this.scene;
     spawner.reserve(count);
     let spawned = 0;
@@ -97,8 +98,8 @@ export class RunEvents {
       const enemy = enemies.get();
       if (!enemy) break;
       const a = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
-      spawner.place(enemy, layout.hordeType ?? 'infantry', cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
-      enemy.speed = speed;
+      spawner.place(enemy, types ? types[i % types.length] : layout.hordeType ?? 'infantry', cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+      enemy.speed = Math.min(speed, enemy.speed * 2.2); // скотина быстрее себя самой не бежит
       enemy.hp *= hpMul;
       enemy.maxHp = enemy.hp;
       if (damage !== null) enemy.damage = damage;
