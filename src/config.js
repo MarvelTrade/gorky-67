@@ -55,6 +55,9 @@ export const RADIO = {
   intros: {
     cows: [{ key: 'vova_cows', who: 'vova' }, { key: 'beryoza_cows', who: 'beryoza' }],
     tractor: [{ key: 'vova_tractor', who: 'vova' }, { key: 'ivan_tractor', who: 'ivan' }],
+    blasters: [{ key: 'vova_blasters', who: 'vova' }, { key: 'beryoza_blasters', who: 'beryoza' }],
+    dumptruck: [{ key: 'ivan_dumptruck', who: 'ivan' }],
+    excavator: [{ key: 'vova_excavator', who: 'vova' }, { key: 'ivan_excavator', who: 'ivan' }],
   },
   duration_long: 4.5,   // с на экране для длинных реплик «Черёмухи» — с паузами они читаются дольше
   longChars: 60,        // длиннее стольких знаков — реплика длинная
@@ -69,6 +72,15 @@ export const CULL = {
 };
 
 // Памятник на площади (Depots): выдуманный «Рабочий с шестернёй». Сбить можно — выпадет добыча
+// Склад взрывчатки у карьера (Depots): сбивается, как склад, но рвётся так, что сносит толпу вокруг —
+// и вертолёт, если он рядом. Можно заманить волну к забору и подорвать
+export const EXPLOSIVES = {
+  hp: 160,
+  blast: 300,           // px — радиус взрыва
+  blastHit: 600,        // урон врагам
+  blastDamage: 35,      // урон вертолёту, если он в радиусе
+};
+
 export const MONUMENT = {
   hp: 220,
   money: 45,
@@ -178,7 +190,7 @@ export const WORLD = {
 export const CITY = {
   tile: 400,
   road: 34,             // ширина половины дороги по краю квартала
-  variants: 40,         // сколько видов кварталов рисует BootScene (0–2 жилые, 3 площадь, 4–26 город, 27–39 деревня)
+  variants: 49,         // сколько видов кварталов рисует BootScene (0–2 жилые, 3 площадь, 4–26 город, 27–39 деревня, 40–48 карьер)
   residential: 3,       // первые N видов — жилые, из них случайный для района R
   plazaVariant: 3,      // вид «площадь с памятником» — без домов; цель артобстрела в бою с боссом
 };
@@ -239,7 +251,7 @@ export const RUINS = {
   hpPerArea: 1 / 35,    // HP дома = площадь пятна / 35 (дом 120×60 ≈ 200)
   damaged: 0.55,        // доля HP: ниже — пробоины и выбитые окна
   blast: 1.5,           // урон дому = радиус взрыва × blast (ракета 55 → 82; снаряд обстрела 60 → 90)
-  crush: { boss: 260, tank: 70 }, // урон дому в секунду, пока по нему едут
+  crush: { boss: 260, tank: 70, dumptruck: 50 }, // урон дому в секунду, пока по нему едут
   tankSlow: 0.6,        // скорость танка внутри дома
   trackEvery: 14,       // px между отпечатками гусениц
   trailEvery: 20,       // px между пятнами «пролома» в доме
@@ -552,6 +564,74 @@ export const ENEMIES = {
     xp: 4,
     radius: 15,
   },
+  // ── Карьер (уровень 3) ──
+  // Заражённый горняк — пехота в каске
+  miner: {
+    behavior: 'chase',
+    hp: 26,
+    speed: 52,
+    speedJitter: 12,
+    damage: 4,
+    xp: 1,
+    radius: 9,
+    hopRange: 70,
+    hopTime: 0.28,
+    hopScale: 1.45,
+    hopCooldown: 1.0,
+  },
+  // Подрывник: бежит с вязанкой тола и горящим фитилём, у вертолёта взрывается; подстреленный — тоже,
+  // и взрыв бьёт своих вокруг (как раздутая скотина, только быстрее и злее)
+  blaster: {
+    behavior: 'bloat',
+    intro: 'blasters',
+    hp: 18,
+    speed: 80,
+    speedJitter: 10,
+    damage: 0,
+    blastRange: 32,
+    blast: 90,
+    blastDamage: 16,
+    blastHit: 70,
+    xp: 2,
+    radius: 9,
+  },
+  // Карьерный самосвал: ползёт к вертолёту, сминая дома, сам не стреляет — но в кузове заражённые,
+  // и раз в unloadEvery с он высыпает их рядом. Толстый: сбить его — задача, а не мимоходом
+  dumptruck: {
+    behavior: 'tank',
+    intro: 'dumptruck',
+    hp: 420,
+    speed: 34,
+    speedJitter: 4,
+    turnRate: 0.7,
+    fireInterval: 99,
+    range: 0,           // не стреляет
+    aimTolerance: 0,
+    unloadEvery: 6,     // с между выгрузками
+    unload: 3,          // горняков за раз
+    unloadType: 'miner',
+    damage: 0,
+    xp: 15,
+    radius: 22,
+  },
+  // Шагающий экскаватор на краю карьера: стоит, поворачивает стрелу и кидает глыбы — медленные и тяжёлые
+  excavator: {
+    behavior: 'turret',
+    intro: 'excavator',
+    static: true,
+    hp: 520,
+    speed: 0,
+    speedJitter: 0,
+    fireInterval: 3.2,
+    range: 560,
+    shellSpeed: 150,
+    shellDamage: 16,
+    shellLife: 4.5,
+    shellTexture: 'boulder',
+    damage: 0,
+    xp: 25,
+    radius: 26,
+  },
   // «Объект»: огромный мутант из лаборатории, медленно ползёт к игроку и плюётся «Зарёй»
   boss: {
     behavior: 'boss',
@@ -623,7 +703,7 @@ export const SPAWN = {
   despawnDist: 1400,    // враги дальше этого от игрока возвращаются в пул (без опыта)
   maxEnemies: 300,      // размер пула
   refillBoost: 1.5,     // во сколько раз чаще пехота, пока живых меньше минимума волны
-  disposable: ['infantry', 'jeep', 'farmer', 'cow', 'horse'], // кого можно тихо убрать, чтобы освободить место орде и боссу
+  disposable: ['infantry', 'jeep', 'farmer', 'cow', 'horse', 'miner', 'blaster'], // кого можно тихо убрать, чтобы освободить место орде и боссу
 };
 
 export const POOLS = {

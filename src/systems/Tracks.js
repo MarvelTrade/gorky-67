@@ -35,10 +35,10 @@ export class Tracks {
   update(dt) {
     const b = this.scene.buildings;
     for (const e of this.scene.enemies.getChildren()) {
-      if (!e.active || (e.type !== 'tank' && e.type !== 'boss')) continue;
+      if (!e.active || (e.cfg.behavior !== 'tank' && e.type !== 'boss')) continue;
       const house = b.at(e.x, e.y);
       e.inHouse = !!house && house.state !== 'ruined';
-      e.inWater = e.type === 'tank' && !!this.scene.river?.contains(e.x, e.y); // вброд
+      e.inWater = e.cfg.behavior === 'tank' && !!this.scene.river?.contains(e.x, e.y); // вброд
       if (e.inHouse) b.hit(house, RUINS.crush[e.type] * dt);
       // Отпечаток: в доме — пролом, на улице — гусеницы (у «Объекта» гусениц нет)
       const inside = !!house;

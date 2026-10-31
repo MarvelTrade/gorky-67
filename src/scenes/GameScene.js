@@ -31,6 +31,7 @@ import { Train } from '../systems/Train.js';
 import { River } from '../systems/River.js';
 import { layout, setLevel, lt } from '../levels.js';
 import { makeFarmTextures } from '../art/farm.js';
+import { makeQuarryTextures } from '../art/quarry.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -47,6 +48,7 @@ export class GameScene extends Phaser.Scene {
     // Уровень кампании — из карты уровней (registry), по умолчанию первый: город
     this.levelDef = setLevel(this.registry.get('level') ?? 1);
     makeFarmTextures(this); // один раз за игру: есть — пропускает
+    makeQuarryTextures(this);
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.culler = new Culler(this); // до города: декорации регистрируются при создании
     this.nav = new CityNav(this);
@@ -103,6 +105,7 @@ export class GameScene extends Phaser.Scene {
     this.depots = new Depots(this, this.player);
     this.spawnWatchtowers();
     this.depots.addMonument();
+    this.depots.addExplosives();
     this.tracks = new Tracks(this);
     this.breakdowns = new Breakdowns(this, this.player);
     this.ordnance = new Ordnance(this, this.player);
@@ -114,7 +117,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player.sprite, this.air.towers);
     // Дома — стены для наземных врагов; «Объект» проламывает, вертолёт и снаряды летят поверху
     // Танки и «Объект» идут сквозь дома и ломают их (Tracks), остальные обходят по улицам
-    this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss' && enemy.type !== 'tank');
+    this.physics.add.collider(this.enemies, this.nav.makeWalls(), null, (enemy) => enemy.type !== 'boss' && enemy.cfg.behavior !== 'tank');
     this.physics.add.overlap(this.bullets, this.enemies, (bullet, enemy) => {
       if (!bullet.active || !enemy.active) return;
       if (bullet.only?.active && enemy !== bullet.only) return;
@@ -756,6 +759,11 @@ export class GameScene extends Phaser.Scene {
 
   // Часовые на вышках по углам «зоны» и посередине длинных сторон
   spawnWatchtowers() {
+    // Стационарные враги уровня (экскаваторы на краю карьера)
+    for (const s of layout.staticSpawns ?? []) {
+      const e = this.enemies.get();
+      if (e) e.spawn(s.type, ENEMIES[s.type], s.x, s.y, this.player);
+    }
     const b = this.zoneBox();
     if (!b) return;
     const mx = (b.x0 + b.x1) / 2;

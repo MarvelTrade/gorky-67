@@ -37,6 +37,41 @@ export default {
   l2_cher_lure: 'Vanechka... drag it into the field... let them cover it...',
   l2_cher_end: 'Boys... next is the station... and the capital... remember...',
 
+  // ── Level 3: Granitny quarry ──
+  l3_telegram:
+    'URGENT SECRET STOP GAS HAS REACHED GRANITNY QUARRY STOP MINERS INFECTED STOP\n' +
+    'PIECES OF THE OBJECT ARE HAULED TO THE PIT FLOOR STOP A NEW ONE IS BEING BUILT THERE STOP\n' +
+    'EXPLOSIVES IN THE STORE STOP FALCON TO COVER THE TRAIN AND THE SETTLEMENT EVACUATION STOP\n' +
+    'AFTERWARDS THE AREA WILL BE CLOSED STOP',
+  l3_wave_1: 'The Settlement',
+  l3_wave_2: 'The Spoil Heaps',
+  l3_wave_3: 'The Benches',
+  l3_wave_4: 'The Crusher',
+  l3_wave_5: 'The Pit Floor',
+  l3_radio_1: "Falcon, the miners' settlement. People are heading for the station. Cover them.",
+  l3_radio_2: "Movement on the spoil heaps. That's the shift — the former one.",
+  l3_radio_3: 'Boulders thrown from the benches. The excavators are working on their own.',
+  l3_radio_4: "Dump trucks are hauling people. Don't let them arrive.",
+  l3_radio_5: "It's assembled on the floor. It's climbing the ramp. It's yours.",
+  l3_cher_1: 'Vanya... Vova... this is Cheryomukha... the gas is in the quarry... thicker in the pit... hold on, boys...',
+  l3_cher_2: "Vanechka... the power line from the substation... it's live... don't snag it, dears...",
+  l3_cher_3: 'Vanya... the crusher bins are taller than you... go around early...',
+  l3_cher_gas: "Vova... the gas sits in the quarry like water in a bowl... above the pit you're safe... down there you're not...",
+  l3_cher_army: "Boys... there's TNT in their store... they're taking it... watch out for the runners...",
+  l3_cher_shoot: "Shoot, Vova... they're not miners anymore... not ours...",
+  l3_cher_boss: "Vanya... from the floor... they built it from the wreckage... it's coming for you...",
+  l3_cher_exit: 'Get out!.. to the {dir}... along the road to the capital... strike in twenty seconds... go!..',
+  l3_cher_lure: 'Vanechka... drag it onto the wasteland... let them cover it...',
+  l3_cher_artillery: 'Vanya!.. Vova!.. get out of the square... they are about to shell it...',
+  l3_cher_end: 'Boys... the capital is getting closer... remember...',
+  l3_vova_train: "The train... past the yard, not slowing down. On to the capital.",
+  vova_blasters: 'Berezka! What are they holding... is that TNT?!',
+  beryoza_blasters: "TNT, Falcon. They've looted the quarry store. If they reach you, they blow. Hit them first.",
+  ivan_dumptruck: "A dump truck... and there are people in the bed. Vova, don't let it unload.",
+  vova_excavator: "Vanya, the excavator's throwing boulders!",
+  ivan_excavator: "It's working on its own... Stay clear of the boom, Vova, and hit the cab.",
+  vova_explosives: 'The store went up!.. Vanya, did you see that?!',
+
   // Campaign map «Road to the capital»
   mapTitle: 'ROAD TO THE CAPITAL',
   mapSub: 'route of the gas and the infected · along the railway',
@@ -183,6 +218,11 @@ export default {
   enemy_cow: 'cow',
   enemy_bull: 'bull',
   enemy_horse: 'horse',
+  enemy_miner: 'miner',
+  enemy_blaster: 'blaster',
+  enemy_dumptruck: 'dump truck',
+  enemy_excavator: 'excavator',
+  enemy_explosives: 'explosives store',
   enemy_boss: 'The Object',
   enemy_wire: 'power lines',
   enemy_artillery: 'friendly shelling',

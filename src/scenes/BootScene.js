@@ -26,6 +26,35 @@ const V = {
   straw: 0x857a50,      // сено — приглушённая охра, золото в игре — добыча
 };
 
+// Карьер «Гранитный» (уровень 3): кварталы 40–47, тоже без асфальта по краям
+const QUARRY_FROM = 40;
+// Палитра карьера: пыльный серо-охристый гранит, всё приглушённое — ярче только враги и снаряды
+const Q = {
+  dust: 0x6a6455,       // утоптанная пыль — фон 46, им же кончается бровка карьера
+  dustDark: 0x5d5849,
+  dustLight: 0x777060,
+  dry: 0x77724f,        // сухая трава
+  dryDark: 0x585a3e,
+  gravel: 0x857f70,     // технологическая дорога
+  rut: 0x57524a,
+  ballast: 0x5a564c,
+  sleeper: 0x4a3a2a,
+  rail: 0x8e9094,
+  bench: [0x6a6455, 0x625f57, 0x5b5952, 0x54524d, 0x4c4b47], // бровка и уступы сверху вниз
+  floor: 0x444340,      // дно карьера
+  lip: 0x8a867b,        // освещённая кромка уступа
+  face: 0x3a3936,       // откос
+  strata: 0x4c4a46,
+  stone: [0x7e7a72, 0x6e6a63, 0x8c877c, 0x5e5b55, 0x7a6e62],
+  water: 0x343e42,
+  rust: 0x6a4a34,
+  concrete: 0x7c7a72,
+};
+// Карьер (кварталы 40–42): уступы — линии уровня глубины; у угла общий центр дуг (QC, QC)
+const QC = 380;
+const QD = [52, 118, 184, 250, 316]; // глубины кромок уступов — одинаковые на стыках 40/41
+const QF = 16;                        // ширина откоса
+
 // Генерирует текстуры из примитивов; часть заменяется PNG из Blender.
 // Все спрайты смотрят вправо (угол 0).
 export class BootScene extends Phaser.Scene {
@@ -845,13 +874,15 @@ export class BootScene extends Phaser.Scene {
       },
       // 27–39 — деревня «Ольховка» (уровень 2)
       ...this.villageLayouts(rnd, s),
+      // 40–47 — карьер «Гранитный» (уровень 3)
+      ...this.quarryLayouts(rnd, s),
     ];
 
     layouts.forEach((draw, i) => {
       const g = this.make.graphics({ x: 0, y: 0 }, false);
-      // Деревня: ни асфальта, ни тротуаров — трава на весь квадрат, дороги кладёт GameScene поверх
+      // Деревня и карьер: ни асфальта, ни тротуаров — трава (пыль) на весь квадрат, дороги кладёт GameScene поверх
       if (i >= VILLAGE_FROM) {
-        g.fillStyle(V.grass).fillRect(0, 0, s, s);
+        g.fillStyle(i >= QUARRY_FROM ? Q.dust : V.grass).fillRect(0, 0, s, s);
         draw(g);
         this.makeTexture(g, `city${i}`, s, s);
         return;
@@ -1826,6 +1857,665 @@ export class BootScene extends Phaser.Scene {
         this.vApple(g, rnd, 272, 362, 10);
         for (let x = 40; x <= 360; x += 46) this.vBirch(g, x, 30, rnd.between(9, 11));
         this.vFenceRect(g, 16, 16, 368, 368, { side: 's', at: 200 });
+      },
+    ];
+  }
+
+  // ---------- Карьер «Гранитный» (уровень 3) ----------
+
+  // Глубина точки: 'edge' — уступы горизонтальные (глубина = y); 'corner' — скруглённый угол,
+  // дуги вокруг (QC, QC), у правого и нижнего края — те же горизонтали/вертикали, что у 41
+  qDepth(kind, x, y) {
+    if (kind === 'edge') return y;
+    if (x < QC && y < QC) return QC - Math.hypot(QC - x, QC - y);
+    return Math.min(x, y);
+  }
+
+  // Линия уровня глубины D: точки через ~4 px с нормалью вглубь карьера
+  qContour(kind, D) {
+    const s = CITY.tile;
+    const pts = [];
+    if (kind === 'edge') {
+      for (let x = 0; x <= s; x += 4) pts.push({ x, y: D, nx: 0, ny: 1 });
+      return pts;
+    }
+    const r = Math.max(1, QC - D);
+    for (let x = s; x > QC; x -= 4) pts.push({ x, y: D, nx: 0, ny: 1 });
+    const n = Math.max(2, Math.ceil((r * Math.PI) / 2 / 4));
+    for (let i = 0; i <= n; i++) {
+      const a = -Math.PI / 2 - (i / n) * (Math.PI / 2);
+      const c = Math.cos(a);
+      const si = Math.sin(a);
+      pts.push({ x: QC + r * c, y: QC + r * si, nx: -c, ny: -si });
+    }
+    for (let y = QC + 4; y <= s; y += 4) pts.push({ x: D, y, nx: 1, ny: 0 });
+    return pts;
+  }
+
+  // Всё, что глубже D (многоугольник до края квартала)
+  qFillDeeper(g, kind, D, color, alpha = 1) {
+    const s = CITY.tile;
+    const p = this.qContour(kind, D).map(({ x, y }) => ({ x, y }));
+    if (kind === 'edge') p.push({ x: s, y: s }, { x: 0, y: s });
+    else p.push({ x: s, y: s });
+    g.fillStyle(color, alpha).fillPoints(p, true);
+  }
+
+  // Камень: тень вправо-вниз, неровный многоугольник, светлая грань слева-сверху
+  qStone(g, rnd, x, y, r, color = rnd.pick(Q.stone)) {
+    const n = r > 4 ? 7 : 5;
+    const pts = [];
+    const a0 = rnd.realInRange(0, Math.PI * 2);
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (i / n) * Math.PI * 2;
+      const k = rnd.realInRange(0.72, 1.1);
+      pts.push({ x: Math.cos(a) * r * k, y: Math.sin(a) * r * k * 0.85 });
+    }
+    g.fillStyle(0x000000, 0.32).fillPoints(pts.map((p) => ({ x: x + p.x + r * 0.45, y: y + p.y + r * 0.4 })), true);
+    g.fillStyle(color).fillPoints(pts.map((p) => ({ x: x + p.x, y: y + p.y })), true);
+    if (r >= 3) {
+      g.fillStyle(0xffffff, 0.14).fillPoints(pts.map((p) => ({ x: x + p.x * 0.55 - r * 0.22, y: y + p.y * 0.55 - r * 0.22 })), true);
+      g.lineStyle(1, 0x26241f, 0.45).strokePoints(pts.map((p) => ({ x: x + p.x, y: y + p.y })), true);
+    }
+  }
+
+  // Случайная точка внутри квартала с отступом m, удовлетворяющая ok(x, y); null — не нашлась
+  qPick(rnd, m, ok, tries = 40) {
+    const s = CITY.tile;
+    for (let i = 0; i < tries; i++) {
+      const x = rnd.realInRange(m, s - m);
+      const y = rnd.realInRange(m, s - m);
+      if (ok(x, y)) return [x, y];
+    }
+    return null;
+  }
+
+  // Уступы карьера для 40 (угол) и 41 (борт): кромка со светлой губой, тёмный откос со штрихами
+  // слоёв, тень на нижнюю площадку, осыпь у подошвы, валуны и колеи на площадках
+  qPit(g, rnd, kind) {
+    const s = CITY.tile;
+    this.vGround(g, rnd, 0, 0, s, s, Q.dust, 26, Q.dustDark, Q.dustLight);
+    const levels = [...QD, 9999];
+    for (let k = 0; k < QD.length; k++) {
+      const D = QD[k];
+      const floor = k + 1 < Q.bench.length ? Q.bench[k + 1] : Q.floor;
+      this.qFillDeeper(g, kind, D - 1, Q.lip);
+      this.qFillDeeper(g, kind, D + 3, Q.face);
+      this.qFillDeeper(g, kind, D + QF, floor);
+      this.qFillDeeper(g, kind, D + QF, 0x000000, 0.3); // тень откоса на площадку
+      this.qFillDeeper(g, kind, D + QF + 4, floor);
+      this.qFillDeeper(g, kind, D + QF + 4, 0x000000, 0.14);
+      this.qFillDeeper(g, kind, D + QF + 9, floor);
+      // Слои гранита на откосе — штрихи поперёк
+      const face = this.qContour(kind, D + 4);
+      for (let i = 1; i < face.length - 1; i++) {
+        if (rnd.frac() < 0.35) continue;
+        const p = face[i];
+        const l = rnd.realInRange(4, QF - 5);
+        g.lineStyle(1, rnd.frac() < 0.7 ? Q.strata : 0x2c2b29, 0.8).lineBetween(p.x, p.y, p.x + p.nx * l, p.y + p.ny * l);
+      }
+    }
+    // Площадки: пятна пыли и мелкий щебень
+    const bench = (x, y) => {
+      const d = this.qDepth(kind, x, y);
+      for (let k = 0; k < QD.length; k++) if (d > QD[k] + QF + 4 && d < levels[k + 1] - 4) return k;
+      return -1;
+    };
+    for (let i = 0; i < 900; i++) {
+      const x = rnd.realInRange(2, s - 3);
+      const y = rnd.realInRange(2, s - 3);
+      const k = bench(x, y);
+      if (k < 0 && this.qDepth(kind, x, y) > QD[0]) continue;
+      g.fillStyle(rnd.frac() < 0.5 ? 0x8a857a : 0x34332f, 0.45).fillRect(x, y, 1.5, 1.5);
+    }
+    // Осыпь у подошвы откосов
+    for (let k = 0; k < QD.length; k++) {
+      const toe = this.qContour(kind, QD[k] + QF + 3);
+      for (let i = 0; i < toe.length; i++) {
+        if (rnd.frac() < 0.55) continue;
+        const p = toe[i];
+        const o = rnd.realInRange(0, 9);
+        const r = rnd.realInRange(1.2, o < 3 ? 3.5 : 2.2);
+        const x = p.x + p.nx * o + rnd.realInRange(-2, 2);
+        const y = p.y + p.ny * o;
+        if (x < r + 2 || x > s - r - 2 || y < r + 2 || y > s - r - 2) continue;
+        this.qStone(g, rnd, x, y, r);
+      }
+      // Конусы осыпи — светлые языки под откосом
+      for (let j = 0; j < 3; j++) {
+        const p = toe[rnd.between(2, toe.length - 3)];
+        const x = p.x + p.nx * 5;
+        const y = p.y + p.ny * 5;
+        if (x < 16 || x > s - 16 || y < 16 || y > s - 16) continue;
+        for (let m = 0; m < 9; m++) {
+          const o = rnd.realInRange(0, 10);
+          this.qStone(g, rnd, x + p.nx * o + rnd.between(-8, 8) * (1 - o / 14), y + p.ny * o + rnd.between(-3, 3), rnd.realInRange(1, 2.6 - o / 10));
+        }
+      }
+    }
+    // Валуны на площадках
+    for (let i = 0; i < 9; i++) {
+      const r = rnd.realInRange(4, 8);
+      const at = this.qPick(rnd, r + 4, (x, y) => {
+        const k = bench(x, y);
+        return k >= 0 && bench(x, y - r) === k && bench(x, y + r) === k && bench(x - r, y) === k && bench(x + r, y) === k;
+      });
+      if (at) this.qStone(g, rnd, at[0], at[1], r);
+    }
+    // Колеи самосвалов по середине площадок — куски внутри квартала
+    for (let k = 1; k < QD.length - 1; k++) {
+      if (rnd.frac() < 0.4) continue;
+      const mid = this.qContour(kind, (QD[k] + QF + QD[k + 1]) / 2 + 2);
+      const a = rnd.between(4, Math.floor(mid.length * 0.4));
+      const b = rnd.between(Math.floor(mid.length * 0.6), mid.length - 5);
+      this.vRuts(g, mid.slice(a, b).map((p) => [p.x, p.y]), 6, 0x3a3935, 0.35, 3);
+    }
+  }
+
+  // Технологическая дорога: светлый щебень, колеи, вал-бруствер вдоль бровки
+  qRoad(g, rnd, pts, w = 36) {
+    this.vPath(g, pts, w + 6, 0x000000, 0.22);
+    this.vPath(g, pts, w, Q.gravel);
+    // Чем ниже по пандусу, тем темнее — читается спуск
+    for (let i = 1; i < pts.length - 1; i++) {
+      this.vPath(g, pts.slice(i), w, 0x000000, 0.07);
+    }
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x1, y1] = pts[i];
+      const [x2, y2] = pts[i + 1];
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const nx = -(y2 - y1) / len;
+      const ny = (x2 - x1) / len;
+      for (let d = 0; d < len; d += 3) {
+        const t = d / len;
+        const o = rnd.realInRange(-w / 2 + 2, w / 2 - 2);
+        g.fillStyle(rnd.frac() < 0.5 ? 0x9a9384 : 0x6e695e, 0.6).fillRect(x1 + (x2 - x1) * t + nx * o, y1 + (y2 - y1) * t + ny * o, 1.5, 1.5);
+      }
+      // Бруствер по одной стороне — гряда камней
+      for (let d = 4; d < len; d += rnd.between(6, 10)) {
+        const t = d / len;
+        this.qStone(g, rnd, x1 + (x2 - x1) * t + nx * (w / 2 + 3), y1 + (y2 - y1) * t + ny * (w / 2 + 3), rnd.realInRange(1.4, 2.4), 0x6a665c);
+      }
+    }
+    this.vRuts(g, pts, 9, 0x5e584c, 0.7, 4);
+    this.vRuts(g, pts, 9, 0x4e493f, 0.5, 1.5);
+  }
+
+  // Ж/д путь по вертикали во всю высоту квартала (шпалы с шагом 10 — стыкуется сам с собой)
+  qTrackBed(g, x) {
+    g.fillStyle(Q.ballast).fillRect(x - 16, 0, 32, CITY.tile);
+    g.fillStyle(0x4c4840, 0.8).fillRect(x - 16, 0, 2, CITY.tile).fillRect(x + 14, 0, 2, CITY.tile);
+  }
+
+  qSleepers(g, x) {
+    g.fillStyle(Q.sleeper);
+    for (let y = 2; y < CITY.tile; y += 10) g.fillRect(x - 16, y, 32, 5);
+  }
+
+  qRails(g, x) {
+    g.fillStyle(0x2a2a28, 0.5).fillRect(x - 8, 0, 3, CITY.tile).fillRect(x + 7, 0, 3, CITY.tile);
+    g.fillStyle(Q.rail).fillRect(x - 9, 0, 3, CITY.tile).fillRect(x + 6, 0, 3, CITY.tile);
+  }
+
+  // Стрелочный съезд между путями: S-кривая (плавный отвод и примыкание), те же слои — балласт, шпалы, рельсы
+  qCrossover(g, x1, y1, x2, y2, layer) {
+    const n = 24;
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const e = t * t * (3 - 2 * t);
+      const de = 6 * t * (1 - t);
+      const tx = (x2 - x1) * de;
+      const ty = y2 - y1;
+      const l = Math.hypot(tx, ty);
+      pts.push({ x: x1 + (x2 - x1) * e, y: y1 + ty * t, nx: -ty / l, ny: tx / l, a: Math.atan2(ty, tx) });
+    }
+    if (layer === 'bed') g.lineStyle(32, Q.ballast).strokePoints(pts, false);
+    if (layer === 'sleepers') {
+      g.fillStyle(Q.sleeper);
+      for (let i = 1; i < n; i++) this.vBox(g, pts[i].x, pts[i].y, pts[i].a, -2.5, -16, 5, 32);
+    }
+    if (layer === 'rails') {
+      for (const o of [-7.5, 7.5]) g.lineStyle(3, Q.rail).strokePoints(pts.map((p) => ({ x: p.x + p.nx * o, y: p.y + p.ny * o })), false);
+    }
+  }
+
+  // Вагоны вид сверху: крытый (крыша с рёбрами) и хоппер с щебнем
+  qBoxcar(g, x, y, len) {
+    g.fillStyle(0x000000, 0.32).fillRect(x - 11, y + 4, 27, len);
+    g.fillStyle(0x5e4636).fillRect(x - 13, y, 26, len);
+    g.fillStyle(0x6c5242).fillRect(x - 13, y, 13, len);
+    g.lineStyle(1, 0x46342a, 0.9);
+    for (let k = y + 6; k < y + len - 2; k += 7) g.lineBetween(x - 13, k, x + 13, k);
+    g.fillStyle(0x3a2c22).fillRect(x - 13, y, 26, 3).fillRect(x - 13, y + len - 3, 26, 3);
+    g.fillStyle(0x2a2a28).fillRect(x - 2, y - 3, 4, 3).fillRect(x - 2, y + len, 4, 3); // сцепки
+  }
+
+  qHopper(g, rnd, x, y, len) {
+    g.fillStyle(0x000000, 0.32).fillRect(x - 11, y + 4, 27, len);
+    g.fillStyle(0x4e5244).fillRect(x - 13, y, 26, len);
+    g.fillStyle(0x3a3e34);
+    for (let k = y + 4; k < y + len - 2; k += 9) g.fillRect(x - 13, k, 2, 4).fillRect(x + 11, k, 2, 4); // стойки
+    g.fillStyle(0x6e6b64).fillRect(x - 10, y + 3, 20, len - 6);
+    for (let i = 0; i < len * 1.4; i++) {
+      g.fillStyle(rnd.pick([0x8a867c, 0x5a5751, 0x7a766e]), 0.9).fillRect(x - 9 + rnd.frac() * 17, y + 4 + rnd.frac() * (len - 9), 2, 2);
+    }
+    g.fillStyle(0x2a2a28).fillRect(x - 2, y - 3, 4, 3).fillRect(x - 2, y + len, 4, 3);
+  }
+
+  // Красный флажок на шесте — «опасно», тень вправо-вниз
+  qFlag(g, x, y) {
+    g.lineStyle(1.5, 0x000000, 0.3).lineBetween(x, y, x + 8, y + 5);
+    g.fillStyle(0x2a2a28).fillCircle(x, y, 1.5);
+    g.lineStyle(1.5, 0x3a3a36).lineBetween(x, y, x, y - 12);
+    g.fillStyle(0xb8322a).fillTriangle(x, y - 12, x + 9, y - 9, x, y - 6);
+    g.fillStyle(0x7a1e18).fillTriangle(x, y - 9, x + 9, y - 9, x, y - 6);
+  }
+
+  // Колючка на бетонных столбах: столбы, три нитки, шипы
+  qWire(g, x1, y1, x2, y2) {
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const ux = (x2 - x1) / len;
+    const uy = (y2 - y1) / len;
+    g.lineStyle(1, 0x000000, 0.22).lineBetween(x1 + 3, y1 + 3, x2 + 3, y2 + 3);
+    for (const o of [-1.5, 0, 1.5]) g.lineStyle(1, 0x2e2e2b, 0.75).lineBetween(x1 - uy * o, y1 + ux * o, x2 - uy * o, y2 + ux * o);
+    g.lineStyle(1, 0x2e2e2b, 0.6);
+    for (let d = 3; d < len; d += 6) {
+      const x = x1 + ux * d;
+      const y = y1 + uy * d;
+      g.lineBetween(x - 1.5, y - 1.5, x + 1.5, y + 1.5);
+    }
+    for (let d = 0; d <= len; d += 20) {
+      const x = x1 + ux * d;
+      const y = y1 + uy * d;
+      g.fillStyle(0x000000, 0.3).fillRect(x - 1, y - 1, 6, 4);
+      g.fillStyle(0x8a8880).fillRect(x - 2, y - 2, 4, 4);
+    }
+  }
+
+  // Обвалованный склад: земляной вал с травой, бетонный портал с дверью на юг, вентиляционные трубы
+  qBunker(g, rnd, x, y, w, h) {
+    g.fillStyle(0x000000, 0.3).fillRoundedRect(x + 6, y + 6, w, h, 22);
+    g.fillStyle(0x56553f).fillRoundedRect(x, y, w, h, 22);
+    g.fillStyle(0x66644a).fillRoundedRect(x + 4, y + 3, w - 18, h - 16, 18); // освещённый склон
+    g.fillStyle(0x5c5b44).fillRoundedRect(x + 16, y + 14, w - 32, h - 30, 10); // плоский верх
+    g.fillStyle(0x484a36, 0.8);
+    for (let i = 0; i < 26; i++) g.fillRect(x + rnd.between(6, w - 8), y + rnd.between(4, h - 10), 1, 3); // трава
+    for (const k of [0.3, 0.7]) {
+      g.fillStyle(0x000000, 0.35).fillCircle(x + w * k + 2, y + h * 0.42 + 2, 3);
+      g.fillStyle(0x6a6c66).fillCircle(x + w * k, y + h * 0.42, 3);
+      g.fillStyle(0x2a2a28).fillCircle(x + w * k, y + h * 0.42, 1.5);
+    }
+    // Портал: подпорные стенки клином, дверь, бетонная площадка
+    const cx = x + w / 2;
+    const b = y + h;
+    g.fillStyle(Q.concrete).fillTriangle(cx - 26, b + 2, cx - 14, b - 14, cx - 14, b + 2).fillTriangle(cx + 26, b + 2, cx + 14, b - 14, cx + 14, b + 2);
+    g.fillStyle(0x8e8c84).fillRect(cx - 15, b - 16, 30, 6);
+    g.fillStyle(0x6a6862).fillRect(cx - 14, b - 10, 28, 12);
+    g.fillStyle(0x464c44).fillRect(cx - 10, b - 9, 20, 11);
+    g.lineStyle(1, 0x2e322c).lineBetween(cx, b - 9, cx, b + 2);
+    g.fillStyle(0x9a988e).fillRect(cx - 18, b + 2, 36, 10);
+    g.fillStyle(0x000000, 0.15).fillRect(cx - 18, b + 2, 36, 2);
+  }
+
+  // Трансформатор: бак, радиаторы по бокам, три ввода на изоляторах
+  qTransformer(g, x, y) {
+    g.fillStyle(0x56544c).fillRect(x - 30, y - 24, 60, 48); // маслоприёмник с бортом
+    g.fillStyle(0x6c6a62).fillRect(x - 27, y - 21, 54, 42);
+    g.fillStyle(0x000000, 0.32).fillRect(x - 15, y - 10, 36, 28);
+    g.fillStyle(0x3e4a3e);
+    for (let k = -14; k <= 12; k += 4) g.fillRect(x - 24, y + k - 1, 8, 2).fillRect(x + 16, y + k - 1, 8, 2); // рёбра радиаторов
+    g.fillStyle(0x4e5c4c).fillRect(x - 18, y - 13, 36, 26);
+    g.fillStyle(0x5c6a58).fillRect(x - 18, y - 13, 36, 7);
+    g.lineStyle(1, 0x2a3228).strokeRect(x - 18, y - 13, 36, 26);
+    g.fillStyle(0x3e4a3e).fillEllipse(x - 10, y + 6, 10, 7); // расширитель
+    for (const dx of [-10, 0, 10]) {
+      g.fillStyle(0x000000, 0.3).fillCircle(x + dx + 2, y - 6, 3);
+      g.fillStyle(0x9c988c).fillCircle(x + dx, y - 8, 3);
+      g.fillStyle(0x6a6860).fillCircle(x + dx, y - 8, 1.2);
+    }
+  }
+
+  // Стальной портал: две решётчатые стойки и ригель с гирляндами изоляторов
+  qPortal(g, x1, x2, y) {
+    g.lineStyle(4, 0x000000, 0.25).lineBetween(x1 + 6, y + 6, x2 + 6, y + 6);
+    g.lineStyle(1, 0x6a6c6a);
+    g.lineBetween(x1, y - 3, x2, y - 3).lineBetween(x1, y + 3, x2, y + 3);
+    for (let x = x1; x < x2; x += 6) g.lineBetween(x, y - 3, x + 6, y + 3);
+    for (const x of [x1, x2]) {
+      g.fillStyle(0x000000, 0.3).fillRect(x - 2, y - 2, 10, 10);
+      g.fillStyle(0x5a5c5a).fillRect(x - 4, y - 4, 8, 8);
+      g.lineStyle(1, 0x7a7c7a).strokeRect(x - 4, y - 4, 8, 8).lineBetween(x - 4, y - 4, x + 4, y + 4);
+    }
+    g.fillStyle(0xa8a498);
+    for (let x = x1 + 22; x < x2 - 10; x += 32) for (let k = 0; k < 4; k++) g.fillCircle(x, y + 5 + k * 2.5, 1.4);
+  }
+
+  // Кабельный лоток: бетонный жёлоб с плитами-крышками
+  qTrench(g, x1, y1, x2, y2) {
+    g.lineStyle(8, 0x5a5852).lineBetween(x1, y1, x2, y2);
+    g.lineStyle(6, 0x86847c).lineBetween(x1, y1, x2, y2);
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    g.fillStyle(0x5a5852);
+    for (let d = 10; d < len; d += 10) g.fillRect(x1 + ((x2 - x1) * d) / len - 0.5, y1 + ((y2 - y1) * d) / len - 0.5, 1, 1);
+  }
+
+  // Кварталы 40–47 — карьер «Гранитный»; индекс в массиве makeCityTiles = номер вида в cityLayout
+  quarryLayouts(rnd, s) {
+    const calm = (x, y, r, c = 200, h = 90) => Math.abs(x - c) < h + r && Math.abs(y - c) < h + r;
+    return [
+      // 40 — угол карьера (северо-западный): бровка сверху и слева, уступы дугами вниз-вправо;
+      // правый край стыкуется с 41, нижний — с 41, повёрнутым к западу
+      (g) => {
+        this.qPit(g, rnd, 'corner');
+        this.vTufts(g, rnd, 4, 4, 40, 40, 14, Q.dry);
+        for (const [x, y] of [[24, 30], [34, 140], [150, 26], [30, 260], [270, 30]]) this.qStone(g, rnd, x, y, rnd.realInRange(2, 4));
+      },
+      // 41 — борт карьера (северный): бровка сверху, уступы горизонталями вниз; съезд — пандус
+      // по диагонали с бровки на нижнюю площадку
+      (g) => {
+        this.qPit(g, rnd, 'edge');
+        this.vTufts(g, rnd, 8, 4, s - 16, 40, 30, Q.dry);
+        this.qRoad(g, rnd, [[34, 30], [150, 118], [276, 214], [352, 300]]);
+        g.fillStyle(0x6e695e, 0.45).fillEllipse(350, 316, 64, 36); // разворотная площадка внизу
+        g.fillStyle(Q.gravel, 0.3).fillEllipse(40, 26, 56, 28);
+        for (let x = 12; x < s - 12; x += rnd.between(30, 60)) this.qStone(g, rnd, x, 44 + rnd.between(-2, 2), rnd.realInRange(2.5, 4), 0x6e6a60); // бруствер по бровке
+      },
+      // 42 — дно карьера: тёмная площадка, лужи, развал горной массы после взрыва, сетка скважин,
+      // следы бурового станка, упавшие глыбы. Центр (~180 px) спокойный — там встаёт яма «Объекта»
+      (g) => {
+        this.vGround(g, rnd, 0, 0, s, s, Q.floor, 34, 0x3a3936, 0x4e4c48);
+        for (let i = 0; i < 700; i++) {
+          g.fillStyle(rnd.frac() < 0.5 ? 0x5e5c56 : 0x2e2d2a, 0.5).fillRect(rnd.realInRange(1, s - 3), rnd.realInRange(1, s - 3), 1.5, 1.5);
+        }
+        // Мокрые пятна и лужи — по углам и краям, не в центре
+        for (const [x, y, w, h] of [[66, 70, 70, 30], [330, 96, 50, 24], [92, 340, 56, 22], [312, 344, 80, 30], [40, 210, 30, 50]]) {
+          g.fillStyle(0x2e3234, 0.55).fillEllipse(x, y, w + 18, h + 12);
+          g.fillStyle(Q.water).fillEllipse(x, y, w, h);
+          g.lineStyle(1, 0x5a6462, 0.5).strokeEllipse(x, y, w, h);
+          g.fillStyle(0x66727a, 0.3).fillEllipse(x - w * 0.15, y - h * 0.15, w * 0.45, h * 0.2);
+        }
+        // Развалы горной массы — кучи щебня с глыбами
+        for (const [cx, cy, r] of [[330, 220, 34], [190, 50, 30], [210, 352, 26]]) {
+          // Неровный бугор: тень, склон, освещённая верхушка, глыбы крупнее к подошве
+          const n = 12;
+          const rim = [];
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2;
+            const k = rnd.realInRange(0.75, 1.15);
+            rim.push({ x: cx + Math.cos(a) * r * 1.2 * k, y: cy + Math.sin(a) * r * 0.85 * k });
+          }
+          g.fillStyle(0x000000, 0.3).fillPoints(rim.map((p) => ({ x: p.x + 6, y: p.y + 5 })), true);
+          g.fillStyle(0x52504a).fillPoints(rim, true);
+          g.fillStyle(0x605d56).fillPoints(rim.map((p) => ({ x: cx - 4 + (p.x - cx) * 0.6, y: cy - 4 + (p.y - cy) * 0.6 })), true);
+          g.fillStyle(0x6c6962).fillPoints(rim.map((p) => ({ x: cx - 6 + (p.x - cx) * 0.3, y: cy - 6 + (p.y - cy) * 0.3 })), true);
+          for (let i = 0; i < 34; i++) {
+            const a = rnd.realInRange(0, Math.PI * 2);
+            const d = Math.sqrt(rnd.frac());
+            this.qStone(g, rnd, cx + Math.cos(a) * d * r * 1.15, cy + Math.sin(a) * d * r * 0.8, rnd.realInRange(1.5, 2 + d * 3.5));
+          }
+        }
+        // Сетка взрывных скважин: кольца выбуренной мелочи и тёмные устья
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 3; j++) {
+            const x = 30 + i * 18 + (j % 2) * 9;
+            const y = 118 + j * 18;
+            g.fillStyle(0x6a6760, 0.8).fillCircle(x, y, 4);
+            g.fillStyle(0x1c1c1a).fillCircle(x, y, 1.8);
+          }
+        }
+        // Следы бурового станка — гусеницы с грунтозацепами вдоль сетки
+        for (const o of [-9, 9]) {
+          g.fillStyle(0x34332f, 0.6).fillRect(18, 176 + o - 3, 92, 6);
+          g.fillStyle(0x4a4844, 0.6);
+          for (let x = 20; x < 108; x += 4) g.fillRect(x, 176 + o - 3, 1.5, 6);
+        }
+        // Упавшие глыбы
+        for (const [x, y, r] of [[360, 160, 9], [52, 280, 10], [290, 30, 7], [370, 290, 8], [140, 380, 7]]) this.qStone(g, rnd, x, y, r);
+        // Мелкие камни вне центра
+        for (let i = 0; i < 60; i++) {
+          const at = this.qPick(rnd, 8, (x, y) => !calm(x, y, 4));
+          if (at) this.qStone(g, rnd, at[0], at[1], rnd.realInRange(1.2, 3));
+        }
+      },
+      // 43 — отвалы породы: плоские террасы-курганы, промоины на склонах, колеи по верху, редкий бурьян
+      (g) => {
+        this.vGround(g, rnd, 0, 0, s, s, Q.dust, 30, Q.dustDark, Q.dustLight);
+        this.vTufts(g, rnd, 0, 0, s, s, 70, Q.dry);
+        for (const [cx, cy, rx, ry] of [[136, 128, 104, 82], [290, 286, 90, 76], [312, 82, 56, 42]]) {
+          const n = 16;
+          const base = [];
+          const top = [];
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2;
+            const k = rnd.realInRange(0.86, 1.08);
+            base.push({ x: cx + Math.cos(a) * rx * k, y: cy + Math.sin(a) * ry * k });
+            const t = 0.58 * rnd.realInRange(0.92, 1.05);
+            top.push({ x: cx - 4 + Math.cos(a) * rx * t, y: cy - 4 + Math.sin(a) * ry * t });
+          }
+          g.fillStyle(0x000000, 0.28).fillPoints(base.map((p) => ({ x: p.x + 8, y: p.y + 7 })), true);
+          g.fillStyle(0x5a5246).fillPoints(base, true); // склон
+          g.fillStyle(0x6a6152, 0.9).fillPoints(base.map((p) => ({ x: p.x - (p.x - cx) * 0.12 - 4, y: p.y - (p.y - cy) * 0.12 - 4 })), true);
+          // Промоины: тёмная борозда со светлой кромкой от верха к подошве
+          for (let i = 0; i < n; i++) {
+            if (rnd.frac() < 0.55) continue;
+            const a = top[i];
+            const b = base[i];
+            const line = [a];
+            for (let k = 1; k < 4; k++) line.push({ x: a.x + ((b.x - a.x) * k) / 4 + rnd.between(-4, 4), y: a.y + ((b.y - a.y) * k) / 4 + rnd.between(-4, 4) });
+            line.push({ x: b.x + rnd.between(-3, 3), y: b.y + rnd.between(-3, 3) });
+            g.fillStyle(0x6a6152, 0.7).fillCircle(line[4].x, line[4].y, 5); // вынос у подошвы
+            g.lineStyle(2.5, 0x433d34, 0.8).strokePoints(line, false);
+            g.lineStyle(1, 0x7a7060, 0.5).strokePoints(line.map((p) => ({ x: p.x - 2, y: p.y - 1 })), false);
+          }
+          g.fillStyle(0x857a66).fillPoints(top.map((p) => ({ x: p.x - 1, y: p.y - 1 })), true); // освещённая бровка
+          g.fillStyle(0x746b5a).fillPoints(top, true); // плоский верх
+          for (let i = 0; i < 40; i++) g.fillStyle(rnd.pick([0x8a8070, 0x5e564a]), 0.6).fillRect(cx - rx * 0.4 + rnd.frac() * rx * 0.8, cy - ry * 0.4 + rnd.frac() * ry * 0.7, 2, 2);
+          // Свежие кучки разгрузки самосвалов — неровный ряд по одной стороне верха
+          const side = rnd.between(0, n - 1);
+          for (let k = 0; k < 5; k++) {
+            const p = top[(side + k) % n];
+            const x = p.x + (cx - p.x) * 0.25 + rnd.between(-2, 2);
+            const y = p.y + (cy - p.y) * 0.25 + rnd.between(-2, 2);
+            g.fillStyle(0x000000, 0.25).fillEllipse(x + 2, y + 2, 13, 10);
+            g.fillStyle(0x6a6252).fillEllipse(x, y, 13, 10);
+            g.fillStyle(0x80766a).fillEllipse(x - 1.5, y - 1.5, 6, 5);
+          }
+          for (let i = 0; i < 12; i++) this.qStone(g, rnd, base[i % n].x + rnd.between(-6, 6), base[i % n].y + rnd.between(-4, 6), rnd.realInRange(1.5, 3.5));
+        }
+        this.vRuts(g, [[60, 120], [120, 104], [200, 120]], 7, 0x5e5648, 0.6, 3);
+        this.vRuts(g, [[40, 300], [120, 260], [200, 250]], 7, Q.rut, 0.4, 3);
+        for (const [x, y] of [[40, 380], [210, 220], [380, 160], [30, 30], [372, 380]]) {
+          g.fillStyle(Q.dryDark).fillCircle(x, y, 5).fillCircle(x + 4, y + 2, 4);
+          g.fillStyle(Q.dry).fillCircle(x - 1, y - 1, 2.5);
+        }
+      },
+      // 44 — станционные пути: полоса x 170–230 — чистый балласт (по ней идёт магистраль); по бокам
+      // подъездные пути со стрелками, крытые вагоны и хопперы с щебнем, пост ЭЦ
+      (g) => {
+        this.vGround(g, rnd, 0, 0, s, s, Q.dust, 22, Q.dustDark, Q.dustLight);
+        g.fillStyle(Q.ballast).fillRect(170, 0, 60, s);
+        const tracks = [48, 108, 270, 318, 366];
+        const xovers = [[48, 200, 108, 368], [270, 26, 318, 190], [318, 214, 366, 380]];
+        for (const x of tracks) this.qTrackBed(g, x);
+        for (const c of xovers) this.qCrossover(g, ...c, 'bed');
+        for (let i = 0; i < 260; i++) {
+          g.fillStyle(rnd.pick([0x6a665c, 0x48443c]), 0.6).fillRect(rnd.realInRange(0, s - 2), rnd.realInRange(0, s - 2), 1.5, 1.5);
+        }
+        for (const x of tracks) this.qSleepers(g, x);
+        for (const c of xovers) this.qCrossover(g, ...c, 'sleepers');
+        for (const x of tracks) this.qRails(g, x);
+        for (const c of xovers) this.qCrossover(g, ...c, 'rails');
+        // Стрелочные переводы: тумбочка с фонарём у начала съезда
+        for (const [x, y] of [[28, 206], [128, 362], [252, 32], [338, 186], [298, 220], [386, 374]]) {
+          g.fillStyle(0x000000, 0.3).fillRect(x - 1, y - 1, 6, 6);
+          g.fillStyle(0x3a3c3a).fillRect(x - 3, y - 3, 6, 6);
+          g.fillStyle(0x8a8c7a).fillCircle(x, y, 1.5);
+        }
+        // Вагоны
+        this.qBoxcar(g, 48, 18, 84);
+        this.qBoxcar(g, 48, 108, 84);
+        this.qHopper(g, rnd, 108, 24, 58);
+        this.qHopper(g, rnd, 108, 88, 58);
+        this.qHopper(g, rnd, 270, 200, 58);
+        this.qHopper(g, rnd, 270, 264, 58);
+        this.qHopper(g, rnd, 270, 328, 58);
+        this.qBoxcar(g, 366, 26, 84);
+        // Просыпанный щебень у пустого пути
+        for (let i = 0; i < 30; i++) this.qStone(g, rnd, 318 + rnd.between(-18, 18), rnd.between(60, 220), rnd.realInRange(1, 2.5), 0x7a766e);
+        // Пост ЭЦ: кирпичная будка с шиферной крышей, фасад к югу
+        g.fillStyle(0x000000, 0.3).fillRect(134, 184, 32, 34);
+        g.fillStyle(0x6e4c3e).fillRect(130, 198, 30, 14); // южная стена
+        g.fillStyle(0x3a4450).fillRect(134, 202, 8, 6).fillRect(148, 202, 8, 6);
+        g.fillStyle(0x5e6066).fillRect(128, 178, 34, 22); // крыша
+        g.fillStyle(0x6c6e74).fillRect(128, 178, 34, 11);
+        g.lineStyle(1, 0x4a4c50).lineBetween(128, 189, 162, 189);
+        g.fillStyle(0x4a3a30).fillRect(152, 180, 4, 5); // печная труба
+        // Релейные шкафы, штабель старых шпал
+        for (const y of [240, 252]) {
+          g.fillStyle(0x000000, 0.3).fillRect(142, y + 2, 14, 9);
+          g.fillStyle(0x6a6e66).fillRect(140, y, 14, 9);
+        }
+        for (let k = 0; k < 4; k++) {
+          g.fillStyle(0x000000, 0.25).fillRect(134, 300 + k * 6 + 2, 30, 5);
+          g.fillStyle(k % 2 ? 0x4a3a2a : 0x54442e).fillRect(132, 300 + k * 6, 30, 5);
+        }
+        this.vTufts(g, rnd, 126, 0, 40, s, 40, Q.dry);
+        this.vTufts(g, rnd, 0, 0, 30, s, 14, Q.dry);
+      },
+      // 45 — склад взрывчатки: колючка на бетонных столбах, контрольно-следовая полоса, два
+      // обвалованных хранилища, будка охраны и ворота на юге, красные флажки; центр (~120 px) пуст
+      (g) => {
+        this.vGround(g, rnd, 0, 0, s, s, Q.dust, 28, Q.dustDark, Q.dustLight);
+        this.vTufts(g, rnd, 0, 0, s, s, 80, Q.dry);
+        const a = 28;
+        const b = 372;
+        g.fillStyle(0x625c4e).fillRect(a, a, b - a, b - a);
+        g.fillStyle(0x4e4636).fillRect(a + 4, a + 4, b - a - 8, 8).fillRect(a + 4, b - 12, b - a - 8, 8).fillRect(a + 4, a + 4, 8, b - a - 8).fillRect(b - 12, a + 4, 8, b - a - 8); // вспаханная полоса
+        g.fillStyle(0x625c4e).fillRect(186, b - 14, 28, 14);
+        // Проезды от ворот к центру и к хранилищам
+        this.vPath(g, [[200, b], [200, 200]], 22, 0x77705f);
+        this.vPath(g, [[115, 150], [200, 168], [285, 150]], 18, 0x77705f);
+        this.vRuts(g, [[200, b], [200, 260]], 5, Q.rut, 0.5, 2);
+        g.fillStyle(0x77705f).fillRect(150, 150, 100, 100); // площадка под штабель
+        g.lineStyle(1, 0x5e584a, 0.8).strokeRect(150, 150, 100, 100);
+        this.qBunker(g, rnd, 54, 46, 122, 84);
+        this.qBunker(g, rnd, 224, 46, 122, 84);
+        // Песок и пожарный щит у хранилищ — без надписей
+        for (const x of [70, 310]) {
+          g.fillStyle(0x000000, 0.3).fillRect(x + 2, 170, 20, 12);
+          g.fillStyle(0x8a7a58).fillRect(x, 168, 20, 12);
+          g.fillStyle(0x9a8a64).fillRect(x + 2, 170, 16, 8);
+        }
+        // Молниеотводы: мачта с длинной тенью
+        for (const [x, y] of [[44, 200], [356, 200]]) {
+          g.lineStyle(2, 0x000000, 0.25).lineBetween(x, y, x + 34, y + 20);
+          g.fillStyle(0x4a4a46).fillRect(x - 3, y - 3, 6, 6);
+          g.lineStyle(1, 0x7a7a74).strokeRect(x - 3, y - 3, 6, 6);
+        }
+        // Ограда с воротами на юге
+        this.qWire(g, a, a, b, a);
+        this.qWire(g, a, a, a, b);
+        this.qWire(g, b, a, b, b);
+        this.qWire(g, a, b, 182, b);
+        this.qWire(g, 218, b, b, b);
+        g.fillStyle(0x000000, 0.3).fillRect(178, b - 2, 9, 9).fillRect(216, b - 2, 9, 9);
+        g.fillStyle(0x9a988e).fillRect(176, b - 4, 8, 8).fillRect(216, b - 4, 8, 8);
+        g.lineStyle(1.5, 0x4e524c).strokeRect(184, b - 2, 15, 4).strokeRect(201, b - 2, 15, 4);
+        g.lineStyle(1, 0x4e524c).lineBetween(184, b - 2, 199, b + 2).lineBetween(201, b + 2, 216, b - 2);
+        // Будка охраны у ворот, фасад к югу
+        g.fillStyle(0x000000, 0.3).fillRect(244, 330, 22, 26);
+        g.fillStyle(0x6a6a5c).fillRect(240, 342, 20, 10);
+        g.fillStyle(0x3a4450).fillRect(244, 344, 6, 5);
+        g.fillStyle(0x56604e).fillRect(238, 326, 24, 18);
+        g.fillStyle(0x64705a).fillRect(238, 326, 24, 8);
+        // Красные флажки по углам и у ворот
+        for (const [x, y] of [[a + 8, a + 8], [b - 8, a + 8], [a + 8, b - 8], [b - 8, b - 8], [172, b - 8], [228, b - 8], [115, 142], [285, 142]]) this.qFlag(g, x, y);
+        for (const [x, y] of [[16, 16], [384, 384], [384, 20], [14, 380]]) this.qStone(g, rnd, x, y, 3);
+      },
+      // 46 — пустырь: утоптанная пыль, следы шин, сухая трава, камни, старая покрышка, гнутая труба
+      (g) => {
+        this.vGround(g, rnd, 0, 0, s, s, Q.dust, 50, Q.dustDark, Q.dustLight);
+        this.vTufts(g, rnd, 0, 0, s, s, 160, Q.dry);
+        this.vTufts(g, rnd, 0, 0, s, s, 60, Q.dryDark);
+        this.vRuts(g, [[30, 330], [120, 250], [230, 210], [330, 80]], 7, Q.rut, 0.45, 4);
+        this.vRuts(g, [[40, 90], [140, 120], [210, 180]], 5, Q.rut, 0.35, 3);
+        for (let i = 0; i < 8; i++) {
+          const x = rnd.between(30, 370);
+          const y = rnd.between(30, 370);
+          g.fillStyle(Q.dryDark).fillCircle(x, y, 4).fillCircle(x + 3, y + 2, 3);
+          g.fillStyle(Q.dry).fillCircle(x - 1, y - 1, 2);
+        }
+        for (let i = 0; i < 40; i++) this.qStone(g, rnd, rnd.between(8, 392), rnd.between(8, 392), rnd.realInRange(1.2, 3.5));
+        for (const [x, y] of [[300, 300], [90, 200]]) this.qStone(g, rnd, x, y, rnd.realInRange(6, 9));
+        // Старая покрышка самосвала
+        g.lineStyle(5, 0x000000, 0.25).strokeCircle(282, 136, 11);
+        g.lineStyle(5, 0x1e1e1c).strokeCircle(280, 134, 11);
+        g.lineStyle(1, 0x3a3a36).strokeCircle(280, 134, 11);
+        // Гнутая ржавая труба
+        const pipe = [{ x: 96, y: 330 }, { x: 140, y: 318 }, { x: 160, y: 296 }];
+        g.lineStyle(5, 0x000000, 0.25).strokePoints(pipe.map((p) => ({ x: p.x + 3, y: p.y + 3 })), false);
+        g.lineStyle(5, Q.rust).strokePoints(pipe, false);
+        g.lineStyle(1, 0x8a6a50).strokePoints(pipe.map((p) => ({ x: p.x - 1, y: p.y - 1.5 })), false);
+        // Обломки бетона
+        g.fillStyle(0x000000, 0.25).fillRect(332, 52, 16, 10);
+        g.fillStyle(Q.concrete).fillRect(330, 50, 16, 10);
+        g.fillStyle(0x5a5852).fillRect(330, 50, 2, 10);
+      },
+      // 47 — подстанция: щебёночный двор, порталы, три трансформатора в маслоприёмниках, кабельные
+      // лотки, ОПУ, бетонная ограда с «ромбиками» и ворота на юге
+      (g) => {
+        this.vGround(g, rnd, 0, 0, s, s, Q.dust, 20, Q.dustDark, Q.dustLight);
+        g.fillStyle(0x64625c).fillRect(24, 24, 352, 352);
+        for (let i = 0; i < 1400; i++) g.fillStyle(rnd.pick([0x76746c, 0x52504a, 0x6c6a62]), 0.7).fillRect(rnd.realInRange(26, 372), rnd.realInRange(26, 372), 1.5, 1.5);
+        g.fillStyle(0x6e6a5c).fillRect(184, 300, 32, 76); // проезд
+        this.qTrench(g, 50, 306, 350, 306);
+        for (const x of [100, 200, 300]) this.qTrench(g, x, 230, x, 306);
+        this.qTrench(g, 350, 306, 350, 340);
+        for (const x of [100, 200, 300]) this.qTransformer(g, x, 200);
+        // Провода от портала к вводам
+        g.lineStyle(1, 0x2a2a28, 0.8);
+        for (const x of [100, 200, 300]) for (const dx of [-10, 0, 10]) g.lineBetween(x + dx * 1.6, 112, x + dx, 192);
+        g.lineStyle(1, 0x2a2a28, 0.6);
+        for (const dx of [-10, 0, 10]) g.lineBetween(36, 100 + dx, 364, 100 + dx);
+        this.qPortal(g, 50, 350, 100);
+        this.qPortal(g, 60, 150, 270);
+        this.qPortal(g, 250, 340, 270);
+        // ОПУ — пульт управления, плоская крыша, фасад к югу
+        g.fillStyle(0x000000, 0.3).fillRect(296, 326, 66, 40);
+        g.fillStyle(0x7a786e).fillRect(290, 346, 64, 14);
+        g.fillStyle(0x3a4450);
+        for (let x = 296; x < 350; x += 12) g.fillRect(x, 349, 7, 6);
+        g.fillStyle(0x5c5c58).fillRect(288, 320, 68, 28);
+        g.lineStyle(1, 0x74746e).strokeRect(288, 320, 68, 28);
+        // Ограда из бетонных плит с «ромбиками»
+        const fence = (x1, y1, x2, y2) => {
+          g.lineStyle(4, 0x000000, 0.28).lineBetween(x1 + 3, y1 + 3, x2 + 3, y2 + 3);
+          g.lineStyle(4, 0x8a887e).lineBetween(x1, y1, x2, y2);
+          const len = Math.hypot(x2 - x1, y2 - y1);
+          g.fillStyle(0x6a685e);
+          for (let d = 4; d < len; d += 8) {
+            const x = x1 + ((x2 - x1) * d) / len;
+            const y = y1 + ((y2 - y1) * d) / len;
+            g.fillTriangle(x - 2, y, x, y - 1.5, x + 2, y).fillTriangle(x - 2, y, x, y + 1.5, x + 2, y);
+          }
+        };
+        fence(22, 22, 378, 22);
+        fence(22, 22, 22, 378);
+        fence(378, 22, 378, 378);
+        fence(22, 378, 180, 378);
+        fence(220, 378, 378, 378);
+        g.fillStyle(0x5a5e5a).fillRect(180, 376, 40, 4);
+        g.lineStyle(1, 0x3a3e3a).lineBetween(200, 376, 200, 380);
+        g.fillStyle(0xd0b030).fillRect(178, 374, 4, 8).fillRect(218, 374, 4, 8); // жёлтые столбы ворот
+        for (const [x, y] of [[10, 200], [390, 120], [200, 392]]) this.qStone(g, rnd, x, y, 3);
+      },
+      // 48 — борт карьера без съезда: те же уступы, что у 41 (стыкуется с 40/41/42 по всем краям);
+      // съезд остаётся только на паре бортов, иначе восемь одинаковых пандусов читаются узором
+      (g) => {
+        this.qPit(g, rnd, 'edge');
+        this.vTufts(g, rnd, 8, 4, s - 16, 40, 30, Q.dry);
+        for (let x = 12; x < s - 12; x += rnd.between(30, 60)) this.qStone(g, rnd, x, 44 + rnd.between(-2, 2), rnd.realInRange(2.5, 4), 0x6e6a60); // бруствер по бровке
       },
     ];
   }

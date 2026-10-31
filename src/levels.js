@@ -1,5 +1,6 @@
 import { CITY_LEVEL } from './cityLayout.js';
 import { VILLAGE_LEVEL } from './villageLayout.js';
+import { QUARRY_LEVEL } from './quarryLayout.js';
 import { t } from './i18n/index.js';
 
 // Кампания «Дорога на столицу»: газ и заражённые уходят от Горького-67 к столице вдоль железной дороги.
@@ -8,7 +9,7 @@ import { t } from './i18n/index.js';
 export const LEVELS = [
   { n: 1, key: 'city', layout: CITY_LEVEL, prefix: '' },
   { n: 2, key: 'village', layout: VILLAGE_LEVEL, prefix: 'l2_' },
-  { n: 3, key: 'quarry' },
+  { n: 3, key: 'quarry', layout: QUARRY_LEVEL, prefix: 'l3_' },
   { n: 4, key: 'l4' },
   { n: 5, key: 'l5' },
   { n: 6, key: 'l6' },

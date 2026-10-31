@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
-import { DEPOT, XP, MONUMENT, CITY } from '../config.js';
+import { DEPOT, XP, MONUMENT, CITY, EXPLOSIVES } from '../config.js';
 import { t } from '../i18n/index.js';
+import { layout, lt } from '../levels.js';
 import { DEPTH } from '../depth.js';
 import { sfx } from './Sfx.js';
 
@@ -35,12 +36,26 @@ export class Depots {
   // Памятник «Рабочему с шестернёй» в центре первой площади: сбивается, как склад, добыча больше
   addMonument() {
     const sq = this.scene.districts?.S?.[0];
-    if (!sq) return;
+    if (!sq || !layout.features.monument) return; // памятник — только на площади города
     const x = sq.x + CITY.tile / 2;
     const y = sq.y + CITY.tile / 2;
     const img = this.scene.add.image(x, y, 'monument').setOrigin(0.5, 0.85).setDepth(DEPTH.buildings + y / 1e5);
     this.scene.culler?.add(img);
     this.list.push({ x, y, hp: MONUMENT.hp, img, ring: null, active: true, monument: true });
+  }
+
+  // Склад взрывчатки в районе layout.explosives (карьер): сбивается пулемётом, рвётся на всю округу
+  addExplosives() {
+    const tile = this.scene.districts?.[layout.explosives]?.[0];
+    if (!layout.explosives || !tile) return;
+    const x = tile.x + CITY.tile / 2;
+    const y = tile.y + CITY.tile / 2;
+    const ring = this.scene.add.circle(x, y, 44).setStrokeStyle(3, 0xff5a3a, 0.8).setDepth(DEPTH.ground + 2);
+    this.scene.tweens.add({ targets: ring, scale: { from: 0.8, to: 1.25 }, alpha: { from: 0.9, to: 0.15 }, duration: 900, repeat: -1 });
+    const img = this.scene.add.image(x, y, 'explosives').setDepth(DEPTH.ground + 3);
+    this.scene.culler?.add(ring);
+    this.scene.culler?.add(img);
+    this.list.push({ x, y, hp: EXPLOSIVES.hp, img, ring, active: true, explosives: true });
   }
 
   // Ближайший целый склад в радиусе прицела — или null
@@ -118,6 +133,17 @@ export class Depots {
       this.scene.events.emit('explosion', d.x, d.y, 40);
       this.scene.events.emit('radio', t('vova_monument'), 'vova', false);
       this.drop(d.x, d.y, MONUMENT.money, MONUMENT.parts);
+      return;
+    }
+    if (d.explosives) {
+      // Склад рвётся: огромный взрыв, толпа у забора — в клочья, вертолёт рядом — тоже достанется
+      d.img.setTexture('explosivesBroken').setScale(1);
+      d.ring.destroy();
+      const E = EXPLOSIVES;
+      this.scene.events.emit('gas-blast', d.x, d.y, { blast: E.blast, blastHit: E.blastHit, blastDamage: E.blastDamage }, 'explosives');
+      this.scene.cameras.main.shake(600, 0.02);
+      this.scene.events.emit('radio', lt('vova_explosives'), 'vova', true);
+      this.drop(d.x, d.y, DEPOT.money[1], 1);
       return;
     }
     d.img.setTexture('depotBroken').setScale(1);

@@ -35,6 +35,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.shotTimer = 0;
     this.hopT = 0; // прыжок заражённого: оставшееся время
     this.hopCd = 0;
+    this.unloadT = cfg.unloadEvery ?? 0; // самосвал: до следующей выгрузки горняков
     this.charge = 0; // разбег быка: оставшееся время
     this.chargeCd = 0;
     this.endHop();
@@ -127,6 +128,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         break;
       case 'tank':
         this.updateTank(dt, dx, dy, dist);
+        if (this.cfg.unload) this.updateUnload(dt, dist);
         break;
       case 'boss':
         this.updateBoss(dt, dx, dy, dist);
@@ -228,6 +230,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!cfg.noRotate) this.rotation = aim;
     this.timer -= dt;
     if (this.timer > 0 || dist > cfg.range) return;
+    // Экскаватор стоит с начала, не из спавнера — разговор о нём при первом броске
+    if (cfg.intro) this.scene.spawner.introduce(cfg.intro);
     this.fireShell(aim);
     this.timer = cfg.fireInterval;
   }
@@ -277,6 +281,22 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       // Кольцо каждый раз чуть повёрнуто, чтобы безопасные щели не стояли на месте
       const offset = Phaser.Math.FloatBetween(0, Math.PI * 2);
       for (let i = 0; i < cfg.burstCount; i++) this.fireShell(offset + (i / cfg.burstCount) * Math.PI * 2);
+    }
+  }
+
+  // Самосвал: раз в unloadEvery с высыпает из кузова заражённых позади себя (только недалеко от вертолёта)
+  updateUnload(dt, dist) {
+    const cfg = this.cfg;
+    this.unloadT -= dt;
+    if (this.unloadT > 0) return;
+    this.unloadT = cfg.unloadEvery;
+    if (dist > 700) return;
+    const sp = this.scene.spawner;
+    for (let i = 0; i < cfg.unload; i++) {
+      const e = this.scene.enemies.get();
+      if (!e) break;
+      const a = this.rotation + Math.PI + (i - (cfg.unload - 1) / 2) * 0.6;
+      sp.place(e, cfg.unloadType, this.x + Math.cos(a) * (cfg.radius + 14), this.y + Math.sin(a) * (cfg.radius + 14));
     }
   }
 

@@ -92,6 +92,7 @@ export class Fx {
     switch (enemy.type) {
       case 'infantry':
       case 'farmer':
+      case 'miner':
         this.puff.explode(7, x, y);
         break;
       case 'tractorBlue':
@@ -99,6 +100,13 @@ export class Fx {
         this.debris.explode(16, x, y);
         this.smoke.explode(6, x, y);
         break;
+      case 'dumptruck':
+      case 'excavator':
+        this.debris.explode(30, x, y);
+        this.smoke.explode(10, x, y);
+        this.shake(FX.heavyShake);
+        break;
+      case 'blaster':
       case 'cow':
       case 'bull':
       case 'horse':
