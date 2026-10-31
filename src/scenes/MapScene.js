@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { t } from '../i18n/index.js';
 import { LEVELS, isBuilt } from '../levels.js';
 import { meta } from '../meta.js';
+import { CAMPAIGN } from '../config.js';
 import { onTap } from '../ui/tap.js';
 import { FONT, INK, INK_SOFT, makeSheet, drawSheet, makeStamp } from '../ui/paper.js';
 
@@ -44,7 +45,7 @@ export class MapScene extends Phaser.Scene {
 
   state(n) {
     if (!isBuilt(n)) return 'soon';
-    if (n > (meta.levelReached ?? 1)) return 'locked';
+    if (n > (meta.levelReached ?? 1) && !CAMPAIGN.openAll) return 'locked';
     return n === this.current() ? 'next' : 'open';
   }
 
