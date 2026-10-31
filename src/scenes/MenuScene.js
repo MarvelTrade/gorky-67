@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { t, getLang, initLang } from '../i18n/index.js';
 import { platform } from '../platform/platform.js';
 import { settings, saveSettings } from '../settings.js';
-import { meta, liveryTint } from '../meta.js';
+import { meta, liveryTexture } from '../meta.js';
 import { onTap } from '../ui/tap.js';
 
 const BTN_W = 260;
@@ -118,9 +118,7 @@ export class MenuScene extends Phaser.Scene {
     this.photo = this.add.container(0, 0);
     const frame = this.add.rectangle(0, 0, 132, 100, 0xf4f0e4).setStrokeStyle(1, 0x8a7a5a);
     const film = this.add.rectangle(0, -4, 118, 80, 0x2a3326);
-    const heli = this.add.image(0, -4, 'heli').setAngle(-35).setScale(1.25);
-    const tint = liveryTint();
-    if (tint !== null) heli.setTint(tint);
+    const heli = this.add.image(0, -4, liveryTexture(this)).setAngle(-35).setScale(1.25);
     this.menuRotor = this.add.image(0, -4, 'rotor').setScale(1.25);
     const clip = this.add.graphics();
     clip.lineStyle(3, 0x9aa6ae).strokeRoundedRect(-40, -60, 14, 34, 6);

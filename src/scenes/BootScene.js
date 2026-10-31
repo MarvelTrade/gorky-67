@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { PALETTE as P, CITY } from '../config.js';
+import { makeLiveryTextures } from '../systems/Livery.js';
 
 // Отрендеренные в Blender спрайты (tools/blender/make_sprites.py → public/sprites/<ключ>.png).
 // Если PNG есть — он заменяет текстуру из примитивов с тем же ключом и размером.
@@ -41,6 +42,7 @@ export class BootScene extends Phaser.Scene {
     this.makeMonumentTextures();
     this.makePauseTexture();
     this.makeTowerTextures();
+    makeLiveryTextures(this); // окраски вертолёта heli_<id> — после того, как спрайт 'heli' готов
     this.makeStreetTextures();
     this.makeCityTiles();
     this.scene.start('MenuScene');

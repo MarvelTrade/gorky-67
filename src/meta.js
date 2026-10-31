@@ -97,8 +97,10 @@ export function setLivery(id) {
   return true;
 }
 
-export function liveryTint(id = meta.livery) {
-  return LIVERIES.find((l) => l.id === id)?.tint ?? null;
+// Текстура вертолёта в окраске (камуфляж, звёзды, номер — systems/Livery.js); нет такой — исходный спрайт
+export function liveryTexture(scene, id = meta.livery) {
+  const key = `heli_${id}`;
+  return scene.textures.exists(key) ? key : 'heli';
 }
 
 export function gearUnlocked(id) {
@@ -142,6 +144,5 @@ export function applyMeta(scene) {
   }
   p.hp = p.maxHp;
 
-  const tint = liveryTint();
-  if (tint !== null) p.look.setTint(tint);
+  p.look.setTexture(liveryTexture(scene));
 }

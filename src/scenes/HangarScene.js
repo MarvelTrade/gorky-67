@@ -3,7 +3,7 @@ import { HANGAR, HELI, LIVERIES, GEAR, LEVELUP } from '../config.js';
 import { t } from '../i18n/index.js';
 import {
   meta, level, price, canBuy, buy, heliLevel, heliProgress, slots,
-  liveryUnlocked, setLivery, liveryTint, gearUnlocked, toggleGear,
+  liveryUnlocked, setLivery, liveryTexture, gearUnlocked, toggleGear,
 } from '../meta.js';
 import { sfx } from '../systems/Sfx.js';
 import { onTap } from '../ui/tap.js';
@@ -129,9 +129,7 @@ export class HangarScene extends Phaser.Scene {
     const lv = heliLevel();
     const max = lv >= HELI.levels.length;
     this.heliLv.setText(`${t('heliLevel')} ${lv}${max ? ` · ${t('heliMax')}` : ''}`);
-    const tint = liveryTint();
-    if (tint === null) this.heli.clearTint();
-    else this.heli.setTint(tint);
+    this.heli.setTexture(liveryTexture(this));
     for (const b of this.tabBtns) {
       const on = b.tabId === this.tab;
       b.setColor(on ? '#ffe066' : '#9fb08f').setBackgroundColor(on ? '#2f363d' : '#00000000');
@@ -301,12 +299,12 @@ export class HangarScene extends Phaser.Scene {
         else g.lineStyle(1.5, 0x6c7680, 1).strokeCircle(x, 0, 4);
       }
     } else if (this.tab === 'livery') {
-      const tint = LIVERIES.find((l) => l.id === r.id).tint ?? 0xffffff;
-      // Цвет, как он ляжет на корпус: серо-зелёный спрайт × tint
-      const c = Phaser.Display.Color.IntegerToColor(tint);
-      const base = { r: 0x9a, g: 0xa4, b: 0x96 };
-      const mix = Phaser.Display.Color.GetColor((base.r * c.red) / 255, (base.g * c.green) / 255, (base.b * c.blue) / 255);
-      r.swatch.fillStyle(mix, 1).fillCircle(20, 0, 11).lineStyle(2, 0xe8f0d8, 0.6).strokeCircle(20, 0, 11);
+      // Маленький вертолёт в этой окраске — камуфляж видно сразу
+      r.swatch.fillStyle(0x1c211a, 1).fillCircle(20, 0, 15).lineStyle(1, 0xe8f0d8, 0.4).strokeCircle(20, 0, 15);
+      if (!r.mini) {
+        r.mini = this.add.image(20, 0, liveryTexture(this, r.id)).setScale(0.38).setAngle(-30);
+        r.add(r.mini);
+      }
     }
   }
 }
