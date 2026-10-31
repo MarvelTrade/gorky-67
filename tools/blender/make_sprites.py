@@ -17,6 +17,8 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = os.path.abspath(argv[0] if argv else "sprites_out")
 ONLY = set(argv[1:])
 SS = 4  # суперсэмплинг: рендер в SS раз крупнее для сглаженных краёв, Blender сам уменьшает
+# Крупные версии для иконки и обложки магазина: SPRITE_SCALE=8 — кадр в 8 раз больше игрового
+PS = int(os.environ.get("SPRITE_SCALE", "1"))
 
 
 def hexrgb(h, a=1.0):
@@ -82,7 +84,7 @@ def clear():
 def setup_scene(w, h):
     sc = bpy.context.scene
     sc.render.engine = "BLENDER_EEVEE_NEXT"
-    sc.render.resolution_x, sc.render.resolution_y = w * SS, h * SS
+    sc.render.resolution_x, sc.render.resolution_y = w * SS * PS, h * SS * PS
     sc.render.resolution_percentage = 100
     sc.render.film_transparent = True
     sc.render.image_settings.file_format = "PNG"
@@ -134,8 +136,8 @@ def render(key, w, h, build, glow=None, skew=False):
     bpy.ops.render.render(write_still=True)
     # Уменьшаем до размера кадра (сглаживание за счёт SS) и обводим силуэт
     img = bpy.data.images.load(path)
-    img.scale(w, h)
-    outline(img, w, h, glow)
+    img.scale(w * PS, h * PS)
+    outline(img, w * PS, h * PS, glow and (glow[0], glow[1] * PS, glow[2]))
     img.filepath_raw = path
     img.file_format = "PNG"
     img.save()
@@ -389,7 +391,6 @@ def tower_chimney():
 TOWER_SPRITES = [
     ("towerRadio", tower_radio),
     ("towerWater", tower_water),
-    ("towerBell", tower_bell),
     ("towerChimney", tower_chimney),
 ]
 
