@@ -128,6 +128,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.updateBoss(dt, dx, dy, dist);
         break;
     }
+    // У самого вертолёта пехота и джипы идут к нему напрямую, мимо карты путей, — если он над рекой,
+    // лезли в воду. Шаг в воду — стоп у набережной (танк вброд и «Объект» — свои правила)
+    const b = this.cfg.behavior;
+    const river = this.scene.river;
+    if (river && (b === 'chase' || b === 'dash')) {
+      const v = this.body.velocity;
+      if ((v.x || v.y) && river.contains(this.x + v.x * 0.12, this.y + v.y * 0.12, 4)) this.body.setVelocity(0, 0);
+    }
   }
 
   // Джип: разгоняется по прямой к тому месту, где игрок был в начале рывка, потом тормозит
