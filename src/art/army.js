@@ -96,30 +96,48 @@ export function makeArmyTextures(scene) {
     g.lineStyle(1, 0x5a4a10, 0.9).strokeRect(2, 3, 30, 14);
   });
   // Бронетранспортёр: восемь колёс, лодочный корпус, башенка с крупнокалиберным стволом вперёд
-  tex(scene, 'btr', 56, 34, (g) => {
+  const btr = (key, body, dark, infected) => tex(scene, key, 56, 34, (g) => {
     g.fillStyle(0x161a14);
     for (const x of [8, 18, 34, 44]) g.fillRect(x, 0, 7, 5).fillRect(x, 29, 7, 5);
-    g.fillStyle(P.army);
+    g.fillStyle(body);
     g.fillPoints(
       [
         { x: 2, y: 8 }, { x: 40, y: 4 }, { x: 52, y: 11 }, { x: 52, y: 23 }, { x: 40, y: 30 }, { x: 2, y: 26 },
       ],
       true
     );
-    g.lineStyle(2, P.armyDark).strokePoints(
+    g.lineStyle(2, dark).strokePoints(
       [
         { x: 2, y: 8 }, { x: 40, y: 4 }, { x: 52, y: 11 }, { x: 52, y: 23 }, { x: 40, y: 30 }, { x: 2, y: 26 },
       ],
       true
     );
-    g.fillStyle(P.armyDark).fillRect(6, 11, 14, 12); // моторный отсек — сзади, решётки
+    g.fillStyle(dark).fillRect(6, 11, 14, 12); // моторный отсек — сзади, решётки
     g.fillStyle(0x1e2618);
     for (let y = 12; y < 23; y += 3) g.fillRect(7, y, 12, 1);
     g.fillStyle(0x2e3a26).fillRect(36, 8, 6, 4).fillRect(36, 22, 6, 4); // люки
     g.fillStyle(0xd8d8d0).fillRect(23, 6, 3, 22); // белая полоса опознавания
-    g.fillStyle(P.armyDark).fillRect(30, 15, 26, 4); // ствол
+    g.fillStyle(dark).fillRect(30, 15, 26, 4); // ствол
     g.fillStyle(0x4a5c3c).fillCircle(30, 17, 7); // башенка
-    g.lineStyle(1.5, P.armyDark).strokeCircle(30, 17, 7);
-    g.fillStyle(P.glow, 0.7).fillCircle(14, 8, 1.8).fillCircle(44, 25, 1.6); // пятна «Зари»
+    g.lineStyle(1.5, dark).strokeCircle(30, 17, 7);
+    if (infected) g.fillStyle(P.glow, 0.7).fillCircle(14, 8, 1.8).fillCircle(44, 25, 1.6); // пятна «Зари»
+  });
+  btr('btr', P.army, P.armyDark, true);
+  // Свой БТР сопровождения колонны: сине-серый, без пятен — не путается с оцеплением
+  btr('btrOwn', 0x5a6a76, 0x34404a, false);
+  // Жёлтый городской автобус эвакуации сверху: ряд окон, люди внутри, нос вправо
+  tex(scene, 'cityBus', 62, 24, (g) => {
+    g.fillStyle(0x000000, 0.25).fillRect(3, 4, 59, 20);
+    g.fillStyle(0x161a14).fillRect(8, 1, 8, 3).fillRect(46, 1, 8, 3).fillRect(8, 20, 8, 3).fillRect(46, 20, 8, 3);
+    g.fillStyle(0xe8c030).fillRect(1, 3, 58, 18);
+    g.fillStyle(0xc89a20).fillRect(5, 7, 46, 10); // крыша
+    g.fillStyle(0x8a8a7a).fillRect(14, 9, 8, 6).fillRect(32, 9, 8, 6); // люки
+    g.fillStyle(0x3a4a58).fillRect(53, 5, 5, 14); // лобовое
+    for (let x = 5; x < 50; x += 7) {
+      g.fillStyle(0x3a4a58).fillRect(x, 3, 5, 3).fillRect(x, 18, 5, 3); // окна по бортам
+      g.fillStyle(0xe8c8a0).fillCircle(x + 2.5, 4.5, 1.2).fillCircle(x + 2.5, 19.5, 1.2); // люди в окнах
+    }
+    g.lineStyle(1, 0x6a5010).strokeRect(1, 3, 58, 18);
+    g.fillStyle(0xfff2b0).fillRect(58, 4, 2, 3).fillRect(58, 17, 2, 3); // фары
   });
 }

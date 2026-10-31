@@ -34,6 +34,7 @@ import { makeFarmTextures } from '../art/farm.js';
 import { makeQuarryTextures } from '../art/quarry.js';
 import { makeArmyTextures } from '../art/army.js';
 import { Pickups } from '../systems/Pickups.js';
+import { Convoy } from '../systems/Convoy.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -92,6 +93,7 @@ export class GameScene extends Phaser.Scene {
     this.fx = new Fx(this);
     this.supply = new Supply(this, this.player);
     this.pickups = new Pickups(this, this.player); // аптечки и военные ящики с врагов
+    this.convoy = layout.convoy ? new Convoy(this) : null; // колонна эвакуации — только где она есть
     this.flares = new Flares(this, this.player, this.shells);
     this.runEvents = new RunEvents(this);
 
@@ -392,6 +394,7 @@ export class GameScene extends Phaser.Scene {
       revived: this.revived,
       crates: { ...this.supply.picked },
       milcrates: this.pickups.crates,
+      convoy: this.convoy?.result() ?? null,
       badges: this.pickups.badges,
       flareKills: this.flares.kills,
       wiresCut: this.air.cut,
@@ -772,6 +775,7 @@ export class GameScene extends Phaser.Scene {
     this.flares.update(dt);
     this.supply.update(dt);
     this.pickups.update(dt);
+    this.convoy?.update(dt, this.spawner.elapsed);
     this.depots.update(dt);
     this.tracks.update(dt);
     this.breakdowns.update(dt);

@@ -255,6 +255,7 @@ export const CITY_LEVEL = {
   towerDistrict: 'R',
   labStyle: 'hatch',
   exitDir: null,           // коридор ухода — в случайную сторону
-  train: { y: 2000, stand: 2.2, moving: false }, // эвакуационный поезд стоит на станции и трогается
+  train: { y: 2000, stand: 2.2, moving: false },
+  convoy: true,            // автобусная колонна эвакуации по главному проспекту // эвакуационный поезд стоит на станции и трогается
   features: { cityFence: true, checkpoint: true, trolleys: true, factoryFence: true, monument: true },
 };
