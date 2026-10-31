@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { AIR, CITY, FX, WORLD } from '../config.js';
 import { DEPTH } from '../depth.js';
-import { AVENUES, TOWER_SPOTS } from '../cityLayout.js';
+import { layout } from '../levels.js';
 import { sfx } from './Sfx.js';
 
 // Воздушные препятствия: без них небо пустое и висеть над городом можно где угодно.
@@ -29,7 +29,7 @@ export class AirObstacles {
     this.buildings = this.scene.nav.rects.slice();
     const placed = [];
     // Сначала — сооружения на своих местах (колокольня у храма, вышка у телецентра, трубы ТЭЦ)
-    for (const [d, spots] of Object.entries(TOWER_SPOTS)) {
+    for (const [d, spots] of Object.entries(layout.TOWER_SPOTS)) {
       for (const tile of this.scene.districts?.[d] ?? []) {
         for (const sp of spots) {
           const x = tile.x + sp.x;
@@ -54,7 +54,7 @@ export class AirObstacles {
   // Случайная точка внутри квартала: не на улице, не в доме, не у старта и не рядом с другой башней
   // Случайные башни (водонапорные) — только в жилых кварталах
   findSpot(rnd, placed, radius) {
-    const tiles = this.scene.districts?.R ?? null;
+    const tiles = this.scene.districts?.[layout.towerDistrict] ?? null;
     const s = CITY.tile;
     const rects = this.buildings;
     const m = AIR.buildingMargin + radius;
@@ -79,7 +79,7 @@ export class AirObstacles {
     // Спрайт из Blender в 3/4 (как дома): основание внизу кадра, originY — из towers.json.
     // Нет файла — плоский значок сверху из BootScene, центр по центру.
     const meta = this.scene.cache.json.get('towers')?.[def.texture];
-    const originY = meta ? meta.originY : 0.5;
+    const originY = meta ? meta.originY : def.originY ?? 0.5;
     const height = meta ? meta.h * originY - def.radius : def.radius * 3;
     this.drawTowerShadow(x, y, def.radius, height);
     const img = this.scene.add.image(x, y, def.texture).setOrigin(0.5, originY).setDepth(DEPTH.towers + y / 1e5);
@@ -120,9 +120,10 @@ export class AirObstacles {
     const cy = WORLD.height / 2;
     // Троллейбус ходит только по проспектам: контактная пара над одной проезжей частью
     // (W.laneOffset от оси проспекта), не над бульваром
-    for (const av of AVENUES) {
+    // Провода уровня: в городе — троллейбус над проспектами, в деревне — ЛЭП через поля
+    for (const av of layout.WIRES ?? layout.AVENUES) {
       const dir = av.dir;
-      const line = av.at + W.laneOffset;
+      const line = av.at + (av.offset ?? W.laneOffset);
       for (let a = av.from; a < av.to; a += s) {
         const b = a + s;
         const span = dir === 'v'

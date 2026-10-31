@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { EXTRACT, WORLD } from '../config.js';
 import { DEPTH } from '../depth.js';
+import { layout } from '../levels.js';
 import { t } from '../i18n/index.js';
 import { sfx } from './Sfx.js';
 
@@ -31,7 +32,8 @@ export class Extraction {
     // Край не ближе minDist — иначе уходить слишком просто; из центра карты подходят все четыре
     const dist = { n: p.y, s: WORLD.height - p.y, w: p.x, e: WORLD.width - p.x };
     const far = Object.keys(dist).filter((d) => dist[d] >= EXTRACT.minDist);
-    this.dir = far.length ? Phaser.Utils.Array.GetRandom(far) : Object.keys(dist).reduce((a, b) => (dist[a] > dist[b] ? a : b));
+    // Уровень может задать сторону (в деревне — север, к столице); иначе — любая далёкая
+    this.dir = layout.exitDir ?? (far.length ? Phaser.Utils.Array.GetRandom(far) : Object.keys(dist).reduce((a, b) => (dist[a] > dist[b] ? a : b)));
     this.scene.events.emit('radio', t('cher_exit').replace('{dir}', t(`dir_${this.dir}`)), 'cheryomukha', true);
     this.scene.events.emit('alert', 3);
     sfx.play('radio');

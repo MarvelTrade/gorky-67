@@ -29,7 +29,7 @@ import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
 import { Train } from '../systems/Train.js';
 import { River } from '../systems/River.js';
-import { DISTRICTS, DISTRICT_VARIANT, AVENUES, TILE_FACING } from '../cityLayout.js';
+import { layout, setLevel, lt } from '../levels.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -43,6 +43,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    // Уровень кампании — из карты уровней (registry), по умолчанию первый: город
+    this.levelDef = setLevel(this.registry.get('level') ?? 1);
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.culler = new Culler(this); // до города: декорации регистрируются при создании
     this.nav = new CityNav(this);
@@ -104,7 +106,7 @@ export class GameScene extends Phaser.Scene {
     this.ordnance = new Ordnance(this, this.player);
     this.lab = new Lab(this);
     this.hints = new Hints(this);
-    this.train = new Train(this, this.railX);
+    this.train = this.railX ? new Train(this, this.railX) : null;
     this.rerolls = LEVELUP.rerolls;
     applyMeta(this); // «Ангар»: броня, калибр, двигатель, магнит, перекруты
     this.physics.add.collider(this.player.sprite, this.air.towers);
@@ -183,7 +185,7 @@ export class GameScene extends Phaser.Scene {
       this.explosionFx(x, y, r);
       sfx.play('explosion');
     });
-    this.events.on('wave-changed', (n) => this.banner(t(`wave_${n}`)));
+    this.events.on('wave-changed', (n) => this.banner(lt(`wave_${n}`)));
     this.events.on('resume', () => {
       this.halting = false;
       this.player.resetInput();
@@ -523,11 +525,11 @@ export class GameScene extends Phaser.Scene {
     for (let y = 0; y < WORLD.height; y += s) {
       for (let x = 0; x < WORLD.width; x += s) {
         // Район — по плану города; жилые — случайного вида и поворота, остальные стоят как задуманы
-        const d = DISTRICTS[y / s]?.[x / s] ?? 'R';
+        const d = layout.DISTRICTS[y / s]?.[x / s] ?? 'R';
         (this.districts[d] ??= []).push({ x, y });
-        const v = DISTRICT_VARIANT[d];
+        const v = layout.DISTRICT_VARIANT[d];
         const variant = Array.isArray(v) ? Phaser.Utils.Array.GetRandom(v) : v ?? Phaser.Math.Between(0, CITY.residential - 1);
-        const quarter = TILE_FACING[`${x / s},${y / s}`] ?? ('RPTWQY'.includes(d) ? Phaser.Math.Between(0, 3) : 0);
+        const quarter = layout.TILE_FACING[`${x / s},${y / s}`] ?? (layout.randomQuarter.includes(d) ? Phaser.Math.Between(0, 3) : 0);
         this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
         if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
@@ -536,26 +538,31 @@ export class GameScene extends Phaser.Scene {
     this.drawAvenues();
     this.river.draw();
     this.river.blockNav(this.nav);
-    this.railX = RAIL.x;
-    this.drawRailway();
+    this.railX = layout.rail?.x ?? null;
+    if (this.railX) this.drawRailway();
     this.buildings = new Buildings(this);
     this.roofs = this.buildings.build(this.nav.rects);
     this.drawZoneFence();
     this.drawFactoryFence();
-    this.drawCityFence();
+    if (layout.features.cityFence) this.drawCityFence();
   }
 
   // Проспекты: широкая проезжая часть с бульваром посередине — кусками по кварталу (их прячет Culler).
   // КПП с шлагбаумом на западном въезде, проходная у завода в конце главного проспекта
   drawAvenues() {
     const s = CITY.tile;
-    for (const a of AVENUES) {
+    // Проспекты (или трасса) и дороги уровня; tex — проспект с бульваром, асфальт трассы, грунтовка.
+    // Грунтовки — ниже трассы: на пересечении асфальт поверх
+    for (const a of [...layout.ROADS, ...layout.AVENUES]) {
+      const tex = a.tex ?? 'avenue';
+      const depth = DEPTH.ground + (tex === 'dirt' ? 0.25 : 0.3);
       for (let p = a.from; p < a.to; p += s) {
-        const img = a.dir === 'h' ? this.add.image(p + s / 2, a.at, 'avenue') : this.add.image(a.at, p + s / 2, 'avenue').setAngle(90);
-        this.culler.add(img.setDepth(DEPTH.ground + 0.3));
+        const img = a.dir === 'h' ? this.add.image(p + s / 2, a.at, tex) : this.add.image(a.at, p + s / 2, tex).setAngle(90);
+        this.culler.add(img.setDepth(depth));
       }
     }
     // Перекрёстки проспектов — поверх, без бульвара
+    const AVENUES = layout.AVENUES.filter((a) => (a.tex ?? 'avenue') === 'avenue');
     for (const a of AVENUES) {
       for (const b of AVENUES) {
         if (a.dir !== 'h' || b.dir !== 'v' || b.at < a.from || b.at > a.to || a.at < b.from || a.at > b.to) continue;
@@ -563,8 +570,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
     // КПП на западном въезде в город (на востоке проспект упирается в ворота завода — их ставит drawFactoryFence)
-    const main = AVENUES[0];
-    this.culler.add(this.add.image(main.from + 30, main.at, 'checkpoint').setDepth(DEPTH.ground + 2.5));
+    const main = layout.AVENUES[0];
+    if (layout.features.checkpoint) this.culler.add(this.add.image(main.from + 30, main.at, 'checkpoint').setDepth(DEPTH.ground + 2.5));
   }
 
   // «Зона»: колючая проволока по периметру района Z со столбами и воротами на юг
@@ -667,7 +674,7 @@ export class GameScene extends Phaser.Scene {
     const m = 14;
     const W = WORLD.width - m;
     const H = WORLD.height - m;
-    const gateY = AVENUES[0].at;
+    const gateY = layout.AVENUES[0].at;
     const rail = this.railX;
     this.concreteFence(g, [
       [m, m, rail - 34, m], [rail + 34, m, W, m],
@@ -683,7 +690,7 @@ export class GameScene extends Phaser.Scene {
     if (!b) return;
     const g = this.add.graphics().setDepth(DEPTH.ground + 2.4);
     const rail = this.railX;
-    const gateY = AVENUES[0].at;
+    const gateY = layout.AVENUES[0].at;
     // Отрезки забора с проёмами: ворота на проспекте (запад) и под ветку (север, юг)
     const segs = [
       [b.x0, b.y0, rail - 34, b.y0], [rail + 34, b.y0, b.x1, b.y0],
@@ -735,7 +742,7 @@ export class GameScene extends Phaser.Scene {
     this.ordnance.update(dt);
     this.lab.update(dt);
     this.hints.update(dt);
-    this.train.update(dt);
+    this.train?.update(dt);
     this.culler.update();
     this.runEvents.update(this.spawner.elapsed);
     this.artillery.update(dt, this.spawner.elapsed);

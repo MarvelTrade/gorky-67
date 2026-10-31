@@ -1,4 +1,4 @@
-import { RIVER } from '../cityLayout.js';
+import { layout } from '../levels.js';
 import { DEPTH } from '../depth.js';
 
 // Река наискосок через юго-запад. Вода закрыта для наземных врагов (клетки CityNav),
@@ -7,9 +7,11 @@ import { DEPTH } from '../depth.js';
 export class River {
   constructor(scene) {
     this.scene = scene;
-    this.pts = RIVER.points;
-    this.half = RIVER.width / 2;
-    this.bridges = RIVER.bridges.map((b) => this.makeBridge(b));
+    // Вода уровня: в городе — река с мостами, в деревне — озеро; нет воды — пустая ломаная
+    this.R = layout.RIVER ?? { points: [], width: 0, bank: 0, bridges: [] };
+    this.pts = this.R.points;
+    this.half = this.R.width / 2;
+    this.bridges = this.R.bridges.map((b) => this.makeBridge(b));
   }
 
   // Расстояние от точки до оси реки
@@ -28,6 +30,7 @@ export class River {
 
   // В воде (pad — запас: набережная, толщина врага)
   contains(x, y, pad = 0) {
+    if (!this.pts.length) return false;
     return this.dist(x, y) < this.half + pad && !this.onBridge(x, y);
   }
 
@@ -37,7 +40,8 @@ export class River {
 
   // Дом [x, y, w, h] задевает воду с набережной
   hitsRect([x, y, w, h]) {
-    const pad = this.half + RIVER.bank + 6;
+    if (!this.pts.length) return false;
+    const pad = this.half + this.R.bank + 6;
     for (let px = x; px <= x + w; px += 12) {
       for (let py = y; py <= y + h; py += 12) if (this.dist(px, py) < pad) return true;
     }
@@ -53,13 +57,14 @@ export class River {
       const y = y1 + ((x - x1) / (x2 - x1)) * (y2 - y1);
       // Река идёт под углом — мост длиннее ширины воды
       const cos = Math.abs(x2 - x1) / Math.hypot(x2 - x1, y2 - y1);
-      return { x, y, width, len: (RIVER.width + RIVER.bank * 2) / cos + 40 };
+      return { x, y, width, len: (this.R.width + this.R.bank * 2) / cos + 40 };
     }
     return { x, y: -1e9, width, len: 0 };
   }
 
   // Вода и набережные — толстыми линиями по оси, кругами на изломах (без «зубцов»), мосты — картинками
   draw() {
+    if (!this.pts.length) return;
     const g = this.scene.add.graphics().setDepth(DEPTH.ground + 0.45);
     const band = (w, color, alpha = 1) => {
       g.lineStyle(w, color, alpha);
@@ -67,10 +72,10 @@ export class River {
       g.fillStyle(color, alpha);
       for (const [x, y] of this.pts) g.fillCircle(x, y, w / 2);
     };
-    band(RIVER.width + RIVER.bank * 2 + 6, 0x5a5c58);   // откос
-    band(RIVER.width + RIVER.bank * 2, 0x9a9c96);       // бетонная набережная
-    band(RIVER.width, 0x2a4656);                        // вода
-    band(RIVER.width * 0.55, 0x30526a, 0.8);            // стрежень светлее
+    band(this.R.width + this.R.bank * 2 + 6, 0x5a5c58);   // откос
+    band(this.R.width + this.R.bank * 2, 0x9a9c96);       // бетонная набережная
+    band(this.R.width, 0x2a4656);                        // вода
+    band(this.R.width * 0.55, 0x30526a, 0.8);            // стрежень светлее
     band(4, 0x6a8ea4, 0.5);                             // блик по середине
     this.makeBridgeTexture();
     for (const b of this.bridges) {
@@ -98,11 +103,12 @@ export class River {
 
   // Вода закрыта для наземных врагов: клетки сетки проходимости в реке (с набережной) — стена
   blockNav(nav) {
+    if (!this.pts.length) return;
     for (let r = 0; r < nav.rows; r++) {
       for (let c = 0; c < nav.cols; c++) {
         const x = (c + 0.5) * nav.cell;
         const y = (r + 0.5) * nav.cell;
-        if (this.contains(x, y, RIVER.bank)) nav.blocked[r * nav.cols + c] = 1;
+        if (this.contains(x, y, this.R.bank)) nav.blocked[r * nav.cols + c] = 1;
       }
     }
   }

@@ -196,3 +196,21 @@ export function buildingHeight(w, h) {
   if (Math.max(w, h) >= 260) return 34;
   return 26;
 }
+
+// Уровень 1 — город целиком: всё, что GameScene и системы берут из плана активного уровня (levels.js)
+export const CITY_LEVEL = {
+  DISTRICTS,
+  DISTRICT_VARIANT,
+  TILE_FACING,
+  randomQuarter: 'RPTWQY',
+  AVENUES,
+  ROADS: [],
+  WIRES: null,             // троллейбус — по проспектам (AVENUES)
+  TOWER_SPOTS,
+  RIVER,
+  rail: { x: 3600 },
+  towerDistrict: 'R',
+  labStyle: 'hatch',
+  exitDir: null,           // коридор ухода — в случайную сторону
+  features: { cityFence: true, checkpoint: true, trolleys: true },
+};

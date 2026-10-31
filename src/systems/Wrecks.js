@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { AIR, CHAOS, CITY, WORLD } from '../config.js';
 import { DEPTH } from '../depth.js';
+import { layout } from '../levels.js';
 
 // Горящая техника на улицах — видно, что город в хаосе. Только декор: не мешает ни врагам, ни вертолёту.
 // Огонь и дым — два общих эмиттера; частицы выпускаются только у остовов в кадре.
@@ -48,7 +49,8 @@ export class Wrecks {
       this.put(key, p.x, p.y, rnd.angle() * (Math.PI / 180), true, true, key === 'tank');
     }
     // Троллейбусы встали под оборванной сетью: под пролётами троллейбусных маршрутов
-    const spans = rnd.shuffle((this.scene.air?.wires ?? []).slice()).slice(0, C.trolleys);
+    // Троллейбусы стоят под троллейбусной сетью; в деревне провода — ЛЭП, троллейбусов нет
+    const spans = layout.features.trolleys ? rnd.shuffle((this.scene.air?.wires ?? []).slice()).slice(0, C.trolleys) : [];
     for (const w of spans) {
       const t = rnd.realInRange(0.25, 0.75);
       const lane = rnd.pick([-1, 1]) * 13;

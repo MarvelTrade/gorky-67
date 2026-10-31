@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { BRIEFING } from '../config.js';
 import { t } from '../i18n/index.js';
+import { lt, setLevel } from '../levels.js';
 import { FONT, INK, INK_SOFT, makeSheet, drawSheet, makeStamp } from '../ui/paper.js';
 
 // Телеграмма перед забегом. Текст «печатается»; первый тап допечатывает сразу,
@@ -11,7 +12,8 @@ export class BriefingScene extends Phaser.Scene {
   }
 
   create() {
-    this.full = t('telegram');
+    setLevel(this.registry.get('level') ?? 1); // телеграмма — своя у каждого уровня
+    this.full = lt('telegram');
     this.shown = 0;
     this.ready = false;
     this.time.delayedCall(BRIEFING.inputDelay * 1000, () => (this.ready = true));
