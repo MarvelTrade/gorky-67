@@ -518,14 +518,14 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'monumentFallen', W, H);
   }
 
-  // Кнопка паузы: полупрозрачный круг и две полоски
+  // Кнопка паузы: полупрозрачный круг с латунной окантовкой и две полоски цвета бумаги — в тон бланкам
   makePauseTexture() {
     const g = this.make.graphics({ x: 0, y: 0 }, false);
     g.fillStyle(0x000000, 0.45);
     g.fillCircle(20, 20, 20);
-    g.lineStyle(2, 0xffffff, 0.6);
+    g.lineStyle(2, 0xb89a52, 0.8);
     g.strokeCircle(20, 20, 19);
-    g.fillStyle(0xffffff);
+    g.fillStyle(0xece4cc);
     g.fillRect(13, 11, 5, 18);
     g.fillRect(22, 11, 5, 18);
     this.makeTexture(g, 'pauseBtn', 40, 40);
@@ -788,6 +788,39 @@ export class BootScene extends Phaser.Scene {
         for (let i = 0; i < 8; i++) g.strokeCircle(rnd.between(70, 330), rnd.between(70, 330), 6); // покрышки
         g.fillStyle(0xd0a020).fillRect(250, 280, 34, 22);  // бульдозер
         g.fillStyle(0x3a3a3a).fillRect(244, 278, 6, 26);
+      },
+      // 24 — горисполком: гранитная площадь перед зданием, ели, флагштоки
+      (g) => {
+        g.fillStyle(0x6a6c70).fillRect(50, 180, 300, 170);
+        g.lineStyle(1, 0x7a7c80);
+        for (let x = 50; x < 350; x += 25) g.lineBetween(x, 180, x, 350);
+        for (let y = 180; y < 350; y += 25) g.lineBetween(50, y, 350, y);
+        g.fillStyle(0x8a8c90).fillRect(180, 180, 40, 170); // гранитная дорожка к входу
+        for (const x of [120, 280]) {
+          g.fillStyle(0x2a2418).fillRect(x - 1, 200, 2, 24);
+          g.fillStyle(0xb03024).fillRect(x + 1, 200, 12, 7);  // флагштоки
+        }
+        g.fillStyle(0x24402a);
+        for (const [x, y] of [[70, 80], [70, 130], [330, 80], [330, 130]]) g.fillTriangle(x - 10, y + 12, x + 10, y + 12, x, y - 14); // ели
+      },
+      // 25 — товарный двор: подъездные пути к складу, рампа, контейнеры
+      (g) => {
+        g.fillStyle(0x4a4c4e).fillRect(40, 40, 320, 320);
+        g.fillStyle(0x5a5246).fillRect(338, 40, 30, 320);          // насыпь подъездного пути
+        g.fillStyle(0x4a3a2a);
+        for (let y = 42; y < 360; y += 10) g.fillRect(342, y, 22, 4);
+        g.fillStyle(0x9aa0a6).fillRect(346, 40, 2, 320).fillRect(358, 40, 2, 320);
+        g.fillStyle(0x7a7c80).fillRect(330, 50, 8, 300);           // рампа
+        const box = [0x6a4a34, 0x3a5a6a, 0x5a6a3a];
+        for (let k = 0; k < 6; k++) g.fillStyle(box[k % 3]).fillRect(70 + (k % 2) * 60, 80 + Math.floor(k / 2) * 80, 50, 22); // контейнеры
+      },
+      // 26 — гаражный кооператив: асфальтовые проезды между рядами
+      (g) => {
+        g.fillStyle(0x4a4c4e).fillRect(40, 40, 320, 320);
+        g.fillStyle(0x3c3e40);
+        for (const y of [96, 174, 252, 330]) g.fillRect(50, y, 300, 14);
+        g.fillStyle(0x5a5040).fillRect(40, 40, 320, 6);           // забор кооператива
+        this.trees(g, rnd, 50, 46, 300, 14, 4);
       },
     ];
 

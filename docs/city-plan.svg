@@ -41,7 +41,7 @@
     <rect x="180" y="270" width="90" height="90" fill="#e0c9a6"/>
     <rect x="270" y="270" width="90" height="90" fill="#4f6fb0"/>
     <rect x="360" y="270" width="90" height="90" fill="#e8b4a0"/>
-    <rect x="450" y="270" width="90" height="90" fill="#e8b4a0"/>
+    <rect x="450" y="270" width="90" height="90" fill="#e6c7a0"/>
     <rect x="540" y="270" width="90" height="90" fill="#a9cf96"/>
     <rect x="630" y="270" width="90" height="90" fill="#5f8a52"/>
     <rect x="720" y="270" width="90" height="90" fill="#6e625b"/>
@@ -56,7 +56,7 @@
     <rect x="630" y="360" width="90" height="90" fill="#5f8a52"/>
     <rect x="720" y="360" width="90" height="90" fill="#9c8f86"/>
     <rect x="810" y="360" width="90" height="90" fill="#9c8f86"/>
-    <rect x="0" y="450" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="0" y="450" width="90" height="90" fill="#a9bcd3"/>
     <rect x="90" y="450" width="90" height="90" fill="#cfd3d8"/>
     <rect x="180" y="450" width="90" height="90" fill="#bcd8a4"/>
     <rect x="270" y="450" width="90" height="90" fill="#e0c9a6"/>
@@ -66,43 +66,43 @@
     <rect x="630" y="450" width="90" height="90" fill="#5f8a52"/>
     <rect x="720" y="450" width="90" height="90" fill="#9c8f86"/>
     <rect x="810" y="450" width="90" height="90" fill="#9c8f86"/>
-    <rect x="0" y="540" width="90" height="90" fill="#a9bcd3"/>
+    <rect x="0" y="540" width="90" height="90" fill="#cfd3d8"/>
     <rect x="90" y="540" width="90" height="90" fill="#cfd3d8"/>
     <rect x="180" y="540" width="90" height="90" fill="#e0c9a6"/>
-    <rect x="270" y="540" width="90" height="90" fill="#e0c9a6"/>
+    <rect x="270" y="540" width="90" height="90" fill="#f0a640"/>
     <rect x="360" y="540" width="90" height="90" fill="#8fbf7a"/>
     <rect x="450" y="540" width="90" height="90" fill="#8fbf7a"/>
     <rect x="540" y="540" width="90" height="90" fill="#e0c9a6"/>
     <rect x="630" y="540" width="90" height="90" fill="#5f8a52"/>
-    <rect x="720" y="540" width="90" height="90" fill="#9c8f86"/>
+    <rect x="720" y="540" width="90" height="90" fill="#7e7468"/>
     <rect x="810" y="540" width="90" height="90" fill="#9c8f86"/>
     <rect x="0" y="630" width="90" height="90" fill="#cfd3d8"/>
-    <rect x="90" y="630" width="90" height="90" fill="#f7f7f2"/>
+    <rect x="90" y="630" width="90" height="90" fill="#cfd3d8"/>
     <rect x="180" y="630" width="90" height="90" fill="#cfd3d8"/>
-    <rect x="270" y="630" width="90" height="90" fill="#f3d9d9"/>
-    <rect x="360" y="630" width="90" height="90" fill="#f0a640"/>
-    <rect x="450" y="630" width="90" height="90" fill="#cfd3d8"/>
-    <rect x="540" y="630" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="270" y="630" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="360" y="630" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="450" y="630" width="90" height="90" fill="#f3d9d9"/>
+    <rect x="540" y="630" width="90" height="90" fill="#f4b8c8"/>
     <rect x="630" y="630" width="90" height="90" fill="#5f8a52"/>
     <rect x="720" y="630" width="90" height="90" fill="#5e5652"/>
     <rect x="810" y="630" width="90" height="90" fill="#9c8f86"/>
     <rect x="0" y="720" width="90" height="90" fill="#f4b8c8"/>
     <rect x="90" y="720" width="90" height="90" fill="#a9cf96"/>
-    <rect x="180" y="720" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="180" y="720" width="90" height="90" fill="#f7f7f2"/>
     <rect x="270" y="720" width="90" height="90" fill="#e9d36a"/>
     <rect x="360" y="720" width="90" height="90" fill="#cfd3d8"/>
-    <rect x="450" y="720" width="90" height="90" fill="#f4b8c8"/>
+    <rect x="450" y="720" width="90" height="90" fill="#cfd3d8"/>
     <rect x="540" y="720" width="90" height="90" fill="#cfd3d8"/>
     <rect x="630" y="720" width="90" height="90" fill="#5f8a52"/>
     <rect x="720" y="720" width="90" height="90" fill="#9c8f86"/>
     <rect x="810" y="720" width="90" height="90" fill="#9c8f86"/>
-    <rect x="0" y="810" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="0" y="810" width="90" height="90" fill="#9a9ea2"/>
     <rect x="90" y="810" width="90" height="90" fill="#cfd3d8"/>
     <rect x="180" y="810" width="90" height="90" fill="#cfd3d8"/>
     <rect x="270" y="810" width="90" height="90" fill="#cfd3d8"/>
     <rect x="360" y="810" width="90" height="90" fill="#cfd3d8"/>
     <rect x="450" y="810" width="90" height="90" fill="#cfd3d8"/>
-    <rect x="540" y="810" width="90" height="90" fill="#cfd3d8"/>
+    <rect x="540" y="810" width="90" height="90" fill="#9a9ea2"/>
     <rect x="630" y="810" width="90" height="90" fill="#8a7a52"/>
     <rect x="720" y="810" width="90" height="90" fill="#9c8f86"/>
     <rect x="810" y="810" width="90" height="90" fill="#9c8f86"/>
@@ -161,7 +161,7 @@
     <circle cx="495" cy="495" r="14" fill="#6fa9c8" opacity="0.8"/>
     <circle cx="405" cy="585" r="14" fill="#6fa9c8" opacity="0.8"/>
     <circle cx="495" cy="585" r="14" fill="#6fa9c8" opacity="0.8"/>
-    <rect x="127" y="660" width="16" height="30" fill="#d03030"/><rect x="120" y="667" width="30" height="16" fill="#d03030"/>
+    <rect x="217" y="750" width="16" height="30" fill="#d03030"/><rect x="210" y="757" width="30" height="16" fill="#d03030"/>
     <ellipse cx="315" cy="786" rx="24" ry="12" fill="#7aa86a" stroke="#c05a3a" stroke-width="2"/>
     <circle cx="655" cy="840" r="10" fill="#6a5a3a"/>
     <circle cx="685" cy="835" r="8" fill="#6a5a3a"/>
@@ -253,7 +253,7 @@
     <rect x="801" y="890.3" width="18" height="6" fill="#4a5058" stroke="#b03024" stroke-width="1.5"/>
     <!-- Высокие сооружения по TOWER_SPOTS -->
     <rect x="242.5" y="474.3" width="10" height="10" fill="#f4f0e4" stroke="#6a5a3a"/><circle cx="247.5" cy="479.3" r="3" fill="#d6a838"/>
-    <path d="M67.5 562.5 L74.5 577.5 L60.5 577.5 Z" fill="none" stroke="#c03020" stroke-width="2"/><circle cx="67.5" cy="562.5" r="2.5" fill="#c03020"/>
+    <path d="M67.5 472.5 L74.5 487.5 L60.5 487.5 Z" fill="none" stroke="#c03020" stroke-width="2"/><circle cx="67.5" cy="472.5" r="2.5" fill="#c03020"/>
     <circle cx="744.8" cy="654.8" r="6" fill="#c0392b" stroke="#f3eee2" stroke-width="1.5"/>
     <circle cx="765" cy="651.6" r="6" fill="#c0392b" stroke="#f3eee2" stroke-width="1.5"/>
     <circle cx="785.3" cy="654.8" r="6" fill="#c0392b" stroke="#f3eee2" stroke-width="1.5"/>
@@ -269,21 +269,25 @@
       <text x="45" y="320" fill="#2a2418">д/сад</text>
       <text x="135" y="292" fill="#2a2418">школа</text>
       <text x="315" y="320" fill="#f3eee2">милиция</text>
+      <text x="495" y="320" fill="#2a2418">гориспол.</text>
       <text x="585" y="320" fill="#2a2418">сквер</text>
       <text x="765" y="346" fill="#f3eee2">ЛАБ.</text>
       <text x="225" y="410" fill="#2a2418">магазин</text>
       <text x="585" y="410" fill="#2a2418">магазин</text>
+      <text x="45" y="500" fill="#2a2418">ТВ</text>
       <text x="225" y="528" fill="#2a2418">храм</text>
       <text x="585" y="500" fill="#f3eee2">пожарн.</text>
-      <text x="45" y="590" fill="#2a2418">ТВ</text>
-      <text x="135" y="706" fill="#2a2418">больн.</text>
-      <text x="315" y="680" fill="#2a2418">поликл.</text>
-      <text x="405" y="680" fill="#2a2418">магазин</text>
+      <text x="315" y="590" fill="#2a2418">магазин</text>
+      <text x="765" y="590" fill="#f3eee2">тов. двор</text>
+      <text x="495" y="680" fill="#2a2418">поликл.</text>
+      <text x="585" y="680" fill="#2a2418">д/сад</text>
       <text x="765" y="680" fill="#f3eee2">ТЭЦ</text>
       <text x="45" y="770" fill="#2a2418">д/сад</text>
       <text x="135" y="770" fill="#2a2418">сквер</text>
+      <text x="225" y="796" fill="#2a2418">больн.</text>
       <text x="315" y="742" fill="#2a2418">школа</text>
-      <text x="495" y="770" fill="#2a2418">д/сад</text>
+      <text x="45" y="860" fill="#2a2418">гаражи</text>
+      <text x="585" y="860" fill="#2a2418">гаражи</text>
       <text x="675" y="860" fill="#f3eee2">свалка</text>
     </g>
     <g font-size="14" font-weight="bold" text-anchor="middle" fill="#2a2418">
@@ -313,25 +317,28 @@
     <rect x="0" y="160" width="18" height="14" fill="#9c8f86" stroke="#2a2418" stroke-width="0.5"/><text x="26" y="172"><tspan font-weight="bold">F</tspan> — завод «Объект 67»: цеха</text>
     <rect x="0" y="180" width="18" height="14" fill="#6e625b" stroke="#2a2418" stroke-width="0.5"/><text x="26" y="192"><tspan font-weight="bold">L</tspan> — завод с лабораторией «Объекта» (люк)</text>
     <rect x="0" y="200" width="18" height="14" fill="#5e5652" stroke="#2a2418" stroke-width="0.5"/><text x="26" y="212"><tspan font-weight="bold">E</tspan> — ТЭЦ с тремя трубами</text>
-    <rect x="460" y="0" width="18" height="14" fill="#bcd8a4" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="12"><tspan font-weight="bold">C</tspan> — храм в зелёном квадрате за оградой, колокольня</text>
-    <rect x="460" y="20" width="18" height="14" fill="#a9bcd3" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="32"><tspan font-weight="bold">V</tspan> — телецентр с радиовышкой</text>
-    <rect x="460" y="40" width="18" height="14" fill="#f7f7f2" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="52"><tspan font-weight="bold">H</tspan> — больница (корпус «Н», красный крест)</text>
-    <rect x="460" y="60" width="18" height="14" fill="#f3d9d9" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="72"><tspan font-weight="bold">N</tspan> — поликлиника</text>
-    <rect x="460" y="80" width="18" height="14" fill="#e9d36a" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="92"><tspan font-weight="bold">K</tspan> — школа со стадионом</text>
-    <rect x="460" y="100" width="18" height="14" fill="#f4b8c8" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="112"><tspan font-weight="bold">G</tspan> — детский сад</text>
-    <rect x="460" y="120" width="18" height="14" fill="#e0503c" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="132"><tspan font-weight="bold">O</tspan> — пожарная часть</text>
-    <rect x="460" y="140" width="18" height="14" fill="#4f6fb0" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="152"><tspan font-weight="bold">M</tspan> — отделение милиции</text>
-    <rect x="460" y="160" width="18" height="14" fill="#f0a640" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="172"><tspan font-weight="bold">U</tspan> — магазины: гастроном и универмаг</text>
-    <rect x="460" y="180" width="18" height="14" fill="#8a7a52" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="192"><tspan font-weight="bold">Y</tspan> — свалка</text>
-    <g transform="translate(0,230)"><line x1="0" y1="7" x2="18" y2="7" stroke="#3a3a3a" stroke-width="8"/><line x1="0" y1="7" x2="18" y2="7" stroke="#7aa86a" stroke-width="2" stroke-dasharray="3 3"/><text x="26" y="12">проспект с бульваром, троллейбус — только по проспектам</text></g>
-    <g transform="translate(460,230)"><line x1="9" y1="0" x2="9" y2="14" stroke="#4a3a2a" stroke-width="8" stroke-dasharray="1.5 3"/><text x="26" y="12">ж/д ветка x=3600 с севера на юг через завод</text></g>
-    <g transform="translate(0,250)"><line x1="0" y1="7" x2="18" y2="7" stroke="#8c8a80" stroke-width="4"/><text x="26" y="12">бетонный забор города и завода</text></g>
-    <g transform="translate(460,250)"><line x1="0" y1="7" x2="18" y2="7" stroke="#5a4630" stroke-width="3"/><text x="26" y="12">частокол и колючка лагеря, ■ вышки</text></g>
-    <g transform="translate(0,270)"><rect x="0" y="1" width="18" height="12" fill="#b03024"/><text x="26" y="12">КПП со шлагбаумом (запад, главный проспект)</text></g>
-    <g transform="translate(460,270)"><rect x="6" y="0" width="6" height="14" fill="#4a5058" stroke="#b03024"/><text x="26" y="12">металлические ворота завода · ж/д ворота</text></g>
-    <g transform="translate(0,290)"><rect x="2" y="3" width="14" height="8" fill="#7a5a30" stroke="#2a2018"/><text x="26" y="12">вахта с воротами лагеря (на юг)</text></g>
-    <g transform="translate(460,290)"><circle cx="9" cy="7" r="6" fill="#c0392b"/><text x="26" y="12">трубы ТЭЦ · ▢ колокольня · △ радиовышка</text></g>
-    <g transform="translate(0,310)"><circle cx="9" cy="7" r="7" fill="#2a2418"/><text x="26" y="12">памятник на площади · люк лаборатории</text></g>
-    <g transform="translate(460,310)"><circle cx="9" cy="7" r="7" fill="#1e88c8" stroke="#fff" stroke-width="2"/><text x="26" y="12">старт вертолёта (2000, 2000) — перекрёсток проспектов</text></g>
+    <rect x="0" y="220" width="18" height="14" fill="#bcd8a4" stroke="#2a2418" stroke-width="0.5"/><text x="26" y="232"><tspan font-weight="bold">C</tspan> — храм в зелёном квадрате за оградой, колокольня</text>
+    <rect x="460" y="0" width="18" height="14" fill="#a9bcd3" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="12"><tspan font-weight="bold">V</tspan> — телецентр с радиовышкой</text>
+    <rect x="460" y="20" width="18" height="14" fill="#f7f7f2" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="32"><tspan font-weight="bold">H</tspan> — больница (корпус «Н», красный крест)</text>
+    <rect x="460" y="40" width="18" height="14" fill="#f3d9d9" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="52"><tspan font-weight="bold">N</tspan> — поликлиника</text>
+    <rect x="460" y="60" width="18" height="14" fill="#e9d36a" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="72"><tspan font-weight="bold">K</tspan> — школа со стадионом</text>
+    <rect x="460" y="80" width="18" height="14" fill="#f4b8c8" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="92"><tspan font-weight="bold">G</tspan> — детский сад</text>
+    <rect x="460" y="100" width="18" height="14" fill="#e0503c" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="112"><tspan font-weight="bold">O</tspan> — пожарная часть</text>
+    <rect x="460" y="120" width="18" height="14" fill="#4f6fb0" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="132"><tspan font-weight="bold">M</tspan> — отделение милиции</text>
+    <rect x="460" y="140" width="18" height="14" fill="#f0a640" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="152"><tspan font-weight="bold">U</tspan> — магазины: гастроном и универмаг</text>
+    <rect x="460" y="160" width="18" height="14" fill="#8a7a52" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="172"><tspan font-weight="bold">Y</tspan> — свалка</text>
+    <rect x="460" y="180" width="18" height="14" fill="#e6c7a0" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="192"><tspan font-weight="bold">X</tspan> — горисполком на площади</text>
+    <rect x="460" y="200" width="18" height="14" fill="#7e7468" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="212"><tspan font-weight="bold">J</tspan> — товарный двор у ж/д ветки</text>
+    <rect x="460" y="220" width="18" height="14" fill="#9a9ea2" stroke="#2a2418" stroke-width="0.5"/><text x="486" y="232"><tspan font-weight="bold">A</tspan> — гаражный кооператив</text>
+    <g transform="translate(0,250)"><line x1="0" y1="7" x2="18" y2="7" stroke="#3a3a3a" stroke-width="8"/><line x1="0" y1="7" x2="18" y2="7" stroke="#7aa86a" stroke-width="2" stroke-dasharray="3 3"/><text x="26" y="12">проспект с бульваром, троллейбус — только по проспектам</text></g>
+    <g transform="translate(460,250)"><line x1="9" y1="0" x2="9" y2="14" stroke="#4a3a2a" stroke-width="8" stroke-dasharray="1.5 3"/><text x="26" y="12">ж/д ветка x=3600 с севера на юг через завод</text></g>
+    <g transform="translate(0,270)"><line x1="0" y1="7" x2="18" y2="7" stroke="#8c8a80" stroke-width="4"/><text x="26" y="12">бетонный забор города и завода</text></g>
+    <g transform="translate(460,270)"><line x1="0" y1="7" x2="18" y2="7" stroke="#5a4630" stroke-width="3"/><text x="26" y="12">частокол и колючка лагеря, ■ вышки</text></g>
+    <g transform="translate(0,290)"><rect x="0" y="1" width="18" height="12" fill="#b03024"/><text x="26" y="12">КПП со шлагбаумом (запад, главный проспект)</text></g>
+    <g transform="translate(460,290)"><rect x="6" y="0" width="6" height="14" fill="#4a5058" stroke="#b03024"/><text x="26" y="12">металлические ворота завода · ж/д ворота</text></g>
+    <g transform="translate(0,310)"><rect x="2" y="3" width="14" height="8" fill="#7a5a30" stroke="#2a2018"/><text x="26" y="12">вахта с воротами лагеря (на юг)</text></g>
+    <g transform="translate(460,310)"><circle cx="9" cy="7" r="6" fill="#c0392b"/><text x="26" y="12">трубы ТЭЦ · ▢ колокольня · △ радиовышка</text></g>
+    <g transform="translate(0,330)"><circle cx="9" cy="7" r="7" fill="#2a2418"/><text x="26" y="12">памятник на площади · люк лаборатории</text></g>
+    <g transform="translate(460,330)"><circle cx="9" cy="7" r="7" fill="#1e88c8" stroke="#fff" stroke-width="2"/><text x="26" y="12">старт вертолёта (2000, 2000) — перекрёсток проспектов</text></g>
   </g>
 </svg>

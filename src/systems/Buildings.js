@@ -24,6 +24,8 @@ const STYLES = {
   fire: { wall: 0xa04a3a, base: 0x6a2e24, roof: 0x7a7c80 },
   police: { wall: 0xd8d0a8, base: 0x8a8468, roof: 0x8a8c90 },
   shop: { wall: 0xc8ccd0, base: 0x7a7e84, roof: 0x9a9ea4 },
+  gov: { wall: 0xd6cab0, base: 0x9a8c70, roof: 0x8a8478 },
+  garage: { wall: 0x7a7e80, base: 0x56585a, roof: 0x5e6264 },
   station: { wall: 0x8a9298, base: 0x5a6268, roof: 0x9aa2a8 },
 };
 
@@ -41,7 +43,8 @@ export class Buildings {
     this.list = []; // дома с HP — для разрушений
     rects.forEach(([x, y, w, h], i) => {
       const style = this.scene.nav?.rectStyles?.[i] ?? 'panel';
-      const H = buildingHeight(w, h);
+      // Гаражи одноэтажные — низкие и в 3/4
+      const H = style === 'garage' ? 12 : buildingHeight(w, h);
       const r = rnd.frac();
       const state = r < CHAOS.burningHouses ? 'burning' : r < CHAOS.burningHouses + CHAOS.shelledHouses ? 'shelled' : 'ok';
       const key = this.texture(w, h, H, state, style);
@@ -202,13 +205,32 @@ export class Buildings {
       g.fillStyle(0xf0e0b0);
       for (let x = 10; x < w - 14; x += 12) g.fillRect(x, h + H - 21, 6, 3); // буквы вывески
     }
-    const windowStep = style === 'stalin' || style === 'church' || style === 'hospital' || style === 'school' ? 11 : 9;
+    if (style === 'garage') {
+      // Ряд железных ворот, без окон
+      for (let x = 2; x < w - 10; x += 14) {
+        g.fillStyle(0x4a4e52).fillRect(x, h + 2, 11, H - 4);
+        g.fillStyle(0x8a8e92).fillRect(x, h + 2, 11, 1);
+      }
+    }
+    if (style === 'gov') {
+      // Портик с колоннами по центру фасада и часы над входом
+      const pw = Math.round(w * 0.4);
+      const px = (w - pw) / 2;
+      g.fillStyle(0xeae2cc).fillRect(px - 4, h, pw + 8, 4);
+      for (let x = px; x < px + pw; x += 12) {
+        g.fillStyle(0xf2ecdc).fillRect(x, h + 6, 6, H - 10);
+        g.fillStyle(0x000000, 0.18).fillRect(x + 5, h + 6, 2, H - 10);
+      }
+      g.fillStyle(0xf0ece0).fillCircle(w / 2, h + 3, 5);
+      g.lineStyle(1, 0x2a2418).strokeCircle(w / 2, h + 3, 5).lineBetween(w / 2, h + 3, w / 2, h);
+    }
+    const windowStep = style === 'stalin' || style === 'church' || style === 'hospital' || style === 'school' || style === 'gov' ? 11 : 9;
     if (style === 'stalin') {
       g.fillStyle(0xe8d8b8).fillRect(0, h, w, 3); // карниз
       g.fillStyle(0x7a6040).fillRect(0, h + 3, w, 1); // тень под карнизом
       g.fillStyle(0xa88a60).fillRect(0, h + H - 10, w, 6); // рустованный первый этаж
     }
-    for (let f = 0; style !== 'factory' && style !== 'dk' && style !== 'barrack' && style !== 'shop' && style !== 'fire' && f < floors; f++) {
+    for (let f = 0; !['factory', 'dk', 'barrack', 'shop', 'fire', 'garage'].includes(style) && f < floors; f++) {
       const wy = h + 3 + f * floorH;
       for (let wx = 5; wx < w - 5; wx += windowStep) {
         const r = rnd.frac();
@@ -265,6 +287,15 @@ export class Buildings {
       dome(w / 2, h / 2, 18, 0x2e4e88);
       g.fillStyle(0xc8b070);
       for (const [x, y] of [[-6, -4], [5, -8], [7, 5], [-4, 8]]) g.fillCircle(w / 2 + x, h / 2 + y, 1.5); // звёзды
+    } else if (style === 'gov') {
+      // Парапет и флагшток над входом
+      g.lineStyle(3, 0xa49c8a).strokeRect(3, 3, w - 6, h - 6);
+      g.fillStyle(0x2a2418).fillRect(w / 2 - 1, 6, 2, 20);
+      g.fillStyle(0xb03024).fillRect(w / 2 + 1, 6, 14, 8);
+    } else if (style === 'garage') {
+      // Плоская кровля с рубероидом, стыки над каждым гаражом
+      g.lineStyle(1, 0x46494c, 0.8);
+      for (let x = 14; x < w; x += 14) g.lineBetween(x, 0, x, h);
     } else if (style === 'hospital') {
       // Красный крест на крыше — видно с вертолёта
       if (w >= 120 || h >= 120) {
