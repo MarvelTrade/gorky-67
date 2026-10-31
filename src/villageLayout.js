@@ -72,5 +72,6 @@ export const VILLAGE_LEVEL = {
   towerDistrict: 'I',      // случайные водонапорные башни — среди изб
   labStyle: 'pit',         // «Объект» выходит из ямы-навозохранилища, где копилось собранное
   exitDir: 'n',            // уходим на север — к столице
-  features: { cityFence: false, checkpoint: false, trolleys: false },
+  plazaVariants: [33, 36], // поля и луг — туда артиллерия, заманить «Объект»
+  features: { cityFence: false, checkpoint: false, trolleys: false, factoryFence: false },
 };

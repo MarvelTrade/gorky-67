@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT, LOW_HP } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
+import { lt } from '../levels.js';
 import { sfx } from '../systems/Sfx.js';
 import { FONT, KHAKI, BRASS } from '../ui/paper.js';
 
@@ -212,7 +213,7 @@ export class UIScene extends Phaser.Scene {
     const wave = gs.spawner.waveIndex;
     if (wave >= 0 && wave !== this.radioWave) {
       this.radioWave = wave;
-      this.queueRadio(t(`radio_${wave + 1}`));
+      this.queueRadio(lt(`radio_${wave + 1}`));
     }
     // Реплики идут по очереди, а не перебивают друг друга; срочные (urgent) — сразу.
     // Обычные ждут, пока идёт орда или летят снаряды обстрела: в опасности — только тревога (Ходент: внимание)

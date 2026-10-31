@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { ARTILLERY } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { t } from '../i18n/index.js';
+import { lt } from '../levels.js';
 import { sfx } from './Sfx.js';
 
 // Артобстрел: на земле появляется круг, «Черёмуха» предупреждает по рации, через ARTILLERY.warn с
@@ -79,7 +80,7 @@ export class Artillery {
       spot = nearest(this.scene.plazas ?? [], p.x, p.y, A.plazaRange);
       if (spot && !this.lured) {
         this.lured = true;
-        this.scene.events.emit('radio', t('cher_lure'), 'cheryomukha', true);
+        this.scene.events.emit('radio', lt('cher_lure'), 'cheryomukha', true);
       }
     }
     if (!spot) {
@@ -89,7 +90,7 @@ export class Artillery {
       spot = { x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d };
     }
     this.zones.push({ x: spot.x, y: spot.y, left: A.warn, salvo: A.salvo, shells: A.shells, hit: false });
-    if (!boss || this.lured) this.scene.events.emit('radio', t('cher_artillery'), 'cheryomukha', true);
+    if (!boss || this.lured) this.scene.events.emit('radio', lt('cher_artillery'), 'cheryomukha', true);
     this.scene.events.emit('alert', A.warn);
   }
 

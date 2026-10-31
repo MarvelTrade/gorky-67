@@ -1,5 +1,6 @@
 import { EVENTS, RADIO, SPAWN } from '../config.js';
 import { t } from '../i18n/index.js';
+import { lt } from '../levels.js';
 import { sfx } from './Sfx.js';
 
 // Темп забега: орды на 1:30 и 3:30, затишье перед «Объектом».
@@ -30,7 +31,7 @@ export class RunEvents {
     for (const h of this.hordes) {
       if (!h.warned && elapsed >= h.at - H.warn) {
         h.warned = true;
-        this.scene.events.emit('radio', t('radio_horde'), 'beryoza', true); // тревога — сразу
+        this.scene.events.emit('radio', lt('radio_horde'), 'beryoza', true); // тревога — сразу
         this.scene.events.emit('alert', H.warn);
       }
       if (!h.started && elapsed >= h.at) {
@@ -55,7 +56,7 @@ export class RunEvents {
     for (const line of [...RADIO.crew, ...RADIO.cheryomukha]) {
       if (!this.said.has(line.key) && elapsed >= line.at) {
         this.said.add(line.key);
-        this.scene.events.emit('radio', t(line.key), line.who ?? 'cheryomukha');
+        this.scene.events.emit('radio', lt(line.key), line.who ?? 'cheryomukha');
       }
     }
 
@@ -63,7 +64,7 @@ export class RunEvents {
     if (!this.calm.started && elapsed >= C.start) {
       this.calm.started = true;
       spawner.paused = true;
-      this.scene.events.emit('radio', t('radio_calm'));
+      this.scene.events.emit('radio', lt('radio_calm'));
       sfx.duck(true);
     }
     if (this.calm.started && !this.calm.ended && elapsed >= C.start + C.duration) {
@@ -83,7 +84,7 @@ export class RunEvents {
   // Вторая фаза «Объекта»: вспышка, тряска, реплика и рой вокруг него
   bossPhase2(boss) {
     const S = EVENTS.bossSwarm;
-    this.scene.events.emit('radio', t('radio_bossPhase'), 'beryoza', true);
+    this.scene.events.emit('radio', lt('radio_bossPhase'), 'beryoza', true);
     this.bossSwarm = this.spawnRing(boss.x, boss.y, S.radius, S.count, S.speed);
   }
 

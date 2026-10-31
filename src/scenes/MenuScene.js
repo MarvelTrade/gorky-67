@@ -47,7 +47,7 @@ export class MenuScene extends Phaser.Scene {
     });
     const langs = this.makeLangSwitch();
 
-    const play = this.button(t('play'), 66, 30, 0x6b8f3a, 0xc8e08a, () => this.scene.start('BriefingScene'));
+    const play = this.button(t('play'), 66, 30, 0x6b8f3a, 0xc8e08a, () => this.scene.start('MapScene'));
     const hangar = this.button(t('hangar'), 50, 21, 0x3a4148, 0xf2c94c, () => this.scene.start('HangarScene', { from: 'MenuScene' }));
     const opts = this.button(t('settings'), 50, 21, 0x3a4148, 0x8a949c, () => {
       this.blocked = true;
@@ -59,7 +59,7 @@ export class MenuScene extends Phaser.Scene {
         },
       });
     });
-    this.input.keyboard.on('keydown-ENTER', () => !this.blocked && this.scene.start('BriefingScene'));
+    this.input.keyboard.on('keydown-ENTER', () => !this.blocked && this.scene.start('MapScene'));
 
     const layout = () => {
       const { width, height } = this.scale;

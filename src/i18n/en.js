@@ -10,6 +10,50 @@ export default {
   soundOn: 'Sound: on',
   soundOff: 'Sound: off',
 
+  // ── Level 2: Olkhovka (l2_* keys override the city ones) ──
+  l2_telegram:
+    'URGENT SECRET STOP OBJECT 67 DESTROYED STOP GAS MOVED ALONG THE RAILWAY STOP\n' +
+    'THE INFECTED ARE HEADING FOR THE CAPITAL STOP CARRYING PIECES OF THE OBJECT STOP\n' +
+    'OLKHOVKA STATE FARM IS ON THEIR WAY STOP FALCON TO COVER EVACUATION FROM THE STATION STOP\n' +
+    'AFTERWARDS THE AREA WILL BE CLOSED STOP',
+  l2_wave_1: 'The Outskirts',
+  l2_wave_2: 'The Farm',
+  l2_wave_3: 'The Kolkhoz Field',
+  l2_wave_4: 'The Silage Pit',
+  l2_wave_5: 'The Assembly',
+  l2_radio_1: 'Falcon, people are heading for the station. Cover them.',
+  l2_radio_2: "Movement at the farm. That's not cattle.",
+  l2_radio_3: "The field wasn't harvested. They're coming out of it.",
+  l2_radio_4: "They're hauling metal into the pit by the farm. Don't let them build it.",
+  l2_radio_5: "Something came out of the pit. Made of the wreckage. It's yours.",
+  l2_cher_1: 'Vanya... Vova... this is Cheryomukha... the gas reached the village... it came along the rails... hold on, boys...',
+  l2_cher_2: 'Vanechka... a power line over the field... tall... don\'t snag it, dears...',
+  l2_cher_3: 'Vanya... the farm towers are taller than you... silos... go around early...',
+  l2_cher_gas: 'Vova... the gas is thicker in the hollows... by the lake... up there you\'re safe...',
+  l2_cher_army: 'Boys... they\'re carrying parts... from the Object... putting them together... we don\'t know why...',
+  l2_cher_shoot: 'Shoot, Vova... they\'re not villagers anymore... not ours...',
+  l2_cher_boss: 'Vanya... from the pit... they built it... from what they carried... it\'s coming for you...',
+  l2_cher_exit: 'Get out!.. to the {dir}... along the road to the capital... strike in twenty seconds... go!..',
+  l2_cher_lure: 'Vanechka... drag it into the field... let them cover it...',
+  l2_cher_end: 'Boys... next is the station... and the capital... remember...',
+
+  // Campaign map «Road to the capital»
+  mapTitle: 'ROAD TO THE CAPITAL',
+  mapSub: 'route of the gas and the infected · along the railway',
+  mapSoon: 'soon',
+  mapGo: 'here',
+  levelUnlocked: 'Level unlocked',
+  lvl_name_1: 'Gorky-67',
+  lvl_name_2: 'Olkhovka',
+  lvl_name_3: 'The Quarry',
+  lvl_name_4: '???',
+  lvl_name_5: '???',
+  lvl_name_6: '???',
+  lvl_name_7: '???',
+  lvl_name_8: '???',
+  lvl_name_9: '???',
+  lvl_name_10: 'The Capital',
+
   telegramHeader: 'TELEGRAM',
   telegramStamp: 'CLASSIFIED',
   telegramNo: 'No. 67-83',

@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { RUN } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
+import { lt } from '../levels.js';
 import { platform } from '../platform/platform.js';
 import { copyReport } from '../systems/Telemetry.js';
 import { onTap } from '../ui/tap.js';
@@ -34,7 +35,7 @@ export class GameOverScene extends Phaser.Scene {
 
     // Концовка — строка по итогу забега и последнее слово «Черёмухи» — при любом исходе
     const ending = this.add
-      .text(0, 0, `${t(`ending_${stats.ending}`)}\n\n${t('radioCallsign_cheryomukha')}: «${t('cher_end')}»`, {
+      .text(0, 0, `${lt(`ending_${stats.ending}`)}\n\n${t('radioCallsign_cheryomukha')}: «${lt('cher_end')}»`, {
         fontFamily: FONT,
         fontSize: '17px',
         color: INK,
@@ -54,6 +55,7 @@ export class GameOverScene extends Phaser.Scene {
     if (stats.weapons?.length) lines.push(stats.weapons.join(' · '));
     if (stats.money || stats.parts) lines.push(`${t('loot')}: +${stats.money} ₽ · +${stats.parts} ⚙`);
     if (stats.xp) lines.push(`${t('heliXp')}: +${stats.xp}`);
+    if (stats.unlocked) lines.push(`${t('levelUnlocked')}: ${stats.unlocked} · ${t(`lvl_name_${stats.unlocked}`)}`);
     // Новый уровень вертолёта — отдельной строкой под цифрами, рядом с «Объектом»
     const heliUp = stats.levelUp ? `${t('heliLevelUp')} ${stats.levelUp}!` : null;
     const bossLine = stats.bossSeen ? t(stats.bossKilled ? 'bossKilled' : 'bossAlive') : null;

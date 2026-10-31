@@ -175,7 +175,7 @@ export class GameScene extends Phaser.Scene {
       this.boss = boss;
       this.banner(t('bossIncoming'), '#ff6a5a');
       this.cameras.main.shake(400, 0.008);
-      this.events.emit('radio', t('cher_boss'), 'cheryomukha', true);
+      this.events.emit('radio', lt('cher_boss'), 'cheryomukha', true);
     });
     this.events.on('xp-collected', (value) => {
       sfx.play('pickup');
@@ -301,6 +301,12 @@ export class GameScene extends Phaser.Scene {
     const stats = this.runStats(win);
     // Добыча со складов — в кошелёк, и при гибели тоже (как в DRG: вынесенное остаётся)
     meta.runs = (meta.runs ?? 0) + 1;
+    // Ушёл из района до удара — открывается следующая станция на дороге к столице
+    const n = this.levelDef.n;
+    if (win && n + 1 > (meta.levelReached ?? 1)) {
+      meta.levelReached = n + 1;
+      stats.unlocked = n + 1;
+    }
     meta.money += this.depots.money;
     meta.parts += this.depots.parts;
     // Опыт вертолёта — за любой исход; уровень открывает окраски и снаряжение
@@ -320,6 +326,7 @@ export class GameScene extends Phaser.Scene {
       bossKilled: this.bossKilled,
       // Концовка: ушёл из района — с «Объектом» или без; не успел до удара; погиб
       ending: !win ? (this.nuked ? 'nuke' : 'lost') : this.bossKilled ? 'convoy' : 'late',
+      level: this.levelDef.n,
       money: this.depots.money,
       parts: this.depots.parts,
       ruined: this.buildings.list.filter((b) => b.state === 'ruined').length,
@@ -532,7 +539,7 @@ export class GameScene extends Phaser.Scene {
         const quarter = layout.TILE_FACING[`${x / s},${y / s}`] ?? (layout.randomQuarter.includes(d) ? Phaser.Math.Between(0, 3) : 0);
         this.culler.add(this.add.image(x + s / 2, y + s / 2, `city${variant}`).setAngle(quarter * 90).setDepth(DEPTH.ground));
         this.nav.addTile(variant, quarter, x, y);
-        if (variant === CITY.plazaVariant) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
+        if ((layout.plazaVariants ?? [CITY.plazaVariant]).includes(variant)) this.plazas.push({ x: x + s / 2, y: y + s / 2 });
       }
     }
     this.drawAvenues();
@@ -543,7 +550,7 @@ export class GameScene extends Phaser.Scene {
     this.buildings = new Buildings(this);
     this.roofs = this.buildings.build(this.nav.rects);
     this.drawZoneFence();
-    this.drawFactoryFence();
+    if (layout.features.factoryFence) this.drawFactoryFence();
     if (layout.features.cityFence) this.drawCityFence();
   }
 
@@ -629,7 +636,7 @@ export class GameScene extends Phaser.Scene {
   // Завод (районы F, L, E) — за бетонным забором по периметру: на проспекте металлические ворота,
   // на севере и юге — железнодорожные ворота, через которые идёт ветка
   factoryBox() {
-    const tiles = ['F', 'L', 'E'].flatMap((d) => this.districts[d] ?? []);
+    const tiles = layout.features.factoryFence ? ['F', 'L', 'E'].flatMap((d) => this.districts[d] ?? []) : [];
     if (!tiles.length) return null;
     const s = CITY.tile;
     return {
