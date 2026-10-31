@@ -46,7 +46,7 @@ export default {
   cher_gas: "Vova... the gas is heavy... it creeps along the ground... it won't reach you... you're safe up there... they're down here...",
   cher_army: "Boys... the cordon breathed the gas... they don't know you anymore... to them you're a target now...",
   cher_shoot: "Shoot, Vova... they're not ours anymore... not ours, you hear?.. I know... I know...",
-  cher_nuke: "Boys... Moscow has decided... they'll cover the district... with a nuke... hold on until the order... then get out... you hear?..",
+  cher_nuke: "Boys... the top brass has decided... they'll cover the district... with a nuke... hold on until the order... then get out... you hear?..",
   cher_boss: "Vanya... what is that?.. we don't know... where it came from... we don't know... it's coming for you...",
   cher_exit: 'Get out!.. Vanya, Vova... head {dir}... the strike is in twenty seconds... my dears, get out!..',
   dir_n: 'north',

@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1250" font-family="Arial, sans-serif">
+  <!-- Уровень 2 «Ольховка»: деревня и колхоз на дороге от Горького-67 к столице. Север (вверх) — к столице.
+       Сетка игры та же: 10×10 кварталов по 400 px, тут клетка 90 px. Названия выдуманные. -->
+  <defs>
+    <pattern id="wheat" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#e6cf7a"/><line x1="0" y1="8" x2="8" y2="0" stroke="#d2b85c" stroke-width="2"/></pattern>
+    <pattern id="potato" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#9a8a5a"/><line x1="0" y1="5" x2="10" y2="5" stroke="#7d7046" stroke-width="3"/></pattern>
+    <pattern id="corn" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#9fc070"/><line x1="5" y1="0" x2="5" y2="10" stroke="#7fa055" stroke-width="3"/></pattern>
+    <pattern id="forest" width="18" height="18" patternUnits="userSpaceOnUse"><rect width="18" height="18" fill="#4f7a44"/><circle cx="5" cy="6" r="5" fill="#3e6636"/><circle cx="14" cy="13" r="5" fill="#3e6636"/></pattern>
+    <pattern id="garden" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#b5c98a"/><line x1="0" y1="3" x2="12" y2="3" stroke="#8fa868" stroke-width="2"/><line x1="0" y1="9" x2="12" y2="9" stroke="#8fa868" stroke-width="2"/></pattern>
+  </defs>
+  <rect width="1000" height="1250" fill="#f3eee2"/>
+  <text x="500" y="36" text-anchor="middle" font-size="25" font-weight="bold" fill="#2a2418">Уровень 2 · «Ольховка» — деревня и колхоз «Красный пахарь»</text>
+  <text x="500" y="60" text-anchor="middle" font-size="13" fill="#5a5040">дорога от Горького-67 (юг) к столице (север) · 10×10 кварталов · названия выдуманные</text>
+
+  <g transform="translate(50,80)">
+    <rect width="900" height="900" fill="#c9d6a0"/>
+    <!-- Лес и озеро — северо-запад -->
+    <rect x="0" y="0" width="360" height="180" fill="url(#forest)"/>
+    <rect x="0" y="180" width="180" height="180" fill="url(#forest)"/>
+    <path d="M110 200 Q170 170 260 205 Q330 240 300 300 Q260 350 180 335 Q105 320 100 265 Z" fill="#5f8fb0" stroke="#3e6a88" stroke-width="3"/>
+    <rect x="262" y="250" width="34" height="6" fill="#7a5a3a"/>
+    <!-- Поля: пшеница (северо-восток), картофель (юго-запад), кукуруза (юго-восток) -->
+    <rect x="450" y="0" width="360" height="270" fill="url(#wheat)"/>
+    <rect x="0" y="630" width="360" height="270" fill="url(#potato)"/>
+    <rect x="540" y="630" width="270" height="270" fill="url(#corn)"/>
+    <!-- Лесополосы вдоль полей -->
+    <g fill="#4f7a44">
+      <rect x="450" y="132" width="360" height="8"/><rect x="0" y="762" width="360" height="8"/><rect x="540" y="762" width="270" height="8"/>
+      <rect x="624" y="0" width="8" height="270"/>
+    </g>
+    <!-- Деревня: избы с огородами вдоль главной улицы -->
+    <rect x="270" y="270" width="360" height="360" fill="url(#garden)"/>
+    <g fill="#8a5a3a">
+      <rect x="290" y="290" width="22" height="18"/><rect x="290" y="340" width="22" height="18"/><rect x="290" y="390" width="22" height="18"/>
+      <rect x="290" y="480" width="22" height="18"/><rect x="290" y="530" width="22" height="18"/><rect x="290" y="580" width="22" height="18"/>
+      <rect x="400" y="290" width="22" height="18"/><rect x="400" y="340" width="22" height="18"/><rect x="400" y="580" width="22" height="18"/>
+      <rect x="478" y="290" width="22" height="18"/><rect x="478" y="340" width="22" height="18"/><rect x="478" y="580" width="22" height="18"/>
+      <rect x="588" y="290" width="22" height="18"/><rect x="588" y="340" width="22" height="18"/><rect x="588" y="530" width="22" height="18"/><rect x="588" y="580" width="22" height="18"/>
+    </g>
+    <!-- Центр деревни: сельсовет, клуб, магазин «Сельпо», обелиск, школа -->
+    <rect x="360" y="405" width="180" height="70" fill="#e8d6b0" stroke="#8a7a5a"/>
+    <rect x="370" y="412" width="44" height="22" fill="#d8c8a0" stroke="#6a5a3a"/>
+    <rect x="486" y="412" width="44" height="22" fill="#d8c8a0" stroke="#6a5a3a"/>
+    <rect x="428" y="446" width="44" height="22" fill="#d8c8a0" stroke="#6a5a3a"/>
+    <polygon points="450,416 455,440 445,440" fill="#2a2418"/>
+    <rect x="360" y="495" width="80" height="34" fill="#e9d36a" stroke="#8a7a3a"/>
+    <!-- Разрушенная церковь (склад колхоза) -->
+    <rect x="290" y="440" width="34" height="26" fill="#d8d0c0" stroke="#6a6458" stroke-dasharray="3 2"/>
+    <!-- Водонапорная башня -->
+    <circle cx="560" cy="440" r="9" fill="#7a3a2a"/>
+    <!-- МТФ: коровники, силосные башни, навозохранилище — место, куда носят «сбор» -->
+    <rect x="20" y="380" width="220" height="190" fill="#b7a98a"/>
+    <g fill="#9a7a5a"><rect x="40" y="400" width="150" height="26"/><rect x="40" y="440" width="150" height="26"/><rect x="40" y="480" width="150" height="26"/></g>
+    <g fill="#6a6a70"><circle cx="212" cy="410" r="10"/><circle cx="212" cy="440" r="10"/></g>
+    <ellipse cx="120" cy="535" rx="70" ry="24" fill="#5a4a2a"/>
+    <circle cx="120" cy="535" r="14" fill="#7a3a5a" stroke="#c8d860" stroke-width="3"/>
+    <!-- Колхозный машинный двор: гаражи, трактора, комбайны, бензоколонка -->
+    <rect x="640" y="450" width="160" height="160" fill="#a8a29a"/>
+    <g fill="#7a7c80"><rect x="655" y="465" width="130" height="34"/><rect x="655" y="515" width="60" height="40"/></g>
+    <g fill="#c03030"><rect x="730" y="520" width="16" height="10"/><rect x="752" y="520" width="16" height="10"/><rect x="730" y="540" width="16" height="10"/></g>
+    <circle cx="770" cy="585" r="8" fill="#d0a020"/>
+    <!-- Ж/д ветка и разъезд с элеватором — восточный край -->
+    <line x1="855" y1="0" x2="855" y2="900" stroke="#4a3a2a" stroke-width="3"/>
+    <line x1="855" y1="0" x2="855" y2="900" stroke="#4a3a2a" stroke-width="9" stroke-dasharray="1 10"/>
+    <rect x="810" y="300" width="36" height="70" fill="#d8d0b8" stroke="#6a6458"/>
+    <rect x="868" y="330" width="22" height="30" fill="#c8a86a" stroke="#6a5a3a"/>
+
+    <!-- Главная дорога — асфальт: с юга (от Горького-67) на север (к столице) -->
+    <line x1="450" y1="900" x2="450" y2="0" stroke="#3a3a3a" stroke-width="14"/>
+    <line x1="450" y1="900" x2="450" y2="0" stroke="#d8d4c4" stroke-width="2" stroke-dasharray="10 10"/>
+    <!-- Грунтовки -->
+    <g stroke="#a88a5a" stroke-width="8" fill="none" stroke-linecap="round">
+      <path d="M450 450 L240 450"/>
+      <path d="M450 540 L640 540"/>
+      <path d="M450 220 Q350 230 300 260"/>
+      <path d="M450 160 L810 160"/>
+      <path d="M450 700 L180 700 L180 900"/>
+      <path d="M450 700 L700 700"/>
+      <path d="M800 540 L855 540"/>
+    </g>
+    <!-- ЛЭП — через поля по диагонали (опоры и провода — препятствие, как троллейбус в городе) -->
+    <line x1="20" y1="880" x2="880" y2="20" stroke="#5a5a5a" stroke-width="2" stroke-dasharray="2 4"/>
+    <g fill="#5a5a5a">
+      <rect x="83" y="811" width="8" height="8"/><rect x="183" y="711" width="8" height="8"/><rect x="653" y="241" width="8" height="8"/>
+      <rect x="753" y="141" width="8" height="8"/><rect x="853" y="41" width="8" height="8"/>
+    </g>
+    <!-- Сетка кварталов -->
+    <g stroke="#ffffff" stroke-width="1" opacity="0.45">
+      <line x1="90" y1="0" x2="90" y2="900"/><line x1="180" y1="0" x2="180" y2="900"/><line x1="270" y1="0" x2="270" y2="900"/>
+      <line x1="360" y1="0" x2="360" y2="900"/><line x1="450" y1="0" x2="450" y2="900"/><line x1="540" y1="0" x2="540" y2="900"/>
+      <line x1="630" y1="0" x2="630" y2="900"/><line x1="720" y1="0" x2="720" y2="900"/><line x1="810" y1="0" x2="810" y2="900"/>
+      <line x1="0" y1="90" x2="900" y2="90"/><line x1="0" y1="180" x2="900" y2="180"/><line x1="0" y1="270" x2="900" y2="270"/>
+      <line x1="0" y1="360" x2="900" y2="360"/><line x1="0" y1="450" x2="900" y2="450"/><line x1="0" y1="540" x2="900" y2="540"/>
+      <line x1="0" y1="630" x2="900" y2="630"/><line x1="0" y1="720" x2="900" y2="720"/><line x1="0" y1="810" x2="900" y2="810"/>
+    </g>
+    <!-- Старт вертолёта — центр деревни на трассе -->
+    <circle cx="450" cy="450" r="9" fill="#1e88c8" stroke="#fff" stroke-width="2"/>
+    <!-- Стрелки направлений -->
+    <text x="462" y="20" font-size="14" font-weight="bold" fill="#b03024">↑ к столице</text>
+    <text x="462" y="890" font-size="14" font-weight="bold" fill="#2a2418">↓ из Горького-67</text>
+
+    <!-- Подписи -->
+    <g font-size="14" font-weight="bold" fill="#2a2418" text-anchor="middle">
+      <text x="180" y="90" fill="#f3eee2">ЛЕС</text>
+      <text x="200" y="275" fill="#f3eee2">ОЗЕРО</text>
+      <text x="630" y="90">ПШЕНИЦА</text>
+      <text x="180" y="850">КАРТОФЕЛЬ</text>
+      <text x="675" y="850">КУКУРУЗА</text>
+      <text x="130" y="395" font-size="12">МТФ (коровники)</text>
+      <text x="120" y="575" font-size="11" fill="#c8d860">место сбора</text>
+      <text x="720" y="625" font-size="12">машинный двор</text>
+      <text x="828" y="290" font-size="11">элеватор</text>
+      <text x="450" y="400" font-size="12">сельсовет · клуб · «Сельпо»</text>
+      <text x="400" y="545" font-size="11">школа</text>
+      <text x="307" y="436" font-size="10">церковь</text>
+      <text x="450" y="620" font-size="13">ДЕРЕВНЯ</text>
+    </g>
+  </g>
+
+  <!-- Легенда -->
+  <g transform="translate(50,1000)" font-size="13" fill="#2a2418">
+    <rect x="0" y="0" width="18" height="14" fill="url(#garden)"/><text x="26" y="12">деревня: избы с огородами вдоль улицы, палисадники, колодцы</text>
+    <rect x="0" y="24" width="18" height="14" fill="#e8d6b0"/><text x="26" y="36">центр: сельсовет, клуб, магазин «Сельпо», обелиск, школа</text>
+    <rect x="0" y="48" width="18" height="14" fill="#b7a98a"/><text x="26" y="60">МТФ: коровники, силосные башни, навозохранилище</text>
+    <rect x="0" y="72" width="18" height="14" fill="#a8a29a"/><text x="26" y="84">машинный двор колхоза: трактора, комбайны, бензоколонка</text>
+    <circle cx="9" cy="103" r="7" fill="#7a3a5a" stroke="#c8d860" stroke-width="2"/><text x="26" y="108">место сбора — сюда заражённые несут «части» (механика уровня)</text>
+    <rect x="490" y="0" width="18" height="14" fill="url(#wheat)"/><text x="516" y="12">поля: пшеница, картофель, кукуруза</text>
+    <rect x="490" y="24" width="18" height="14" fill="url(#forest)"/><text x="516" y="36">лес и лесополосы, озеро с мостками</text>
+    <line x1="490" y1="55" x2="508" y2="55" stroke="#3a3a3a" stroke-width="7"/><text x="516" y="60">трасса (асфальт) · грунтовки</text>
+    <line x1="490" y1="79" x2="508" y2="79" stroke="#5a5a5a" stroke-width="2" stroke-dasharray="2 3"/><text x="516" y="84">ЛЭП через поля — опоры и провода</text>
+    <line x1="490" y1="103" x2="508" y2="103" stroke="#4a3a2a" stroke-width="4"/><text x="516" y="108">ж/д ветка, разъезд, элеватор</text>
+    <circle cx="9" cy="130" r="7" fill="#1e88c8"/><text x="26" y="135">старт вертолёта — центр деревни, на трассе</text>
+  </g>
+</svg>
