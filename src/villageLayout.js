@@ -83,7 +83,8 @@ export const VILLAGE_LEVEL = {
   labStyle: 'pit',         // «Объект» выходит из ямы-навозохранилища, где копилось собранное
   exitDir: 'n',            // уходим на север — к столице
   WAVES,
-  hordeType: 'farmer',     // орда — колхозники
+  hordeType: 'farmer',
+  wreckKinds: ['tractorBlue', 'tractorRed', 'tractorBlue', 'jeep'], // сгоревшая техника на дорогах     // орда — колхозники
   train: { y: 2400, stand: 0, moving: true }, // поезд из города уже идёт мимо, на север
   plazaVariants: [33, 36], // поля и луг — туда артиллерия, заманить «Объект»
   features: { cityFence: false, checkpoint: false, trolleys: false, factoryFence: false },

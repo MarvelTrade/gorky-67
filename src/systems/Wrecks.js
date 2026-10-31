@@ -45,7 +45,8 @@ export class Wrecks {
     for (let i = 0; i < C.military; i++) {
       const p = this.roadPoint();
       if (!p) break;
-      const key = rnd.frac() < 0.3 ? 'tank' : 'jeep';
+      // В деревне вместо брошенной брони — сгоревшие тракторы (и редкий армейский вездеход)
+      const key = layout.wreckKinds ? rnd.pick(layout.wreckKinds) : rnd.frac() < 0.3 ? 'tank' : 'jeep';
       this.put(key, p.x, p.y, rnd.angle() * (Math.PI / 180), true, true, key === 'tank');
     }
     // Троллейбусы встали под оборванной сетью: под пролётами троллейбусных маршрутов
@@ -98,10 +99,22 @@ export class Wrecks {
     const s = CITY.tile;
     const cx = WORLD.width / 2;
     const cy = WORLD.height / 2;
+    // Дороги уровня заданы списком (деревня: трасса и грунтовки) — машины только на них, не в полях
+    const roads = layout.ROADS.length ? [...layout.ROADS, ...layout.AVENUES] : null;
     for (let tries = 0; tries < 300; tries++) {
-      const along = rnd.between(60, WORLD.width - 60);
-      const line = rnd.between(1, WORLD.width / s - 1) * s + rnd.between(-CITY.road + 12, CITY.road - 12);
-      const dir = rnd.frac() < 0.5 ? 'v' : 'h';
+      let along;
+      let line;
+      let dir;
+      if (roads) {
+        const r = rnd.pick(roads);
+        along = rnd.between(r.from + 60, r.to - 60);
+        line = r.at + rnd.between(-14, 14);
+        dir = r.dir;
+      } else {
+        along = rnd.between(60, WORLD.width - 60);
+        line = rnd.between(1, WORLD.width / s - 1) * s + rnd.between(-CITY.road + 12, CITY.road - 12);
+        dir = rnd.frac() < 0.5 ? 'v' : 'h';
+      }
       const [x, y] = dir === 'v' ? [line, along] : [along, line];
       if (Math.hypot(x - cx, y - cy) < CHAOS.startClear) continue;
       if (this.scene.river?.contains(x, y, 40)) continue; // не в реке
