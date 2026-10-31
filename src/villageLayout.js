@@ -85,7 +85,7 @@ export const VILLAGE_LEVEL = {
   WAVES,
   hordeType: 'farmer',
   // bossTexture: 'bossHerd' — шар из скотины нарисован (art/farm.js), но пока «Объект» везде один — символ вируса
-  bossSwarm: ['cow', 'horse', 'cow', 'farmer'], // во второй фазе зовёт к себе стадо (оно лопается)
+  bossSwarm: ['farmer', 'cow', 'farmer', 'farmer', 'pig'], // во второй фазе зовёт своих; скотины — четверть, иначе кольцо лопалось на вертолёте
   wreckKinds: ['tractorBlue', 'tractorRed', 'tractorBlue', 'jeep'], // сгоревшая техника на дорогах     // орда — колхозники
   train: { y: 2400, stand: 0, moving: true }, // поезд из города уже идёт мимо, на север
   plazaVariants: [33, 36], // поля и луг — туда артиллерия, заманить «Объект»

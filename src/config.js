@@ -671,12 +671,12 @@ export const ENEMIES = {
     behavior: 'bloat',
     intro: 'blasters',
     hp: 18,
-    speed: 80,
+    speed: 70,          // 80 — бот-средний погибал на 1:30 почти только от подрывников
     speedJitter: 10,
     damage: 0,
     blastRange: 32,
     blast: 90,
-    blastDamage: 16,
+    blastDamage: 10,    // 16 — 100+ урона за полторы минуты
     blastHit: 70,
     xp: 2,
     radius: 9,
@@ -691,8 +691,8 @@ export const ENEMIES = {
     turnRate: 1.8,
     fireInterval: 99,
     range: 0,           // не стреляет
-    unloadEvery: 7,
-    unload: 4,
+    unloadEvery: 9,     // 7 и по 4 — горняки из автобусов добивали бота-среднего к 2:00
+    unload: 3,
     unloadType: 'miner',
     damage: 0,
     xp: 8,
@@ -710,8 +710,8 @@ export const ENEMIES = {
     fireInterval: 99,
     range: 0,           // не стреляет
     aimTolerance: 0,
-    unloadEvery: 6,     // с между выгрузками
-    unload: 3,          // горняков за раз
+    unloadEvery: 7,     // с между выгрузками
+    unload: 2,          // горняков за раз
     unloadType: 'miner',
     damage: 0,
     xp: 15,
@@ -914,6 +914,16 @@ export const SUPPLY = {
   weights: { repair: 1, magnet: 1, bomb: 1 }, // вероятность содержимого
   repairHp: 30,
   bombDamage: 200,      // урон каждому врагу на экране
+};
+
+// Находки с врагов (Pickups): аптечка — чаще при малой броне; военный ящик — с тяжёлой техники,
+// бесплатное улучшение и иногда знак отличия. max — пул картинок, life — с до исчезновения
+export const PICKUPS = {
+  medkit: { max: 4, life: 25, heal: 25, chance: 0.003, chanceLow: 0.012, lowHp: 0.5, radius: 30, ring: 0x7dff8a },
+  milcrate: {
+    max: 3, life: 30, radius: 36, ring: 0xe8c860, chance: 0.35, badgeChance: 0.25,
+    from: ['btr', 'tank', 'aa', 'watchtower', 'dumptruck', 'excavator', 'tractorRed', 'workbus', 'hauler'],
+  },
 };
 
 export const LEVELUP = {

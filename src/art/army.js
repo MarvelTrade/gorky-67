@@ -21,6 +21,21 @@ function flatcar(g) {
 }
 
 export function makeArmyTextures(scene) {
+  tex(scene, 'medkit', 20, 16, (g) => {
+    g.fillStyle(0x000000, 0.3).fillRect(2, 3, 18, 13);
+    g.fillStyle(0x2f8a4a).fillRect(0, 0, 18, 13);
+    g.lineStyle(1, 0x1a4a28).strokeRect(0, 0, 18, 13);
+    g.fillStyle(0xf2f2ea).fillRect(7, 2, 4, 9).fillRect(4, 5, 10, 3); // белый крест на зелёном
+    g.fillStyle(0x1a4a28).fillRect(6, 0, 6, 2); // ручка
+  });
+  tex(scene, 'milcrate', 26, 18, (g) => {
+    g.fillStyle(0x000000, 0.3).fillRect(3, 4, 23, 14);
+    g.fillStyle(0x5a6238).fillRect(0, 0, 23, 15);
+    g.lineStyle(1.5, 0x2e3420).strokeRect(0, 0, 23, 15);
+    g.fillStyle(0x444a2a).fillRect(0, 6, 23, 3); // стяжка
+    g.fillStyle(0xe8c860).fillRect(3, 2, 6, 2).fillRect(14, 2, 6, 2).fillRect(3, 11, 6, 2).fillRect(14, 11, 6, 2); // жёлтая трафаретная маркировка
+    g.fillStyle(0x8a8a70).fillRect(1, 1, 2, 2).fillRect(20, 1, 2, 2).fillRect(1, 12, 2, 2).fillRect(20, 12, 2, 2); // уголки
+  });
   // Эшелон: пустая платформа и платформы с морским контейнером трёх цветов
   tex(scene, 'flatcar', 24, 52, (g) => flatcar(g));
   [0xa04a30, 0x2f5a8a, 0x3a6a48].forEach((col, i) =>

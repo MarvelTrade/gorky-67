@@ -55,6 +55,7 @@ export class GameOverScene extends Phaser.Scene {
     if (stats.weapons?.length) lines.push(stats.weapons.join(' · '));
     if (stats.money || stats.parts) lines.push(`${t('loot')}: +${stats.money} ₽ · +${stats.parts} ⚙`);
     if (stats.xp) lines.push(`${t('heliXp')}: +${stats.xp}`);
+    if (stats.milcrates) lines.push(`${t('milcrate')}: ${stats.milcrates}${stats.badges ? ` · ${t('badges')}: +${stats.badges}` : ''}`);
     if (stats.unlocked) lines.push(`${t('levelUnlocked')}: ${stats.unlocked} · ${t(`lvl_name_${stats.unlocked}`)}`);
     // Новый уровень вертолёта — отдельной строкой под цифрами, рядом с «Объектом»
     const heliUp = stats.levelUp ? `${t('heliLevelUp')} ${stats.levelUp}!` : null;

@@ -67,11 +67,11 @@ const RIVER = {
 // скотины тут нет (она — в деревне);
 // экскаваторы стоят на краю карьера (staticSpawns) с самого начала
 const WAVES = [
-  { hpMul: 1.0, dmgMul: 0.5, alive: [0, 60], infantry: { interval: 1.4, batch: [1, 2, 2] }, miner: { interval: 1.4, batch: [1, 1, 2] }, blaster: { interval: 8, batch: 1, from: 30 } },
-  { hpMul: 1.2, dmgMul: 0.75, alive: [30, 90], infantry: { interval: 1.2, batch: 2 }, miner: { interval: 1.2, batch: 2 }, blaster: { interval: 5, batch: 2 }, workbus: { interval: 12, batch: 1 } },
-  { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 2 }, miner: { interval: 1.0, batch: 3 }, blaster: { interval: 4, batch: 2 }, dumptruck: { interval: 20, batch: 1, from: 10 }, workbus: { interval: 10, batch: 1 } },
-  { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 3 }, miner: { interval: 1.0, batch: 3 }, blaster: { interval: 3.5, batch: 2 }, dumptruck: { interval: 16, batch: 1 }, aa: { interval: 7, batch: 1 }, workbus: { interval: 9, batch: 1 } },
-  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 3 }, miner: { interval: 0.9, batch: 4 }, blaster: { interval: 3, batch: 3 }, dumptruck: { interval: 14, batch: 1 }, aa: { interval: 5, batch: 1 }, btr: { interval: 12, batch: 1 } },
+  { hpMul: 1.0, dmgMul: 0.5, alive: [0, 60], infantry: { interval: 1.4, batch: [1, 2, 2] }, miner: { interval: 1.4, batch: [1, 1, 2] }, blaster: { interval: 10, batch: 1, from: 45 } },
+  { hpMul: 1.2, dmgMul: 0.75, alive: [30, 90], infantry: { interval: 1.2, batch: 2 }, miner: { interval: 1.2, batch: 2 }, blaster: { interval: 6, batch: 1 }, workbus: { interval: 15, batch: 1 } },
+  { hpMul: 1.5, alive: [50, 130], infantry: { interval: 1.0, batch: 2 }, miner: { interval: 1.0, batch: 3 }, blaster: { interval: 5, batch: 2 }, dumptruck: { interval: 20, batch: 1, from: 10 }, workbus: { interval: 13, batch: 1 } },
+  { hpMul: 1.9, alive: [70, 160], infantry: { interval: 1.0, batch: 3 }, miner: { interval: 1.0, batch: 3 }, blaster: { interval: 4.5, batch: 2 }, dumptruck: { interval: 16, batch: 1 }, aa: { interval: 7, batch: 1 }, workbus: { interval: 12, batch: 1 } },
+  { hpMul: 2.4, alive: [80, 180], infantry: { interval: 0.9, batch: 3 }, miner: { interval: 0.9, batch: 4 }, blaster: { interval: 4, batch: 2 }, dumptruck: { interval: 14, batch: 1 }, aa: { interval: 5, batch: 1 }, btr: { interval: 12, batch: 1 } },
 ];
 
 export const QUARRY_LEVEL = {

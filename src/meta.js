@@ -3,7 +3,7 @@ import { platform } from './platform/platform.js';
 
 // Всё, что живёт между забегами: кошелёк, улучшения «Ангара», опыт вертолёта, окраска и снаряжение.
 // Хранится в том же сохранении, что и рекорд (облако Яндекса или localStorage).
-export const meta = { money: 0, parts: 0, levels: {}, heliXp: 0, livery: 'olive', gear: [], runs: 0, levelReached: 1 };
+export const meta = { money: 0, parts: 0, levels: {}, heliXp: 0, livery: 'olive', gear: [], runs: 0, levelReached: 1, badges: 0 };
 
 export async function loadMeta() {
   const m = (await platform.loadProgress()).meta ?? {};
@@ -15,6 +15,7 @@ export async function loadMeta() {
   meta.gear = [...(m.gear ?? [])];
   meta.runs = m.runs ?? 0; // сыгранных забегов — для подсказок первых забегов
   meta.levelReached = m.levelReached ?? 1; // самый дальний открытый уровень кампании
+  meta.badges = m.badges ?? 0; // знаки отличия из военных ящиков, за всё время
 }
 
 // Для сохранения вместе с рекордом — одной записью, чтобы две записи не затёрли друг друга

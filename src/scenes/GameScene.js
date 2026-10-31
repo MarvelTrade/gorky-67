@@ -33,6 +33,7 @@ import { layout, setLevel, lt } from '../levels.js';
 import { makeFarmTextures } from '../art/farm.js';
 import { makeQuarryTextures } from '../art/quarry.js';
 import { makeArmyTextures } from '../art/army.js';
+import { Pickups } from '../systems/Pickups.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -90,6 +91,7 @@ export class GameScene extends Phaser.Scene {
     this.upgrades = new Upgrades(this);
     this.fx = new Fx(this);
     this.supply = new Supply(this, this.player);
+    this.pickups = new Pickups(this, this.player); // аптечки и военные ящики с врагов
     this.flares = new Flares(this, this.player, this.shells);
     this.runEvents = new RunEvents(this);
 
@@ -171,6 +173,7 @@ export class GameScene extends Phaser.Scene {
       }
       const gem = this.gems.get();
       if (gem) gem.drop(enemy.x, enemy.y, enemy.cfg.xp, this.player);
+      this.pickups.onKill(enemy);
     });
     this.events.on('boss-phase2', (boss) => {
       this.cameras.main.flash(300, 255, 230, 120);
@@ -388,6 +391,8 @@ export class GameScene extends Phaser.Scene {
       firstLevelUpAt: this.firstLevelUpAt,
       revived: this.revived,
       crates: { ...this.supply.picked },
+      milcrates: this.pickups.crates,
+      badges: this.pickups.badges,
       flareKills: this.flares.kills,
       wiresCut: this.air.cut,
       depots: this.depots.broken,
@@ -766,6 +771,7 @@ export class GameScene extends Phaser.Scene {
     this.missiles.update(dt);
     this.flares.update(dt);
     this.supply.update(dt);
+    this.pickups.update(dt);
     this.depots.update(dt);
     this.tracks.update(dt);
     this.breakdowns.update(dt);
