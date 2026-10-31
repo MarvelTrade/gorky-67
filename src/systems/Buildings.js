@@ -17,7 +17,6 @@ const STYLES = {
   barrack: { wall: 0x6b5a40, base: 0x4a3e2c, roof: 0x5b4a36 },
   dk: { wall: 0xd8cfb8, base: 0xa89e88, roof: 0xb8b0a0 },
   stalin: { wall: 0xc9a97a, base: 0x8a6e4a, roof: 0x6e5c50 }, // крыша — крашеное кровельное железо, скатная
-  church: { wall: 0xece6da, base: 0xb8b0a0, roof: 0x4a6a5a },
   hospital: { wall: 0xe6eaea, base: 0xa8b0b0, roof: 0xc8cccc },
   school: { wall: 0xe0b46a, base: 0x9a7a4a, roof: 0x8a8c90 },
   kinder: { wall: 0xf0dcae, base: 0xb09a70, roof: 0x9a6a5a },
@@ -369,7 +368,7 @@ export class Buildings {
       g.lineStyle(1, 0x2a2418).strokeCircle(w / 2, h + 3, 5).lineBetween(w / 2, h + 3, w / 2, h);
     }
     if (style === 'izba' || style === 'rural' || style === 'barn') this.villageFacade(g, rnd, w, h, H, style, variant, burning, shelled);
-    const windowStep = style === 'stalin' || style === 'church' || style === 'hospital' || style === 'school' || style === 'gov' ? 11 : 9;
+    const windowStep = style === 'stalin' || style === 'hospital' || style === 'school' || style === 'gov' ? 11 : 9;
     if (style === 'stalin') {
       g.fillStyle(0xe8d8b8).fillRect(0, h, w, 3); // карниз
       g.fillStyle(0x7a6040).fillRect(0, h + 3, w, 1); // тень под карнизом
@@ -424,19 +423,6 @@ export class Buildings {
       g.fillStyle(0x6a3a2a).fillRect(w * 0.7, h / 2 - 6, 6, 6);
     } else if (style === 'izba' || style === 'rural' || style === 'barn') {
       this.villageRoof(g, w, h, style, variant);
-    } else if (style === 'church') {
-      // Храм: пять глав-луковиц на крыше — большая синяя со звёздами в центре, малые золотые по углам, кресты
-      const dome = (x, y, r, color) => {
-        g.fillStyle(0x000000, 0.25).fillCircle(x + 2, y + 3, r);
-        g.fillStyle(color).fillCircle(x, y, r);
-        g.fillStyle(0xffffff, 0.2).fillCircle(x - r * 0.35, y - r * 0.35, r * 0.35);
-        g.fillStyle(0xb89a50).fillRect(x - 1, y - r - 8, 2, 8).fillRect(x - 4, y - r - 6, 8, 2); // крест
-      };
-      // Малые главы — тусклая позолота: яркое золото в игре — добыча
-      for (const [x, y] of [[18, 18], [w - 18, 18], [18, h - 18], [w - 18, h - 18]]) dome(x, y, 9, 0xa88a48);
-      dome(w / 2, h / 2, 18, 0x2e4e88);
-      g.fillStyle(0xc8b070);
-      for (const [x, y] of [[-6, -4], [5, -8], [7, 5], [-4, 8]]) g.fillCircle(w / 2 + x, h / 2 + y, 1.5); // звёзды
     } else if (style === 'gov') {
       // Парапет и флагшток над входом
       g.lineStyle(3, 0xa49c8a).strokeRect(3, 3, w - 6, h - 6);
@@ -447,10 +433,10 @@ export class Buildings {
       g.lineStyle(1, 0x46494c, 0.8);
       for (let x = 14; x < w; x += 14) g.lineBetween(x, 0, x, h);
     } else if (style === 'hospital') {
-      // Красный крест на крыше — видно с вертолёта
+      // Зелёный крест на крыше (красный — охраняемая эмблема Красного Креста), видно с вертолёта
       if (w >= 120 || h >= 120) {
         g.fillStyle(0xd8dcd8).fillRect(w / 2 - 14, h / 2 - 14, 28, 28);
-        g.fillStyle(0xa83a34).fillRect(w / 2 - 4, h / 2 - 11, 8, 22).fillRect(w / 2 - 11, h / 2 - 4, 22, 8);
+        g.fillStyle(0x2f8a4a).fillRect(w / 2 - 4, h / 2 - 11, 8, 22).fillRect(w / 2 - 11, h / 2 - 4, 22, 8);
       }
     } else if (style === 'fire') {
       // Рукавная башня на углу и мигалка

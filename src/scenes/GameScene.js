@@ -622,7 +622,7 @@ export class GameScene extends Phaser.Scene {
     if (layout.features.checkpoint) this.culler.add(this.add.image(main.from + 30, main.at, 'checkpoint').setDepth(DEPTH.ground + 2.5));
   }
 
-  // «Зона»: колючая проволока по периметру района Z со столбами и воротами на юг
+  // База городской милиции (район Z): бетонный забор по периметру, КПП со шлагбаумом на юг
   zoneBox() {
     const zs = this.districts.Z ?? [];
     if (!zs.length) return null;
@@ -637,41 +637,18 @@ export class GameScene extends Phaser.Scene {
   drawZoneFence() {
     const b = this.zoneBox();
     if (!b) return;
-    const g = this.add.graphics().setDepth(DEPTH.ground + 1.3);
+    const g = this.add.graphics().setDepth(DEPTH.ground + 2.4);
     const gate = (b.x0 + b.x1) / 2;
-    const gw = 44; // полуширина ворот
-    // Снаружи — деревянный забор (частокол), внутри — колючка, между ними «запретка» из взрыхлённого песка
-    const ring = (o) => [
-      [b.x0 - o, b.y0 - o, b.x1 + o, b.y0 - o],
-      [b.x1 + o, b.y0 - o, b.x1 + o, b.y1 + o],
-      [b.x0 - o, b.y1 + o, gate - gw, b.y1 + o],
-      [gate + gw, b.y1 + o, b.x1 + o, b.y1 + o],
-      [b.x0 - o, b.y0 - o, b.x0 - o, b.y1 + o],
-    ];
-    for (const [x1, y1, x2, y2] of ring(6)) {
-      const horiz = y1 === y2;
-      g.fillStyle(0x8a7e60, 0.8).fillRect(Math.min(x1, x2) - (horiz ? 0 : 10), Math.min(y1, y2) - (horiz ? 10 : 0), horiz ? Math.abs(x2 - x1) : 12, horiz ? 12 : Math.abs(y2 - y1));
-    }
-    for (const [x1, y1, x2, y2] of ring(12)) {
-      // Частокол: толстая коричневая линия, торцы досок
-      g.lineStyle(5, 0x5a4630).lineBetween(x1, y1, x2, y2);
-      const len = Math.hypot(x2 - x1, y2 - y1);
-      for (let d = 0; d <= len; d += 6) {
-        const k = d / len;
-        g.fillStyle(0x7a6040).fillRect(x1 + (x2 - x1) * k - 1, y1 + (y2 - y1) * k - 1, 2, 2);
-      }
-    }
-    for (const [x1, y1, x2, y2] of ring(-6)) {
-      g.lineStyle(1.5, 0x9a9488, 0.9).lineBetween(x1, y1, x2, y2); // колючка
-      g.lineStyle(1, 0x6a645a, 0.9).lineBetween(x1 + 2, y1 + 2, x2 + 2, y2 + 2);
-      const len = Math.hypot(x2 - x1, y2 - y1);
-      for (let d = 0; d <= len; d += 30) {
-        const k = d / len;
-        g.fillStyle(0x3a2e22).fillRect(x1 + (x2 - x1) * k - 2, y1 + (y2 - y1) * k - 2, 4, 4);
-      }
-    }
-    // Вахта у ворот: будка и деревянные створки
-    this.culler.add(this.add.image(gate, b.y1 + 12, 'campGate').setDepth(DEPTH.ground + 2.5));
+    const gw = 44; // полуширина проезда
+    this.concreteFence(g, [
+      [b.x0, b.y0, b.x1, b.y0],
+      [b.x1, b.y0, b.x1, b.y1],
+      [b.x0, b.y1, gate - gw, b.y1],
+      [gate + gw, b.y1, b.x1, b.y1],
+      [b.x0, b.y0, b.x0, b.y1],
+    ]);
+    // КПП: шлагбаум поперёк проезда и будка дежурного
+    this.culler.add(this.add.image(gate, b.y1 + 2, 'policeGate').setDepth(DEPTH.ground + 2.5));
   }
 
   // Завод (районы F, L, E) — за бетонным забором по периметру: на проспекте металлические ворота,

@@ -35,7 +35,7 @@ export class Wrecks {
       .setDepth(DEPTH.buildings + 0.5); // выше крыш: горят и дома, а дым поднимается над кварталом
   }
 
-  // Улицы после катастрофы: сгоревшая военная техника, троллейбусы под сетью, заторы, аварии с телами.
+  // Улицы после катастрофы: сгоревшая военная техника, троллейбусы под сетью, заторы, аварии.
   // Всё на проезжей части, не у старта; часть горит.
   build(rnd = Phaser.Math.RND) {
     this.rnd = rnd;
@@ -75,21 +75,13 @@ export class Wrecks {
         this.put(`car${rnd.between(0, 4)}`, x, y, angle, rnd.frac() < 0.2, rnd.frac() < 0.15);
       }
     }
-    // Аварии: две машины носами друг к другу, рядом накрытые тела
+    // Аварии: две машины носами друг к другу
     for (let i = 0; i < C.crashes; i++) {
       const p = this.roadPoint();
       if (!p) break;
       const a = rnd.angle() * (Math.PI / 180);
       this.put(`car${rnd.between(0, 4)}`, p.x - Math.cos(a) * 13, p.y - Math.sin(a) * 13, a, rnd.frac() < 0.5, true);
       this.put(`car${rnd.between(0, 4)}`, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, a + Math.PI + rnd.realInRange(-0.6, 0.6), false, rnd.frac() < 0.4);
-      for (let k = rnd.between(1, 2); k > 0; k--) {
-        this.scene.culler?.add(
-          this.scene.add
-            .image(p.x + rnd.between(-26, 26), p.y + rnd.between(-26, 26), 'covered')
-            .setRotation(rnd.angle() * (Math.PI / 180))
-            .setDepth(DEPTH.ground + 2)
-        );
-      }
     }
   }
 

@@ -322,7 +322,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  // Тягач с прицепом: едет не на вертолёт, а к яме «Объекта»; довёз туши — «Объект» выйдет раньше
+  // Тягач с прицепом: едет не на вертолёт, а к яме «Объекта»; довёз бочки — «Объект» выйдет раньше
   updateHaul(dt, dx, dy) {
     const cfg = this.cfg;
     const pit = this.scene.lab?.pos;

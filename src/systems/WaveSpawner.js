@@ -23,7 +23,7 @@ export class WaveSpawner {
     this.stats = { suppressed: 0, freed: 0, expired: 0, poolFull: 0, maxAlive: 0 };
     this.waves = layout.WAVES ?? CITY_WAVES; // у уровня свой состав волн (деревня — тракторы и скотина)
     this.introduced = new Set(); // разговор о новом враге — по разу
-    this.bossAt = BOSS_SPAWN.at; // тягачи с тушами сдвигают раньше
+    this.bossAt = BOSS_SPAWN.at; // тягачи с бочками сдвигают раньше
     this.hauls = 0;
   }
 
@@ -113,7 +113,7 @@ export class WaveSpawner {
     this.introduce(ENEMIES[type].intro);
   }
 
-  // Тягач довёз туши к яме: «Объект» выйдет раньше (не раньше minBossAt), Берёза предупреждает
+  // Тягач довёз бочки к яме: «Объект» выйдет раньше (не раньше minBossAt), Берёза предупреждает
   hauled(sec) {
     if (this.bossSpawned) return;
     this.hauls++;

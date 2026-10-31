@@ -5,7 +5,7 @@ import { makeLiveryTextures } from '../systems/Livery.js';
 // Отрендеренные в Blender спрайты (tools/blender/make_sprites.py → public/sprites/<ключ>.png).
 // Если PNG есть — он заменяет текстуру из примитивов с тем же ключом и размером.
 const BLENDER_SPRITES = ['heli', 'rotor', 'infantry', 'jeep', 'aa', 'tank', 'boss'];
-const TOWER_SPRITES = ['towerRadio', 'towerWater', 'towerBell', 'towerChimney'];
+const TOWER_SPRITES = ['towerRadio', 'towerWater', 'towerChimney'];
 
 // Деревенские кварталы (уровень 2): с этого индекса — без асфальта и тротуаров по краям
 const VILLAGE_FROM = 27;
@@ -444,28 +444,27 @@ export class BootScene extends Phaser.Scene {
     this.makeTexture(g, 'checkpoint', 36, 120);
   }
 
-  // Ворота лагеря с вахтой, металлические ворота завода, ж/д ворота, насыпь с рельсами, состав
+  // КПП базы милиции, металлические ворота завода, ж/д ворота, насыпь с рельсами, состав
   makeIndustryTextures() {
     let g = this.make.graphics({ x: 0, y: 0 }, false);
-    // Лагерь: деревянные створки во всю ширину проёма и будка вахты сбоку
-    g.fillStyle(0x6a5236).fillRect(0, 6, 88, 8);
-    g.lineStyle(1, 0x3e3020);
-    for (let x = 0; x < 88; x += 5) g.lineBetween(x, 6, x, 14);
-    g.lineStyle(2, 0x3e3020).lineBetween(0, 6, 44, 14).lineBetween(44, 6, 88, 14); // укосины
+    // База милиции: шлагбаум в бело-красную полоску поперёк проезда и будка дежурного с синей полосой
+    g.fillStyle(0x3a3a3a).fillRect(0, 8, 6, 8); // стойка шлагбаума
+    for (let x = 6; x < 88; x += 10) g.fillStyle((x / 10) % 2 < 1 ? 0xe8e4dc : 0xc03a30).fillRect(x, 10, 10, 4);
     g.fillStyle(0x000000, 0.3).fillRect(94, 4, 28, 20);
-    g.fillStyle(0x7a6448).fillRect(90, 0, 28, 20);   // вахта
-    g.fillStyle(0x3e3a34).fillRect(90, 0, 28, 6);
-    g.fillStyle(0xfff2b0).fillRect(96, 9, 6, 4);      // окно с огнём
-    this.makeTexture(g, 'campGate', 122, 26);
+    g.fillStyle(0xd8d4c8).fillRect(90, 0, 28, 20); // будка
+    g.fillStyle(0x2a5aa8).fillRect(90, 12, 28, 3); // синяя полоса
+    g.fillStyle(0x4a5058).fillRect(90, 0, 28, 5); // крыша
+    g.fillStyle(0xfff2b0).fillRect(96, 6, 6, 4); // окно с огнём
+    this.makeTexture(g, 'policeGate', 122, 26);
 
-    // Завод: две металлические створки поперёк проспекта, прутья, красная звезда
+    // Завод: две металлические створки поперёк проспекта, прутья, круглые эмблемы-шестерёнки
     g = this.make.graphics({ x: 0, y: 0 }, false);
     g.fillStyle(0x000000, 0.3).fillRect(5, 4, 8, 124);
     g.fillStyle(0x4a5058).fillRect(2, 0, 8, 124);
     g.fillStyle(0x6a7078);
     for (let y = 4; y < 120; y += 6) g.fillRect(3, y, 6, 2);
     g.fillStyle(0x2a2e34).fillRect(0, 60, 12, 4);   // стык створок
-    g.fillStyle(0xc03030).fillCircle(6, 30, 4).fillCircle(6, 94, 4); // звёзды
+    g.fillStyle(0x8a8f96).fillCircle(6, 30, 4).fillCircle(6, 94, 4); // эмблемы на створках
     this.makeTexture(g, 'factoryGate', 14, 128);
 
     // Ж/д ворота: створки над путями
@@ -667,10 +666,10 @@ export class BootScene extends Phaser.Scene {
         g.fillStyle(0x7a7468).fillCircle(200, 200, 18); // клумба на перекрёстке дорожек
         g.fillStyle(0x8a3a3a).fillCircle(200, 200, 10);
       },
-      // 7 — «зона»: утоптанная земля, плац
+      // 7 — база милиции: асфальтированный двор, плац для построения
       (g) => {
         g.fillStyle(0x4a4636).fillRect(40, 40, 320, 320);
-        g.fillStyle(0x56523f).fillRect(60, 130, 280, 36); // плац между рядами бараков
+        g.fillStyle(0x56523f).fillRect(60, 130, 280, 36); // плац между корпусами
         g.fillStyle(0x56523f).fillRect(60, 229, 280, 36);
       },
       // 8 — ДК: площадь с плиткой перед зданием, клумбы, фонари
@@ -722,7 +721,7 @@ export class BootScene extends Phaser.Scene {
         for (const [x, y] of [[150, 120], [250, 280], [120, 250], [280, 150]]) g.fillRect(x - 10, y - 3, 20, 6);
         for (const [x, y] of [[60, 200], [340, 200], [200, 60], [200, 340], [100, 100], [300, 300], [300, 100], [100, 300]]) this.tree(g, x, y, 13);
       },
-      // 13 — храм: зелёный квадрат, ограда — каменные столбы и металлические прутья, дорожка к входу
+      // 13 — музей: сквер за оградой — каменные столбы и металлические прутья, дорожка к входу
       (g) => {
         g.fillStyle(0x45603a).fillRect(60, 60, 280, 280);
         g.fillStyle(0x7a7468).fillRect(185, 270, 20, 70); // дорожка к ступеням с юга
@@ -933,7 +932,7 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
-  // Улица после катастрофы, вид сверху, нос вправо: брошенные легковушки, троллейбус, накрытое тело.
+  // Улица после катастрофы, вид сверху, нос вправо: брошенные легковушки, троллейбус.
   // Без марок и моделей — обобщённые силуэты.
   makeStreetTextures() {
     const cars = [0x3d6fa8, 0xc9b98a, 0x9c3a33, 0x4f7a4a, 0xd8d4c8];
@@ -970,14 +969,6 @@ export class BootScene extends Phaser.Scene {
     g.lineStyle(1, 0x15181b);
     g.strokeRoundedRect(0, 4, 66, 18, 3);
     this.makeTexture(g, 'trolley', 66, 26);
-
-    // Накрытое тело — серо-синяя ткань, без подробностей (тон игры — экшен, не хоррор)
-    g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x6f7c86);
-    g.fillEllipse(9, 4, 18, 7);
-    g.lineStyle(1, 0x3c4349);
-    g.strokeEllipse(9, 4, 18, 7);
-    this.makeTexture(g, 'covered', 18, 8);
   }
 
   // Высокие сооружения, вид сверху. Высоту передаёт длинная тень, которую ставит AirObstacles.
@@ -1015,20 +1006,6 @@ export class BootScene extends Phaser.Scene {
     g.lineStyle(2, 0x1c2126);
     g.strokeCircle(30, 30, 28);
     this.makeTexture(g, 'towerWater', 60, 60);
-
-    // Колокольня: белый четверик, ярус и зелёный купол со шпилем
-    g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0xd9d6cc);
-    g.fillRect(3, 3, 38, 38);
-    g.fillStyle(0xbcb8ac);
-    g.fillRect(9, 9, 26, 26);
-    g.fillStyle(0x3d6b4f);
-    g.fillCircle(22, 22, 10);
-    g.fillStyle(0xe0b84a);
-    g.fillCircle(22, 22, 3);
-    g.lineStyle(2, 0x1c2126);
-    g.strokeRect(2, 2, 40, 40);
-    this.makeTexture(g, 'towerBell', 44, 44);
 
     // Заводская труба: красно-белые кольца и чёрное жерло
     g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -1352,25 +1329,14 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x8a7454).fillRect(x, y, w, 1);
   }
 
-  // Пятиконечная звезда
-  vStar(g, x, y, r, color) {
-    const pts = [];
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + (i / 10) * Math.PI * 2;
-      const d = i % 2 ? r * 0.42 : r;
-      pts.push({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d });
-    }
-    g.fillStyle(color).fillPoints(pts, true);
-  }
-
-  // Обелиск павшим в 3/4: ступень, гранёный шпиль (правая грань в тени), звезда наверху. y — основание
+  // Обелиск в 3/4: ступень, гранёный шпиль (правая грань в тени), шар наверху. y — основание
   vObelisk(g, x, y) {
     g.fillStyle(0x000000, 0.3).fillEllipse(x + 12, y + 2, 34, 10);
     g.fillStyle(0x5e605e).fillRect(x - 11, y - 6, 22, 9);
     g.fillStyle(0x86887f).fillRect(x - 11, y - 8, 22, 3);
     g.fillStyle(0x9a9a92).fillPoints([{ x: x - 5, y: y - 7 }, { x: x + 5, y: y - 7 }, { x: x + 2, y: y - 38 }, { x: x - 2, y: y - 38 }], true);
     g.fillStyle(0x76766e).fillPoints([{ x, y: y - 7 }, { x: x + 5, y: y - 7 }, { x: x + 2, y: y - 38 }, { x, y: y - 38 }], true);
-    this.vStar(g, x, y - 42, 5, 0x9a3028); // тёмно-красная, не «опасность»
+    g.fillStyle(0x9aa0a6).fillCircle(x, y - 42, 3); // шар на шпиле
   }
 
   // Доска объявлений на двух столбах: листки без текста
@@ -1757,7 +1723,7 @@ export class BootScene extends Phaser.Scene {
         for (const [x, y] of [[320, 60], [350, 160], [310, 300], [360, 360]]) this.vBush(g, x, y, rnd.between(8, 11));
         this.vWoodpile(g, 300, 210, 24, 8);
       },
-      // 38 — разрушенная церковь: заросший двор, бурьян, старые липы, кирпичная ограда со столбами —
+      // 38 — старый клуб: заросший двор, бурьян, старые липы, кирпичная ограда со столбами —
       // местами обвалена; проломы на западе и востоке — там, где идёт грунтовка
       (g) => {
         this.vGround(g, rnd, 0, 0, s, s, 0x434c30, 60, 0x363f28, 0x515a38);

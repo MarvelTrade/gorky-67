@@ -95,15 +95,16 @@ export function makeFarmTextures(scene) {
   tex(scene, 'horse', 50, 30, (g) => beast(g, 50, 30, { body: 0x8a5a34, leg: 0x2a1a10, line: 0x3a2414, head: 10, mane: 0x2a1a10 }));
   // Свинья: розовая, круглая от газа, пятачок
   tex(scene, 'pig', 36, 28, (g) => beast(g, 36, 28, { body: 0xe8a0a0, leg: 0x8a5050, line: 0x7a3a3a, head: 9, headCol: 0xf0b0b0 }));
-  // Тягач с прицепом: синий трактор тянет телегу с тушами — к яме «Объекта»
+  // Тягач с прицепом: синий трактор тянет телегу с бочками газа — к яме «Объекта»
   tex(scene, 'hauler', 64, 28, (g) => {
     g.fillStyle(0x4a3a2a).fillRect(4, 6, 30, 16); // прицеп
     g.lineStyle(1.5, 0x2a1e14).strokeRect(4, 6, 30, 16);
     g.fillStyle(0x1a1a16).fillRect(10, 3, 8, 3).fillRect(10, 22, 8, 3); // колёса прицепа
-    for (const [x, y, col] of [[12, 11, 0xe8e4d8], [22, 15, 0x8a5a34], [27, 10, 0xe8a0a0], [14, 17, 0x5a3220]]) {
-      g.fillStyle(col).fillEllipse(x, y, 11, 7); // туши
+    for (const [x, y] of [[11, 10], [21, 10], [11, 18], [21, 18], [29, 14]]) {
+      g.fillStyle(0x6a7a3a).fillCircle(x, y, 4.5); // бочки сверху
+      g.lineStyle(1, 0x3a4220).strokeCircle(x, y, 4.5);
+      g.fillStyle(0xc8e040, 0.8).fillCircle(x, y, 1.5); // пробка, газ сочится
     }
-    g.fillStyle(0x2a2622).fillCircle(10, 10, 1.5).fillCircle(24, 16, 1.5);
     g.fillStyle(P.glow, 0.5).fillCircle(19, 13, 4); // газ над грузом
     g.lineStyle(2, 0x2a2a2a).lineBetween(34, 14, 38, 14); // сцепка
     g.translateCanvas(28, 0);
