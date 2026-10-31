@@ -16,7 +16,8 @@ export const LEVELS = [
   { n: 7, key: 'l7' },
   { n: 8, key: 'l8' },
   { n: 9, key: 'l9' },
-  { n: 10, key: 'capital' },
+  { n: 10, key: 'l10' },
+  { n: 11, key: 'capital' },
 ];
 
 // План активного уровня. Системы читают его поля (DISTRICTS, AVENUES, RIVER, rail…), а не импорт

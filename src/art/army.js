@@ -11,7 +11,44 @@ function tex(scene, key, w, h, draw) {
   g.destroy();
 }
 
+// Платформа эшелона сверху (вагон рисуется носом на юг, в поезде — переворачивается): рама, борта, колёса
+function flatcar(g) {
+  g.fillStyle(0x161a14).fillRect(0, 6, 3, 8).fillRect(21, 6, 3, 8).fillRect(0, 38, 3, 8).fillRect(21, 38, 3, 8);
+  g.fillStyle(0x5a5a52).fillRect(2, 0, 20, 52);
+  g.fillStyle(0x4a4a42);
+  for (let y = 4; y < 52; y += 8) g.fillRect(3, y, 18, 2); // доски настила
+  g.lineStyle(1, 0x2a2a26).strokeRect(2, 0, 20, 52);
+}
+
 export function makeArmyTextures(scene) {
+  // Эшелон: пустая платформа и платформы с морским контейнером трёх цветов
+  tex(scene, 'flatcar', 24, 52, (g) => flatcar(g));
+  [0xa04a30, 0x2f5a8a, 0x3a6a48].forEach((col, i) =>
+    tex(scene, `flatcarBox${i}`, 24, 52, (g) => {
+      flatcar(g);
+      g.fillStyle(col).fillRect(3, 4, 18, 44);
+      g.fillStyle(0x000000, 0.18);
+      for (let y = 6; y < 46; y += 4) g.fillRect(3, y, 18, 1); // гофра
+      g.lineStyle(1, 0x1a1a16, 0.8).strokeRect(3, 4, 18, 44);
+      g.fillStyle(0xffffff, 0.12).fillRect(4, 5, 4, 42);
+    })
+  );
+  // Вагон с пушкой: бронированный короб, мешки с песком; башня — отдельной картинкой (gunTurret)
+  tex(scene, 'gunwagon', 24, 52, (g) => {
+    flatcar(g);
+    g.fillStyle(P.army).fillRect(3, 8, 18, 36);
+    g.lineStyle(2, P.armyDark).strokeRect(3, 8, 18, 36);
+    g.fillStyle(0x8a7a5a);
+    for (let y = 3; y < 50; y += 5) g.fillRect(1, y, 3, 4).fillRect(20, y, 3, 4); // мешки по бортам
+    g.fillStyle(0xd8d8d0).fillRect(3, 40, 18, 2); // полоса опознавания
+    g.fillStyle(0xb03024).fillRect(10, 12, 4, 4); // красная звезда-пятно
+  });
+  tex(scene, 'gunTurret', 26, 18, (g) => {
+    g.fillStyle(P.armyDark).fillRect(9, 7, 17, 4); // ствол
+    g.fillStyle(0x4a5c3c).fillCircle(9, 9, 8);
+    g.lineStyle(1.5, P.armyDark).strokeCircle(9, 9, 8);
+    g.fillStyle(0x2e3a26).fillCircle(7, 9, 3);
+  });
   // Милиция: жёлтый легковой с синей полосой, мигалка на крыше, пятна «Зари»
   tex(scene, 'police', 34, 20, (g) => {
     g.fillStyle(P.glow, 0.3).fillEllipse(17, 10, 34, 20);

@@ -243,6 +243,8 @@ export class GameScene extends Phaser.Scene {
     cam.pan(this.train.x, this.train.y, R.introPan * 1000, 'Sine.easeInOut');
     // Рация (UIScene) ещё не запущена — реплика чуть позже
     this.time.delayedCall(400, () => this.events.emit('radio', lt('vova_train'), 'vova'));
+    // Черёмуха просит беречь эшелон: там едет «её дорогой» (кто он — выяснится позже, docs/story.md)
+    this.time.delayedCall(500, () => this.events.emit('radio', lt('cher_train'), 'cheryomukha'));
     this.time.delayedCall((R.introPan + R.introHold) * 1000, () => {
       if (this.ended) return;
       cam.pan(this.player.sprite.x, this.player.sprite.y, R.introBack * 1000, 'Sine.easeInOut', true, (_, k) => {

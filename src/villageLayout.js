@@ -84,7 +84,7 @@ export const VILLAGE_LEVEL = {
   exitDir: 'n',            // уходим на север — к столице
   WAVES,
   hordeType: 'farmer',
-  bossTexture: 'bossHerd',           // «Объект» деревни — шар из коров, лошадей и людей
+  // bossTexture: 'bossHerd' — шар из скотины нарисован (art/farm.js), но пока «Объект» везде один — символ вируса
   bossSwarm: ['cow', 'horse', 'cow', 'farmer'], // во второй фазе зовёт к себе стадо (оно лопается)
   wreckKinds: ['tractorBlue', 'tractorRed', 'tractorBlue', 'jeep'], // сгоревшая техника на дорогах     // орда — колхозники
   train: { y: 2400, stand: 0, moving: true }, // поезд из города уже идёт мимо, на север
