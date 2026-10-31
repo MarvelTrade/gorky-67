@@ -1,6 +1,6 @@
 import { EVENTS, RADIO, SPAWN } from '../config.js';
 import { t } from '../i18n/index.js';
-import { lt } from '../levels.js';
+import { layout, lt } from '../levels.js';
 import { sfx } from './Sfx.js';
 
 // Темп забега: орды на 1:30 и 3:30, затишье перед «Объектом».
@@ -97,7 +97,7 @@ export class RunEvents {
       const enemy = enemies.get();
       if (!enemy) break;
       const a = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
-      spawner.place(enemy, 'infantry', cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+      spawner.place(enemy, layout.hordeType ?? 'infantry', cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
       enemy.speed = speed;
       enemy.hp *= hpMul;
       enemy.maxHp = enemy.hp;

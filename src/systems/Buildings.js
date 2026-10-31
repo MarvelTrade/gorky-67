@@ -27,7 +27,23 @@ const STYLES = {
   gov: { wall: 0xd6cab0, base: 0x9a8c70, roof: 0x8a8478 },
   garage: { wall: 0x7a7e80, base: 0x56585a, roof: 0x5e6264 },
   station: { wall: 0x8a9298, base: 0x5a6268, roof: 0x9aa2a8 },
+  // Деревня (уровень 2): сруб, белёное сельское здание, коровник/гараж
+  izba: { wall: 0x6e5636, base: 0x4a3a26, roof: 0x6e726e },
+  rural: { wall: 0xbcb8aa, base: 0x7a7468, roof: 0x6e726e },
+  barn: { wall: 0xaaa69a, base: 0x6a665c, roof: 0x666a68 },
 };
+
+// Деревенские дома одноэтажные — ниже городских (px на экране)
+const LOW_H = { garage: 12, izba: 16, rural: 18, barn: 20 };
+// Сколько вариантов отделки у стиля (крыша избы, кирпич/доски коровника, цвет вывески)
+const VARIANTS = { izba: 3, rural: 3, barn: 2 };
+// Деревянные дома рушатся в бурые обломки, белёные — в светлые
+const RUIN_COLORS = {
+  wood: { base: 0x3a3024, bits: [0x6e5636, 0x5a4630, 0x4a3a26, 0x7a6a50], wall: 0x5a4630 },
+  white: { base: 0x4a4740, bits: [0xa8a49a, 0x8a867c, 0x6e6a62, 0x7a5040], wall: 0x8a867c },
+  stone: { base: 0x3e4144, bits: [0x8a8f95, 0x6c7176, 0x5d6269, 0x9aa0a6], wall: 0x5d6269 },
+};
+const RUIN_KIND = { izba: 'wood', barrack: 'wood', rural: 'white', barn: 'white' };
 
 export class Buildings {
   constructor(scene) {
@@ -43,11 +59,12 @@ export class Buildings {
     this.list = []; // дома с HP — для разрушений
     rects.forEach(([x, y, w, h], i) => {
       const style = this.scene.nav?.rectStyles?.[i] ?? 'panel';
-      // Гаражи одноэтажные — низкие и в 3/4
-      const H = style === 'garage' ? 12 : buildingHeight(w, h);
+      // Гаражи и деревенские дома одноэтажные — низкие и в 3/4
+      const H = LOW_H[style] ?? buildingHeight(w, h);
+      const variant = VARIANTS[style] ? rnd.between(0, VARIANTS[style] - 1) : 0;
       const r = rnd.frac();
       const state = r < CHAOS.burningHouses ? 'burning' : r < CHAOS.burningHouses + CHAOS.shelledHouses ? 'shelled' : 'ok';
-      const key = this.texture(w, h, H, state, style);
+      const key = this.texture(w, h, H, state, style, variant);
       if (state === 'burning') {
         const n = Math.max(1, Math.round(Math.max(w, h) / 120));
         for (let i = 0; i < n; i++) {
@@ -67,7 +84,7 @@ export class Buildings {
       this.roofs.push(roof);
       const maxHp = w * h * RUINS.hpPerArea;
       // Дом «после обстрела» уже потрёпан — рушится быстрее
-      this.list.push({ x, y, w, h, H, img, roof, state, style, maxHp, hp: state === 'shelled' ? maxHp * RUINS.damaged : maxHp });
+      this.list.push({ x, y, w, h, H, img, roof, state, style, variant, maxHp, hp: state === 'shelled' ? maxHp * RUINS.damaged : maxHp });
     });
     return this.roofs;
   }
@@ -99,7 +116,7 @@ export class Buildings {
 
   setState(b, state) {
     b.state = state;
-    b.img.setTexture(this.texture(b.w, b.h, b.H, state, b.style));
+    b.img.setTexture(this.texture(b.w, b.h, b.H, state, b.style, b.variant));
   }
 
   // Руины: дом становится низкой грудой обломков на земле — ниже врагов и следов,
@@ -107,7 +124,7 @@ export class Buildings {
   collapse(b) {
     b.state = 'ruined';
     b.hp = 0;
-    b.img.setTexture(this.ruinTexture(b.w, b.h)).setPosition(b.x, b.y - RUIN_H).setDepth(DEPTH.ground + 1.4);
+    b.img.setTexture(this.ruinTexture(b.w, b.h, RUIN_KIND[b.style])).setPosition(b.x, b.y - RUIN_H).setDepth(DEPTH.ground + 1.4);
     const i = this.roofs.indexOf(b.roof);
     if (i >= 0) this.roofs.splice(i, 1);
     this.scene.dust?.(b.x + b.w / 2, b.y + b.h / 2, Math.max(b.w, b.h) / 2);
@@ -115,22 +132,23 @@ export class Buildings {
   }
 
   // Груда обломков на месте дома: плиты, куски стен по краю, копоть
-  ruinTexture(w, h) {
-    const key = `ruin_${w}x${h}`;
+  ruinTexture(w, h, kind = 'stone') {
+    const C = RUIN_COLORS[kind] ?? RUIN_COLORS.stone;
+    const key = `ruin_${w}x${h}_${kind}`;
     if (this.scene.textures.exists(key)) return key;
     const rnd = new Phaser.Math.RandomDataGenerator([key]);
     const g = this.scene.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x3e4144);
+    g.fillStyle(C.base);
     g.fillRect(0, RUIN_H, w, h);
     g.fillStyle(0x1c1d1f, 0.6);
     for (let i = 0; i < 3; i++) g.fillCircle(rnd.between(6, w - 6), RUIN_H + rnd.between(6, h - 6), rnd.between(10, 20));
     const n = Math.round((w * h) / 280); // реже — иначе груда рябит
     for (let i = 0; i < n; i++) {
-      g.fillStyle(rnd.pick([0x8a8f95, 0x6c7176, 0x5d6269, 0x9aa0a6]));
+      g.fillStyle(rnd.pick(C.bits));
       g.fillRect(rnd.between(0, w - 8), RUIN_H + rnd.between(0, h - 6), rnd.between(4, 12), rnd.between(3, 7));
     }
     // Обломки стен по южному краю — видно, что тут стоял дом
-    g.fillStyle(0x5d6269);
+    g.fillStyle(C.wall);
     for (let x = 2; x < w - 6; x += rnd.between(10, 22)) {
       const sh = rnd.between(3, RUIN_H + 4);
       g.fillRect(x, RUIN_H + h - sh, rnd.between(4, 9), sh);
@@ -142,10 +160,136 @@ export class Buildings {
     return key;
   }
 
+  // Стекло окна: большинство тёмные (эвакуация), редкие горят, у горящего дома — огонь
+  winColor(r, burning, shelled) {
+    if (burning) return r < 0.45 ? 0xff7a2e : 0x1b1d20;
+    if (r < 0.06) return 0xd8b878;
+    return r < (shelled ? 0.55 : 0.2) ? 0x1b1d20 : 0x56646e;
+  }
+
+  // Фасады деревни: izba — сруб из брёвен, наличники и ставни, крыльцо у торца;
+  // rural — белёная штукатурка, окна в рамах, вывеска без надписи, крыльцо с козырьком;
+  // barn — коровник/гараж: белёный кирпич или доски, узкие окна под крышей, ворота
+  villageFacade(g, rnd, w, h, H, style, variant, burning, shelled) {
+    const win = () => this.winColor(rnd.frac(), burning, shelled);
+    if (style === 'izba') {
+      for (let y = h + 1; y < h + H - 4; y += 3) {
+        g.fillStyle(0x866a46, 0.6).fillRect(0, y, w, 1);
+        g.fillStyle(0x3a2c1c, 0.7).fillRect(0, y + 2, w, 1);
+      }
+      g.fillStyle(0x8a7450); // торцы венцов на углах
+      for (let y = h + 2; y < h + H - 4; y += 3) g.fillCircle(1.5, y, 1.4).fillCircle(w - 1.5, y, 1.4);
+      const frame = [0xbcb8a8, 0x5a7890, 0x5a7a5a][variant] ?? 0xbcb8a8; // наличники: белые, синие, зелёные
+      const n = w >= 56 ? 3 : 2;
+      const span = w - 20;
+      for (let i = 0; i < n; i++) {
+        const x = Math.round(6 + ((i + 0.5) * span) / n) - 3;
+        const y = h + 5;
+        g.fillStyle(frame).fillRect(x - 3, y, 2, 6).fillRect(x + 7, y, 2, 6); // ставни
+        g.fillRect(x - 1, y - 2, 8, 2).fillTriangle(x - 1, y - 2, x + 7, y - 2, x + 3, y - 4); // резной верх
+        g.fillStyle(win()).fillRect(x, y, 6, 6);
+        g.fillStyle(frame).fillRect(x + 2.5, y, 1, 6).fillRect(x - 1, y + 6, 8, 1);
+      }
+      g.fillStyle(0x3a2c1c).fillRect(w - 12, h + H - 13, 6, 9); // дверь
+      g.fillStyle(0x5a4630).fillRect(w - 14, h + H - 5, 10, 2);  // ступенька крыльца
+      g.fillStyle(0x5a4630).fillRect(w - 14, h + H - 15, 10, 2); // навес
+      return;
+    }
+    if (style === 'rural') {
+      g.fillStyle(0x000000, 0.18).fillRect(0, h, w, 2); // тень под свесом крыши
+      g.lineStyle(1, 0x8a8678, 0.6);
+      for (let i = 0; i < 3; i++) {
+        const x = rnd.between(4, Math.max(5, w - 10));
+        g.lineBetween(x, h + 3, x + rnd.between(-3, 3), h + 3 + rnd.between(3, 8));
+      }
+      const dx = Math.round(w / 2) - 4;
+      for (let x = 7; x < w - 12; x += 14) {
+        if (x > dx - 14 && x < dx + 16) continue;
+        g.fillStyle(0x6a7a88).fillRect(x - 1, h + 4, 8, 9);
+        g.fillStyle(win()).fillRect(x, h + 5, 6, 7);
+        g.fillStyle(0x6a7a88).fillRect(x + 2.5, h + 5, 1, 7).fillRect(x, h + 8, 6, 1);
+      }
+      const sign = [0x7a3a30, 0x3a5470, 0x46623e][variant] ?? 0x7a3a30;
+      const sw = Math.min(Math.round(w * 0.4), 52);
+      g.fillStyle(sign).fillRect(w / 2 - sw / 2, h + 2, sw, 4);
+      g.fillStyle(0xd0c8b0, 0.6);
+      for (let x = w / 2 - sw / 2 + 3; x < w / 2 + sw / 2 - 3; x += 5) g.fillRect(x, h + 3, 3, 2); // «буквы» — не читаются
+      g.fillStyle(0x3a3428).fillRect(dx, h + H - 12, 8, 8);
+      g.fillStyle(0x6e726e).fillRect(dx - 3, h + H - 14, 14, 2); // козырёк
+      g.fillStyle(0x000000, 0.25).fillRect(dx - 3, h + H - 12, 14, 1);
+      g.fillStyle(0x8a8a84).fillRect(dx - 4, h + H - 4, 16, 2).fillRect(dx - 2, h + H - 2, 12, 2); // ступени
+      return;
+    }
+    // barn
+    if (variant === 0) {
+      g.fillStyle(0x000000, 0.08);
+      for (let y = h + 2; y < h + H - 4; y += 3) g.fillRect(0, y, w, 1);
+      g.fillStyle(0x7a5040, 0.35); // побелка облезла — проступает кирпич
+      for (let i = 0; i < Math.max(2, Math.round(w / 60)); i++) g.fillRect(rnd.between(2, Math.max(3, w - 16)), h + rnd.between(3, H - 10), rnd.between(6, 14), rnd.between(3, 5));
+    } else {
+      g.fillStyle(0x6b5a40).fillRect(0, h, w, H - 4);
+      g.lineStyle(1, 0x4a3c28, 0.8);
+      for (let x = 3; x < w; x += 4) g.lineBetween(x, h, x, h + H - 4);
+    }
+    const n = Math.max(1, Math.round(w / 120));
+    const gates = [];
+    for (let i = 0; i < n; i++) gates.push(Math.round(((i + 0.5) * w) / n));
+    for (let x = 10; x < w - 8; x += 18) {
+      if (gates.some((c) => Math.abs(x + 3 - c) < 16)) continue;
+      g.fillStyle(win()).fillRect(x, h + 3, 6, 3);
+    }
+    for (const c of gates) {
+      const gx = c - 9;
+      const gy = h + 5;
+      const gh = H - 9;
+      g.fillStyle(0x1e1c18).fillRect(gx, gy, 18, gh);
+      g.fillStyle(0x5a4a34).fillRect(gx, gy, 9, gh); // одна створка закрыта
+      g.lineStyle(1, 0x3a2e20).lineBetween(gx, gy, gx + 9, gy + gh).lineBetween(gx + 9, gy, gx, gy + gh);
+    }
+  }
+
+  // Двускатные крыши деревни: конёк вдоль длинной стороны, северный скат в тени.
+  // Шифер — частая волна поперёк конька, кровельное железо (у изб — крашеное) — редкие фальцы
+  villageRoof(g, w, h, style, variant) {
+    const IZBA = [[0x5a5e5a, 0x767a74, 'shifer'], [0x3e5240, 0x4e6650, 'iron'], [0x5a382c, 0x74483a, 'iron']];
+    const [dark, light, kind] = style === 'izba' ? IZBA[variant] ?? IZBA[0] : style === 'barn' ? [0x545856, 0x6c706c, 'shifer'] : [0x5a5e5a, 0x767a74, 'shifer'];
+    const long = w >= h;
+    if (long) g.fillStyle(dark).fillRect(0, 0, w, h / 2).fillStyle(light).fillRect(0, h / 2, w, h - h / 2);
+    else g.fillStyle(light).fillRect(0, 0, w / 2, h).fillStyle(dark).fillRect(w / 2, 0, w - w / 2, h);
+    const step = kind === 'shifer' ? 3 : 7;
+    g.lineStyle(1, kind === 'shifer' ? 0x000000 : 0xffffff, kind === 'shifer' ? 0.18 : 0.12);
+    if (long) for (let x = step; x < w; x += step) g.lineBetween(x, 1, x, h - 1);
+    else for (let y = step; y < h; y += step) g.lineBetween(1, y, w - 1, y);
+    g.lineStyle(2, 0x8a8c86);
+    if (long) g.lineBetween(0, h / 2, w, h / 2);
+    else g.lineBetween(w / 2, 0, w / 2, h);
+    const len = long ? w : h;
+    const at = (k) => (long ? [k, h / 2] : [w / 2, k]);
+    if (style === 'barn') {
+      // Вентиляционные шахты по коньку
+      for (let k = 30; k < len - 12; k += 50) {
+        const [x, y] = at(k);
+        g.fillStyle(0x000000, 0.3).fillRect(x - 1, y - 1, 8, 8);
+        g.fillStyle(0x8a8c86).fillRect(x - 4, y - 4, 8, 8);
+        g.fillStyle(0x2a2a28).fillRect(x - 2, y - 2, 4, 4);
+      }
+      return;
+    }
+    // Печная труба у конька; на избе — телевизионная антенна
+    const [cx, cy] = at(Math.round(len * 0.62));
+    g.fillStyle(0x000000, 0.3).fillRect(cx - 1, cy - 2, 7, 7);
+    g.fillStyle(0x7a4e3c).fillRect(cx - 3, cy - 4, 6, 6);
+    g.fillStyle(0x2a2220).fillRect(cx - 2, cy - 3, 4, 2);
+    if (style === 'izba') {
+      const [ax, ay] = at(Math.round(len * 0.25));
+      g.lineStyle(1, 0x2a2a28).lineBetween(ax, ay, ax, ay - 9).lineBetween(ax - 5, ay - 8, ax + 5, ay - 8).lineBetween(ax - 3, ay - 5, ax + 3, ay - 5);
+    }
+  }
+
   // style: panel — панелька, factory — цех (кирпич, ленты окон, световые фонари на крыше),
   // barrack — барак (доски, мелкие окна), dk — Дворец культуры (светлый, колонны)
-  texture(w, h, H, state = 'ok', style = 'panel') {
-    const key = `bld_${w}x${h}_${H}_${state}_${style}`;
+  texture(w, h, H, state = 'ok', style = 'panel', variant = 0) {
+    const key = `bld_${w}x${h}_${H}_${state}_${style}${variant ? `_${variant}` : ''}`;
     const S = STYLES[style] ?? STYLES.panel;
     if (this.scene.textures.exists(key)) return key;
     const rnd = new Phaser.Math.RandomDataGenerator([key]);
@@ -224,13 +368,15 @@ export class Buildings {
       g.fillStyle(0xf0ece0).fillCircle(w / 2, h + 3, 5);
       g.lineStyle(1, 0x2a2418).strokeCircle(w / 2, h + 3, 5).lineBetween(w / 2, h + 3, w / 2, h);
     }
+    if (style === 'izba' || style === 'rural' || style === 'barn') this.villageFacade(g, rnd, w, h, H, style, variant, burning, shelled);
     const windowStep = style === 'stalin' || style === 'church' || style === 'hospital' || style === 'school' || style === 'gov' ? 11 : 9;
     if (style === 'stalin') {
       g.fillStyle(0xe8d8b8).fillRect(0, h, w, 3); // карниз
       g.fillStyle(0x7a6040).fillRect(0, h + 3, w, 1); // тень под карнизом
       g.fillStyle(0xa88a60).fillRect(0, h + H - 10, w, 6); // рустованный первый этаж
     }
-    for (let f = 0; !['factory', 'dk', 'barrack', 'shop', 'fire', 'garage'].includes(style) && f < floors; f++) {
+    const ownFacade = ['factory', 'dk', 'barrack', 'shop', 'fire', 'garage', 'izba', 'rural', 'barn'];
+    for (let f = 0; !ownFacade.includes(style) && f < floors; f++) {
       const wy = h + 3 + f * floorH;
       for (let wx = 5; wx < w - 5; wx += windowStep) {
         const r = rnd.frac();
@@ -251,7 +397,9 @@ export class Buildings {
     g.fillStyle(0x2c3034);
     // Подъезды; у барака — одна дверь с торца
     if (style === 'barrack') g.fillStyle(0x3a2c1c).fillRect(4, h + H - 12, 7, 8);
-    else for (let i = 0; i < sections; i++) g.fillRect((i + 0.5) * (w / sections) - 3, h + H - 9, 6, 5);
+    else if (VARIANTS[style]) {
+      // деревня: двери и ворота рисует villageFacade
+    } else for (let i = 0; i < sections; i++) g.fillRect((i + 0.5) * (w / sections) - 3, h + H - 9, 6, 5);
 
     // Крыша: как раньше — секции и выходы на крышу
     g.fillStyle(S.roof);
@@ -274,6 +422,8 @@ export class Buildings {
       g.lineStyle(2, 0x5a564e).lineBetween(0, h / 2, w, h / 2); // конёк
       g.fillStyle(0x6a3a2a).fillRect(w * 0.3, h / 2 - 6, 6, 6);  // печная труба
       g.fillStyle(0x6a3a2a).fillRect(w * 0.7, h / 2 - 6, 6, 6);
+    } else if (style === 'izba' || style === 'rural' || style === 'barn') {
+      this.villageRoof(g, w, h, style, variant);
     } else if (style === 'church') {
       // Храм: пять глав-луковиц на крыше — большая синяя со звёздами в центре, малые золотые по углам, кресты
       const dome = (x, y, r, color) => {
@@ -388,7 +538,7 @@ export class Buildings {
         g.fillStyle(0x0d0d0d);
         g.fillCircle(cx + 1, cy + 1, 4);
       }
-      g.fillStyle(0x2e3134); // отбитый угол — сквозь него видно асфальт
+      g.fillStyle(RUIN_KIND[style] ? 0x3e3a2c : 0x2e3134); // отбитый угол — сквозь него видно землю/асфальт
       g.fillTriangle(w, 0, w - rnd.between(14, 26), 0, w, rnd.between(10, 18));
     }
     // Кромка крыши светлее — читается грань между крышей и фасадом

@@ -35,6 +35,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.shotTimer = 0;
     this.hopT = 0; // прыжок заражённого: оставшееся время
     this.hopCd = 0;
+    this.charge = 0; // разбег быка: оставшееся время
+    this.chargeCd = 0;
     this.endHop();
     // Таймер текущей фазы: рывок/пауза у джипа, перезарядка у зенитки.
     // Случайный старт, чтобы враги одной пачки не действовали синхронно.
@@ -78,6 +80,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.endHop();
     this.disableBody(true, true);
     this.scene.events.emit('enemy-killed', this);
+    // Раздутая скотина лопается газовым облаком — и когда подстрелили, и когда дошла до вертолёта
+    if (this.cfg.blast) this.scene.events.emit('gas-blast', this.x, this.y, this.cfg, this.type);
   }
 
   // Тихо вернуться в пул — без опыта и счётчика убийств
@@ -127,12 +131,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       case 'boss':
         this.updateBoss(dt, dx, dy, dist);
         break;
+      case 'tractor':
+        this.updateTractor(dt, dx, dy, dist);
+        break;
+      case 'bloat':
+        this.updateBloat(dt, dx, dy, dist);
+        if (!this.active) return; // лопнула
+        break;
     }
     // У самого вертолёта пехота и джипы идут к нему напрямую, мимо карты путей, — если он над рекой,
     // лезли в воду. Шаг в воду — стоп у набережной (танк вброд и «Объект» — свои правила)
     const b = this.cfg.behavior;
     const river = this.scene.river;
-    if (river && (b === 'chase' || b === 'dash')) {
+    if (river && (b === 'chase' || b === 'dash' || b === 'tractor' || b === 'bloat')) {
       const v = this.body.velocity;
       if ((v.x || v.y) && river.contains(this.x + v.x * 0.12, this.y + v.y * 0.12, 4)) this.body.setVelocity(0, 0);
     }
@@ -267,6 +278,46 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const offset = Phaser.Math.FloatBetween(0, Math.PI * 2);
       for (let i = 0; i < cfg.burstCount; i++) this.fireShell(offset + (i / cfg.burstCount) * Math.PI * 2);
     }
+  }
+
+  // Трактор: едет к вертолёту по дорогам, разворачивается не сразу; фермер из кабины бьёт дробью веером
+  // туда, где вертолёт сейчас (ружьё поворачивается, трактор — нет)
+  updateTractor(dt, dx, dy, dist) {
+    const cfg = this.cfg;
+    this.rotation = Phaser.Math.Angle.RotateTo(this.rotation, this.pathAngle(dx, dy), cfg.turnRate * dt);
+    this.body.setVelocity(Math.cos(this.rotation) * this.speed, Math.sin(this.rotation) * this.speed);
+    this.timer -= dt;
+    if (this.timer > 0 || dist > cfg.range) return;
+    this.timer = cfg.fireInterval;
+    const aim = Math.atan2(dy, dx);
+    const half = (cfg.pellets - 1) / 2;
+    for (let i = 0; i < cfg.pellets; i++) this.fireShell(aim + ((i - half) / Math.max(1, half)) * (cfg.pelletSpread / 2));
+  }
+
+  // Раздутая скотина бредёт к вертолёту; бык рядом разбегается по прямой. Вплотную — лопается
+  updateBloat(dt, dx, dy, dist) {
+    const cfg = this.cfg;
+    if (dist <= cfg.blastRange) {
+      this.die();
+      return;
+    }
+    if (this.charge > 0) {
+      this.charge -= dt;
+      return; // летит по прямой с тем направлением, что взял в начале
+    }
+    this.chargeCd -= dt;
+    if (cfg.chargeRange && dist <= cfg.chargeRange && this.chargeCd <= 0) {
+      this.charge = cfg.chargeTime;
+      this.chargeCd = cfg.chargeCooldown;
+      this.rotation = Math.atan2(dy, dx);
+      this.body.setVelocity(Math.cos(this.rotation) * cfg.chargeSpeed, Math.sin(this.rotation) * cfg.chargeSpeed);
+      return;
+    }
+    const a = this.pathAngle(dx, dy);
+    if (this.slowT > 0) this.slowT -= dt;
+    const v = this.speed * (this.slowT > 0 ? ORDNANCE.slowMul : 1);
+    this.body.setVelocity(Math.cos(a) * v, Math.sin(a) * v);
+    this.rotation = a;
   }
 
   // Направление к игроку в обход домов (CityNav); рядом с игроком или без карты — напрямую

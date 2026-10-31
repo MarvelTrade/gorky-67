@@ -91,7 +91,18 @@ export class Fx {
     const { x, y } = enemy;
     switch (enemy.type) {
       case 'infantry':
+      case 'farmer':
         this.puff.explode(7, x, y);
+        break;
+      case 'tractorBlue':
+      case 'tractorRed':
+        this.debris.explode(16, x, y);
+        this.smoke.explode(6, x, y);
+        break;
+      case 'cow':
+      case 'bull':
+      case 'horse':
+        this.puff.explode(18, x, y); // газовое облако — остальное рисует gas-blast
         break;
       case 'jeep':
         this.puff.explode(4, x, y);

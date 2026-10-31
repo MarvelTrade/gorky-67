@@ -1,5 +1,7 @@
 import * as Phaser from 'phaser';
-import { ENEMIES, SPAWN, WAVES, WAVE_LENGTH, WORLD, BOSS_SPAWN } from '../config.js';
+import { ENEMIES, SPAWN, WAVES as CITY_WAVES, WAVE_LENGTH, WORLD, BOSS_SPAWN, RADIO } from '../config.js';
+import { layout } from '../levels.js';
+import { t } from '../i18n/index.js';
 
 // Спавнит врагов кольцом сразу за краем экрана по расписанию из WAVES.
 // У каждого типа свой таймер; новая волна каждые WAVE_LENGTH секунд.
@@ -19,19 +21,21 @@ export class WaveSpawner {
     // Для замеров: сколько пропущено выше максимума, сколько убрано ради орды/босса,
     // сколько остатков орды ушло, сколько не влезло в пул и пик живых
     this.stats = { suppressed: 0, freed: 0, expired: 0, poolFull: 0, maxAlive: 0 };
+    this.waves = layout.WAVES ?? CITY_WAVES; // у уровня свой состав волн (деревня — тракторы и скотина)
+    this.introduced = new Set(); // разговор о новом враге — по разу
   }
 
   get wave() {
-    return WAVES[this.waveIndex];
+    return this.waves[this.waveIndex];
   }
 
   update(dt) {
     this.elapsed += dt;
-    const index = Math.min(WAVES.length - 1, Math.floor(this.elapsed / WAVE_LENGTH));
+    const index = Math.min(this.waves.length - 1, Math.floor(this.elapsed / WAVE_LENGTH));
     if (index !== this.waveIndex) {
       this.waveIndex = index;
       // Новые типы появляются сразу (или через from секунд), а не через полный интервал
-      for (const type of Object.keys(ENEMIES)) this.timers[type] = WAVES[index][type]?.from ?? 0;
+      for (const type of Object.keys(ENEMIES)) this.timers[type] = this.waves[index][type]?.from ?? 0;
       this.scene.events.emit('wave-changed', index + 1);
     }
 
@@ -104,6 +108,14 @@ export class WaveSpawner {
     y = Phaser.Math.Clamp(y, 0, WORLD.height);
     if (type !== 'boss' && this.scene.nav) ({ x, y } = this.scene.nav.nearestFree(x, y));
     enemy.spawn(type, ENEMIES[type], x, y, this.target, this.wave.hpMul, this.wave.dmgMul ?? 1);
+    this.introduce(ENEMIES[type].intro);
+  }
+
+  // Первая корова — Вова спрашивает «Берёзу», что с ними; первый трактор — Вова с Иваном
+  introduce(key) {
+    if (!key || this.introduced.has(key)) return;
+    this.introduced.add(key);
+    for (const line of RADIO.intros[key] ?? []) this.scene.events.emit('radio', t(line.key), line.who);
   }
 
   // Босс не должен потеряться из-за полного пула — освобождаем место за счёт рядового врага

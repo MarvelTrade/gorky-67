@@ -30,6 +30,7 @@ import { Culler } from '../systems/Culler.js';
 import { Train } from '../systems/Train.js';
 import { River } from '../systems/River.js';
 import { layout, setLevel, lt } from '../levels.js';
+import { makeFarmTextures } from '../art/farm.js';
 import { meta, applyMeta, addHeliXp } from '../meta.js';
 import { settings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -45,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   create() {
     // Уровень кампании — из карты уровней (registry), по умолчанию первый: город
     this.levelDef = setLevel(this.registry.get('level') ?? 1);
+    makeFarmTextures(this); // один раз за игру: есть — пропускает
     this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
     this.culler = new Culler(this); // до города: декорации регистрируются при создании
     this.nav = new CityNav(this);
@@ -157,7 +159,7 @@ export class GameScene extends Phaser.Scene {
     this.events.on('enemy-killed', (enemy) => {
       this.kills++;
       this.fx.enemyDeath(enemy);
-      if (enemy.type !== 'infantry') sfx.play('explosion');
+      if (enemy.cfg.behavior !== 'chase') sfx.play('explosion');
       if (enemy === this.boss) {
         this.onBossKilled(enemy);
         return;
@@ -186,6 +188,7 @@ export class GameScene extends Phaser.Scene {
       sfx.play('explosion');
     });
     this.events.on('wave-changed', (n) => this.banner(lt(`wave_${n}`)));
+    this.events.on('gas-blast', (x, y, cfg, type) => this.gasBlast(x, y, cfg, type));
     this.events.on('resume', () => {
       this.halting = false;
       this.player.resetInput();
@@ -203,6 +206,7 @@ export class GameScene extends Phaser.Scene {
     cam.shake = (...args) => (settings.shake ? shake(...args) : cam);
     this.cameras.main.startFollow(this.player.sprite, true, 0.12, 0.12);
     this.fitZoom();
+    this.trainIntro();
     this.scale.on('resize', this.fitZoom, this);
 
     this.scene.launch('UIScene');
@@ -212,7 +216,7 @@ export class GameScene extends Phaser.Scene {
     platform.gameplayStart();
     // scene.events переживает restart — снимаем свои подписки
     this.events.once('shutdown', () => {
-      for (const e of ['radio', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'boss-phase2', 'alert', 'player-hurt', 'resume', 'player-died', 'spin-crash']) this.events.off(e);
+      for (const e of ['radio', 'gas-blast', 'enemy-hit', 'enemy-killed', 'xp-collected', 'explosion', 'wave-changed', 'boss-spawned', 'boss-phase2', 'alert', 'player-hurt', 'resume', 'player-died', 'spin-crash']) this.events.off(e);
       this.scale.off('resize', this.fitZoom, this);
       this.scene.stop('UIScene');
       sfx.duck(false);
@@ -223,6 +227,36 @@ export class GameScene extends Phaser.Scene {
   fitZoom() {
     const { width, height } = this.scale;
     this.cameras.main.setZoom(Math.min(1, Math.min(width, height) / VIEW.minShortSide));
+  }
+
+  // Начало уровня: камера к эвакуационному поезду — трогается (город) или идёт мимо (деревня) — и назад
+  trainIntro() {
+    if (!this.train) return;
+    const cam = this.cameras.main;
+    const R = RAIL;
+    cam.stopFollow();
+    cam.pan(this.train.x, this.train.y, R.introPan * 1000, 'Sine.easeInOut');
+    // Рация (UIScene) ещё не запущена — реплика чуть позже
+    this.time.delayedCall(400, () => this.events.emit('radio', lt('vova_train'), 'vova'));
+    this.time.delayedCall((R.introPan + R.introHold) * 1000, () => {
+      if (this.ended) return;
+      cam.pan(this.player.sprite.x, this.player.sprite.y, R.introBack * 1000, 'Sine.easeInOut', true, (_, k) => {
+        if (k === 1) cam.startFollow(this.player.sprite, true, 0.12, 0.12);
+      });
+    });
+  }
+
+  // Лопнула раздутая скотина: газовое облако бьёт врагов вокруг (стадо рвётся цепочкой) и вертолёт,
+  // если он в облаке
+  gasBlast(x, y, cfg, type) {
+    this.explosionFx(x, y, cfg.blast * 0.7);
+    sfx.play('explosion');
+    const r2 = cfg.blast * cfg.blast;
+    for (const e of this.enemies.getChildren()) {
+      if (e.active && e.type !== 'boss' && (e.x - x) ** 2 + (e.y - y) ** 2 <= r2) e.hit(cfg.blastHit, true);
+    }
+    const p = this.player.sprite;
+    if ((p.x - x) ** 2 + (p.y - y) ** 2 <= r2) this.player.takeDamage(cfg.blastDamage, type);
   }
 
   // Вертолёт сбит: взрыв, затем — предложение воскреснуть (если можно) или итоги

@@ -51,6 +51,11 @@ export const RADIO = {
     { at: 128, key: 'cher_shoot' },
     { at: 175, key: 'cher_nuke' },
   ],
+  // Первая встреча с новым врагом (поле intro в ENEMIES) — короткий разговор, по разу за забег
+  intros: {
+    cows: [{ key: 'vova_cows', who: 'vova' }, { key: 'beryoza_cows', who: 'beryoza' }],
+    tractor: [{ key: 'vova_tractor', who: 'vova' }, { key: 'ivan_tractor', who: 'ivan' }],
+  },
   duration_long: 4.5,   // с на экране для длинных реплик «Черёмухи» — с паузами они читаются дольше
   longChars: 60,        // длиннее стольких знаков — реплика длинная
 };
@@ -71,11 +76,17 @@ export const MONUMENT = {
 };
 
 // Железная дорога завода (Train): ветка по улице между кварталами завода, поезд с севера на юг
+// Эвакуационный поезд на столицу (Train): везёт документы Объекта, идёт на север, не останавливаясь.
+// В городе стоит у станции и в начале забега трогается; в деревне уже идёт мимо. Камера в начале
+// уровня показывает его и возвращается к вертолёту
 export const RAIL = {
   x: 3600,              // px — ось ветки (линия между кварталами 8 и 9)
-  speed: 70,            // px/с — поезд
+  speed: 110,           // px/с — полный ход
+  accel: 28,            // px/с² — трогается медленно, тяжёлый
   wagons: 7,
-  pause: [12, 22],      // с между составами
+  introPan: 0.9,        // с — камера к поезду
+  introHold: 2.4,       // с — смотрим, как он идёт
+  introBack: 0.8,       // с — назад к вертолёту
 };
 
 // Подсказки первых забегов (Hints): в очереди рации, по одной, чередуются с репликами
@@ -435,6 +446,112 @@ export const ENEMIES = {
     xp: 6,
     radius: 18,
   },
+  // ── Деревня (уровень 2) ──
+  // Заражённый колхозник — та же пехота, чуть крепче (телогрейка)
+  farmer: {
+    behavior: 'chase',
+    hp: 24,
+    speed: 50,
+    speedJitter: 12,
+    damage: 4,
+    xp: 1,
+    radius: 9,
+    hopRange: 70,
+    hopTime: 0.28,
+    hopScale: 1.45,
+    hopCooldown: 1.0,
+  },
+  // Трактор с фермером: едет на вертолёт по дорогам, фермер бьёт из ружья веером дроби.
+  // Синий — быстрый и хлипкий, красный — медленный, крепкий, дроби больше
+  tractorBlue: {
+    behavior: 'tractor',
+    intro: 'tractor',
+    hp: 70,
+    speed: 62,
+    speedJitter: 6,
+    turnRate: 2.2,      // рад/с — трактор не разворачивается на месте
+    fireInterval: 2.0,
+    range: 380,
+    pellets: 5,         // дробинок в выстреле
+    pelletSpread: 0.35, // рад — веер
+    shellSpeed: 240,
+    shellDamage: 2,
+    shellLife: 1.4,
+    shellTexture: 'pellet',
+    damage: 0,
+    xp: 4,
+    radius: 13,
+  },
+  tractorRed: {
+    behavior: 'tractor',
+    intro: 'tractor',
+    hp: 120,
+    speed: 45,
+    speedJitter: 5,
+    turnRate: 1.6,
+    fireInterval: 2.6,
+    range: 400,
+    pellets: 7,
+    pelletSpread: 0.45,
+    shellSpeed: 230,
+    shellDamage: 2,
+    shellLife: 1.5,
+    shellTexture: 'pellet',
+    damage: 0,
+    xp: 6,
+    radius: 14,
+  },
+  // Скотина: газ внутри бродит, их раздуло в полтора раза. Подошли вплотную — лопаются облаком;
+  // подстреленные — тоже, и облако бьёт соседей (цепная реакция в стаде). blast — радиус облака,
+  // blastDamage — вертолёту (если он в облаке), blastHit — врагам вокруг
+  cow: {
+    behavior: 'bloat',
+    intro: 'cows',
+    hp: 30,
+    speed: 34,
+    speedJitter: 6,
+    damage: 0,
+    blastRange: 36,     // px до вертолёта — лопается
+    blast: 85,
+    blastDamage: 14,
+    blastHit: 60,
+    xp: 3,
+    radius: 16,
+  },
+  // Бык: подошёл на chargeRange — разбегается по прямой (направление фиксируется — можно увернуться)
+  bull: {
+    behavior: 'bloat',
+    intro: 'cows',
+    hp: 55,
+    speed: 38,
+    speedJitter: 4,
+    damage: 0,
+    chargeRange: 280,
+    chargeSpeed: 170,
+    chargeTime: 1.1,
+    chargeCooldown: 2.5,
+    blastRange: 38,
+    blast: 95,
+    blastDamage: 18,
+    blastHit: 80,
+    xp: 5,
+    radius: 17,
+  },
+  // Лошадь: быстрая, лопается слабее
+  horse: {
+    behavior: 'bloat',
+    intro: 'cows',
+    hp: 35,
+    speed: 82,
+    speedJitter: 8,
+    damage: 0,
+    blastRange: 34,
+    blast: 75,
+    blastDamage: 12,
+    blastHit: 50,
+    xp: 4,
+    radius: 15,
+  },
   // «Объект»: огромный мутант из лаборатории, медленно ползёт к игроку и плюётся «Зарёй»
   boss: {
     behavior: 'boss',
@@ -506,7 +623,7 @@ export const SPAWN = {
   despawnDist: 1400,    // враги дальше этого от игрока возвращаются в пул (без опыта)
   maxEnemies: 300,      // размер пула
   refillBoost: 1.5,     // во сколько раз чаще пехота, пока живых меньше минимума волны
-  disposable: ['infantry', 'jeep'], // кого можно тихо убрать, чтобы освободить место орде и боссу
+  disposable: ['infantry', 'jeep', 'farmer', 'cow', 'horse'], // кого можно тихо убрать, чтобы освободить место орде и боссу
 };
 
 export const POOLS = {
