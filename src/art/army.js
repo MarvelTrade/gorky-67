@@ -21,6 +21,22 @@ function flatcar(g) {
 }
 
 export function makeArmyTextures(scene) {
+  // Реактивные ускорители «Сокола»: две гондолы по бортам в кадре вертолёта (70×48, нос вправо)
+  tex(scene, 'jetPods', 70, 48, (g) => {
+    for (const cy of [7, 41]) {
+      g.fillStyle(0x3a3e38).fillRoundedRect(22, cy - 4, 26, 8, 3);
+      g.fillStyle(0x6a705e).fillRect(24, cy - 3, 20, 2); // блик
+      g.fillStyle(0xb8402a).fillRect(44, cy - 4, 4, 8); // красный обтекатель
+      g.fillStyle(0x1a1a18).fillRect(20, cy - 3, 3, 6); // сопло
+      g.lineStyle(2, 0x2a2e28).lineBetween(34, cy + (cy < 24 ? 4 : -4), 34, 24 + (cy < 24 ? -8 : 8)); // пилон
+    }
+  });
+  // Пламя сопла: белое ядро, оранжевый факел; origin справа — у сопла, тянется назад
+  tex(scene, 'jetFlame', 26, 10, (g) => {
+    g.fillStyle(0xff5a1f, 0.6).fillTriangle(0, 5, 26, 0, 26, 10);
+    g.fillStyle(0xffa030, 0.9).fillTriangle(8, 5, 26, 1.5, 26, 8.5);
+    g.fillStyle(0xfff0c0).fillTriangle(16, 5, 26, 3, 26, 7);
+  });
   tex(scene, 'medkit', 20, 16, (g) => {
     g.fillStyle(0x000000, 0.3).fillRect(2, 3, 18, 13);
     g.fillStyle(0x2f8a4a).fillRect(0, 0, 18, 13);

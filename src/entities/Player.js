@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { PLAYER, CONTROLS, FX, SPIN } from '../config.js';
+import { HUD_GAUGES, PLAYER, CONTROLS, FX, SPIN } from '../config.js';
 import { sfx } from '../systems/Sfx.js';
 import { DEPTH } from '../depth.js';
 
@@ -27,6 +27,9 @@ export class Player {
 
     this.rotor = scene.add.image(x, y, 'rotor');
     this.rotor.setDepth(DEPTH.rotor);
+    // Реактивные ускорители: появляются, когда ход вырос до HUD_GAUGES.boostAt; пламя — по скорости
+    this.pods = scene.add.image(x, y, 'jetPods').setDepth(DEPTH.player + 0.01).setVisible(false);
+    this.flames = [0, 1].map(() => scene.add.image(x, y, 'jetFlame').setOrigin(1, 0.5).setDepth(DEPTH.player - 0.01).setVisible(false));
 
     // Копия, чтобы улучшения меняли её, а не конфиг
     this.stats = { ...PLAYER };
@@ -275,5 +278,27 @@ export class Player {
     // Диск винта наклоняется вместе с корпусом: смещён вперёд при разгоне, вбок при крене
     const shift = T.rotorShift;
     this.rotor.setPosition(x + fx * tl.pitch * shift - fy * tl.roll * shift, y + fy * tl.pitch * shift + fx * tl.roll * shift);
+    this.updateBoosters(x, y, fx, fy);
+  }
+
+  // Ускорители по бортам: гондолы — в такт корпусу; пламя назад, длиннее на полном ходу, дрожит
+  updateBoosters(x, y, fx, fy) {
+    const on = this.stats.maxSpeed / PLAYER.maxSpeed >= HUD_GAUGES.boostAt && this.alive && !this.crashing;
+    if (this.pods.visible !== on) {
+      this.pods.setVisible(on);
+      for (const f of this.flames) f.setVisible(on);
+    }
+    if (!on) return;
+    this.pods.setPosition(x, y).setRotation(this.look.rotation).setScale(this.look.scaleX, this.look.scaleY);
+    const v = Math.min(1, this.body.velocity.length() / this.maxSpeed);
+    const flick = 0.85 + Math.random() * 0.3;
+    this.flames.forEach((f, i) => {
+      const side = i ? 1 : -1;
+      // Сопла — у задней кромки гондол: 14 px назад от центра, 17 px вбок
+      f.setPosition(x - fx * 14 - fy * 17 * side, y - fy * 14 + fx * 17 * side)
+        .setRotation(this.look.rotation)
+        .setScale((0.4 + v * 0.9) * flick, 0.8 + v * 0.3)
+        .setAlpha(0.5 + v * 0.5);
+    });
   }
 }

@@ -5,6 +5,7 @@ import { t } from '../i18n/index.js';
 import { lt } from '../levels.js';
 import { sfx } from '../systems/Sfx.js';
 import { FONT, KHAKI, BRASS } from '../ui/paper.js';
+import { WeaponBar } from '../ui/WeaponBar.js';
 
 const PAD = 12;
 const XP_BAR_H = 10;
@@ -81,6 +82,8 @@ export class UIScene extends Phaser.Scene {
       .text(0, 0, t('boss'), { ...style, fontSize: '14px', strokeThickness: 3, color: '#ffb0a0' })
       .setOrigin(0.5, 1)
       .setVisible(false);
+    // Нижняя панель оружия и шкалы брони и хода по бокам
+    this.weaponBar = new WeaponBar(this);
     this.fpsText = import.meta.env.DEV
       ? this.add.text(0, 0, '', { ...style, fontSize: '12px', strokeThickness: 3 }).setOrigin(1, 0)
       : null;
@@ -165,6 +168,8 @@ export class UIScene extends Phaser.Scene {
     }
 
     this.drawAlert(g, width, height, delta / 1000, gs.scene.isPaused());
+    this.weaponBar.layout(gs, width, height);
+    this.weaponBar.drawGauges(gs, width, height);
     this.drawStick(p.stick);
     this.drawSupplyArrows(gs, g);
     // «Объект» за кадром — красная стрелка: видно, откуда катится
