@@ -77,7 +77,9 @@ export class MenuScene extends Phaser.Scene {
         by = cy - (66 + 50 + 50 + 24) / 2;
       } else {
         cx = width / 2;
-        cy = 52 + ch / 2;
+        // Высокий экран (планшет стоя) — карточка и кнопки по центру, а не прижаты кверху
+        const block = ch + 22 + 22 + play.h + hangar.h + opts.h + 36 + 40;
+        cy = Math.max(52, (height - block) / 2) + ch / 2;
         bx = width / 2;
         by = cy + ch / 2 + 22;
       }

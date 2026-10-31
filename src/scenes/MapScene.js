@@ -15,6 +15,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   create() {
+    this.cameras.main.setBackgroundColor('#1b2418'); // своя подложка: меню не просвечивает
     this.sheet = makeSheet(this);
     this.title = this.add.text(0, 0, t('mapTitle'), { fontFamily: FONT, fontSize: '22px', color: INK, fontStyle: 'bold' }).setOrigin(0.5, 0);
     this.sub = this.add.text(0, 0, t('mapSub'), { fontFamily: FONT, fontSize: '12px', color: INK_SOFT, align: 'center' }).setOrigin(0.5, 0);
@@ -89,8 +90,10 @@ export class MapScene extends Phaser.Scene {
 
   layout() {
     const { width, height } = this.scale;
-    const w = Math.min(460, width - 24);
-    const h = height - 70;
+    // Телефон лёжа: маршрут идёт слева направо — по высоте 11 станций не помещаются
+    const wide = width > height * 1.3;
+    const w = Math.min(wide ? 900 : 460, width - 24);
+    const h = height - (wide ? 52 : 70);
     const x0 = (width - w) / 2;
     const y0 = 10;
     drawSheet(this.sheet, x0, y0, w, h);
@@ -100,12 +103,17 @@ export class MapScene extends Phaser.Scene {
     this.back.setPosition(8, height - 8);
 
     // Станции снизу вверх по извилистой линии: x качается синусом, y — равными шагами
-    const top = y0 + 70;
+    const top = Math.max(y0 + 70, this.sub.y + this.sub.height + 22); // подзаголовок может уйти в две строки
     const bottom = y0 + h - 26;
     const amp = Math.min(w * 0.22, 90);
     const cx = x0 + w * 0.36;
     const pts = this.nodes.map((node, i) => {
       const k = i / (this.nodes.length - 1);
+      if (wide) {
+        const midY = (top + bottom) / 2 - 6;
+        const ampY = Math.min((bottom - top) * 0.3, 70);
+        return { x: x0 + 36 + k * (w - 150), y: midY - Math.sin(k * Math.PI * 2.4) * ampY + (i % 2 ? 10 : -10) };
+      }
       return { x: cx + Math.sin(k * Math.PI * 2.4) * amp, y: bottom - k * (bottom - top) };
     });
     // Железная дорога: шпалы и рельс, пройденная часть — темнее
@@ -129,8 +137,15 @@ export class MapScene extends Phaser.Scene {
     const small = h < 420;
     this.nodes.forEach((node, i) => {
       node.setPosition(pts[i].x, pts[i].y).setScale(small ? 0.8 : 1);
-      node.name.setPosition(22, 0).setFontSize(small ? 11 : 13);
-      node.tag.setPosition(22 + node.name.width + 6, 0);
+      if (wide) {
+        // Подписи под и над станцией по очереди — соседние не налезают друг на друга
+        const dy = i % 2 ? 24 : -24;
+        node.name.setOrigin(0.5, 0.5).setPosition(0, dy).setFontSize(11);
+        node.tag.setOrigin(0.5, 0.5).setPosition(0, dy + (i % 2 ? 13 : -13));
+      } else {
+        node.name.setOrigin(0, 0.5).setPosition(22, 0).setFontSize(small ? 11 : 13);
+        node.tag.setOrigin(0, 0.5).setPosition(22 + node.name.width + 6, 0);
+      }
     });
   }
 }
