@@ -12,10 +12,10 @@ export default {
 
   // ── Level 2: Olkhovka (l2_* keys override the city ones) ──
   l2_telegram:
-    'URGENT SECRET STOP OBJECT 67 DESTROYED STOP GAS MOVED ALONG THE RAILWAY STOP\n' +
-    'THE INFECTED ARE HEADING FOR THE CAPITAL STOP CARRYING PIECES OF THE OBJECT STOP\n' +
-    'OLKHOVKA STATE FARM IS ON THEIR WAY STOP FALCON TO COVER EVACUATION FROM THE STATION STOP\n' +
-    'AFTERWARDS THE AREA WILL BE CLOSED STOP',
+    'FALCON, THIS IS BEREZKA. THE TRAIN IS HEADING NORTH, YOU FOLLOW IT.\n' +
+    'THE GAS HAS REACHED OLKHOVKA FARM. THE INFECTED ARE CARRYING PIECES OF THE OBJECT.\n' +
+    'TASK: HOLD THE VILLAGE FOR FIVE MINUTES SO NOBODY CHASES THE TRAIN.\n' +
+    'THEN GO NORTH. THE DISTRICT WILL BE BURNED OUT.',
   l2_wave_1: 'The Outskirts',
   l2_wave_2: 'The Farm',
   l2_wave_3: 'The Kolkhoz Field',
@@ -39,10 +39,10 @@ export default {
 
   // ── Level 3: Granitny quarry ──
   l3_telegram:
-    'URGENT SECRET STOP GAS HAS REACHED GRANITNY QUARRY STOP MINERS INFECTED STOP\n' +
-    'PIECES OF THE OBJECT ARE HAULED TO THE PIT FLOOR STOP A NEW ONE IS BEING BUILT THERE STOP\n' +
-    'EXPLOSIVES IN THE STORE STOP FALCON TO COVER THE TRAIN AND THE SETTLEMENT EVACUATION STOP\n' +
-    'AFTERWARDS THE AREA WILL BE CLOSED STOP',
+    'FALCON, THIS IS BEREZKA. THE TRAIN IS PASSING GRANITNY QUARRY.\n' +
+    'THE MINERS ARE INFECTED. A NEW OBJECT IS BEING BUILT ON THE PIT FLOOR. EXPLOSIVES IN THE STORE.\n' +
+    'TASK: HOLD THE QUARRY FOR FIVE MINUTES WHILE THE TRAIN GETS AWAY.\n' +
+    'THEN GO NORTH. THE DISTRICT WILL BE BURNED OUT.',
   l3_wave_1: 'The Settlement',
   l3_wave_2: 'The Spoil Heaps',
   l3_wave_3: 'The Benches',
@@ -111,10 +111,11 @@ export default {
   telegramStamp: 'CLASSIFIED',
   telegramNo: 'No. 67-83',
   telegram:
-    'URGENT CLASSIFIED STOP ACCIDENT AT OBJECT 67 STOP ZARYA RELEASED AS GAS STOP\n' +
-    'CORDON AFFECTED STOP NOT ANSWERING CALLSIGNS STOP TREATS FALCON AS TARGET STOP\n' +
-    'FALCON CREW TO COVER EVAC COLUMN STOP FIRE TO KILL AUTHORISED STOP\n' +
-    'DISTRICT TO BE CLOSED AFTERWARDS STOP',
+    'FALCON, THIS IS BEREZKA. NO CONTACT WITH GORKY-67 SINCE LAST NIGHT.\n' +
+    'FLY OVER THE FOREST AND SEE WHAT IS GOING ON.\n' +
+    'THERE IS A TRAIN AT THE STATION. IT NEEDS TIME TO GET MOVING.\n' +
+    'TASK: HOLD THE CITY FOR FIVE MINUTES — DRAW THEM TO YOUR NOISE, AWAY FROM THE TRACKS.\n' +
+    'THEN GET OUT. THE DISTRICT WILL BE BURNED OUT.',
   tapToContinue: 'Tap to continue',
 
   radioCallsign_beryoza: 'BERYOZA',
@@ -192,7 +193,7 @@ export default {
   wave_3: 'The Cordon',
   wave_4: 'Building B',
   wave_5: 'Object 67',
-  radio_1: "Falcon, column's at the gate. Cover it.",
+  radio_1: "Falcon, the city is yours. Make noise — draw them to you, away from the station.",
   radio_2: 'Vehicles on the square. Not ours anymore.',
   radio_3: 'The cordon is not answering callsigns. They are firing at you.',
   radio_4: 'Building B is silent. Hold the column.',
