@@ -12,6 +12,7 @@ export default {
 
   telegramHeader: 'TELEGRAM',
   telegramStamp: 'CLASSIFIED',
+  telegramNo: 'No. 67-83',
   telegram:
     'URGENT CLASSIFIED STOP ACCIDENT AT OBJECT 67 STOP ZARYA RELEASED AS GAS STOP\n' +
     'CORDON AFFECTED STOP NOT ANSWERING CALLSIGNS STOP TREATS FALCON AS TARGET STOP\n' +
@@ -81,6 +82,9 @@ export default {
   bossShort: 'object',
 
   pause: 'Paused',
+  pauseHeader: 'FLIGHT LOG · TAIL 67',
+  settingsHeader: 'FORM F-67 · AIRCRAFT SETTINGS',
+  reportCase: 'FILE No. 67',
   settings: 'Settings',
   sound: 'Sound',
   volume: 'Volume',

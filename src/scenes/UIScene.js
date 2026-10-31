@@ -3,12 +3,14 @@ import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT, LOW_HP } f
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { sfx } from '../systems/Sfx.js';
+import { FONT, KHAKI, BRASS } from '../ui/paper.js';
 
 const PAD = 12;
 const XP_BAR_H = 10;
 const HP_BAR_W = 180;
 const HP_BAR_H = 14;
 const BOSS_BAR_H = 12;
+const HUD_TEXT = '#ece4cc'; // цифры HUD — цвет бумаги, не чисто белый: в тон экранам-бланкам
 
 // HUD поверх GameScene: полоска опыта с уровнем, HP, прожитое время.
 // Только читает состояние GameScene, ничего в нём не меняет.
@@ -25,7 +27,7 @@ export class UIScene extends Phaser.Scene {
     this.lowT = 0;
     this.lowText = this.add
       .text(0, 0, t('lowArmor'), {
-        fontFamily: 'sans-serif',
+        fontFamily: FONT,
         fontSize: '15px',
         fontStyle: 'bold',
         color: '#1b1b10',
@@ -48,13 +50,17 @@ export class UIScene extends Phaser.Scene {
     this.radioQueue = [];
     this.radio = this.add.container(0, 0).setAlpha(0);
     this.radioBg = this.add.graphics();
-    this.radioCall = this.add.text(0, 0, t('radioCallsign_beryoza'), {
-      fontFamily: 'monospace',
-      fontSize: '12px',
-      color: '#d8f040',
-      fontStyle: 'bold',
-    });
-    this.radioText = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '15px', color: '#ffffff' });
+    // Плашка — как шкала полевой рации: хаки, латунная окантовка, позывной машинкой с разрядкой.
+    // Текст реплики — рубленым шрифтом: машинка шире, строки на телефоне переносились бы чаще
+    this.radioCall = this.add
+      .text(0, 0, t('radioCallsign_beryoza'), {
+        fontFamily: FONT,
+        fontSize: '12px',
+        color: '#d8f040',
+        fontStyle: 'bold',
+      })
+      .setLetterSpacing(2);
+    this.radioText = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '15px', color: HUD_TEXT });
     this.radio.add([this.radioBg, this.radioCall, this.radioText]);
     // Разовые реплики не по волнам: emit('radio', строка, позывной?, срочно?)
     this.gs.events.on('radio', (line, who, urgent) => this.queueRadio(line, who, urgent));
@@ -62,10 +68,12 @@ export class UIScene extends Phaser.Scene {
     this.alertLeft = 0;
     this.alertT = 0;
     this.gs.events.on('alert', (seconds) => (this.alertLeft = seconds));
-    const style = { fontFamily: 'sans-serif', color: '#ffffff', stroke: '#000000', strokeThickness: 4 };
+    // Цифры HUD — машинкой: моноширинные цифры не «пляшут», когда меняются
+    const style = { fontFamily: FONT, color: HUD_TEXT, stroke: '#000000', strokeThickness: 4 };
     this.levelText = this.add.text(0, 0, '', { ...style, fontSize: '16px', fontStyle: 'bold' });
-    this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', strokeThickness: 3 }).setOrigin(0.5);
-    this.timerText = this.add.text(0, 0, '', { ...style, fontSize: '28px', fontStyle: 'bold' }).setOrigin(0.5, 0);
+    this.hpText = this.add.text(0, 0, '', { ...style, fontSize: '13px', fontStyle: 'bold', strokeThickness: 3 }).setOrigin(0.5);
+    // Таймер — рубленым: «Удар через 0:45» машинкой на 375 px налезал бы на «Уровень»
+    this.timerText = this.add.text(0, 0, '', { ...style, fontFamily: 'sans-serif', fontSize: '28px', fontStyle: 'bold' }).setOrigin(0.5, 0);
     // Добыча со складов за забег: рубли и запчасти — под полоской брони
     this.walletText = this.add.text(0, 0, '', { ...style, fontSize: '14px', strokeThickness: 3, color: '#f2c94c' });
     this.bossText = this.add
@@ -130,11 +138,11 @@ export class UIScene extends Phaser.Scene {
     if (ex.active) {
       // Уход из района: вместо таймера забега — отсчёт до удара, мигает
       this.timerText.setText(`${t('strikeIn')} ${formatTime(Math.max(0, ex.left))}`);
-      setColorIfChanged(this.timerText, Math.floor(ex.left * 3) % 2 ? '#ff6a5a' : '#ffffff');
+      setColorIfChanged(this.timerText, Math.floor(ex.left * 3) % 2 ? '#ff6a5a' : HUD_TEXT);
     } else {
       // цель видна: сколько осталось продержаться
       this.timerText.setText(`${formatTime(elapsed)} / ${formatTime(RUN.duration)}`);
-      setColorIfChanged(this.timerText, RUN.duration - elapsed <= 30 ? '#ff6a5a' : '#ffffff');
+      setColorIfChanged(this.timerText, RUN.duration - elapsed <= 30 ? '#ff6a5a' : HUD_TEXT);
     }
 
     // HP босса — под таймером, пока он жив
@@ -238,10 +246,15 @@ export class UIScene extends Phaser.Scene {
     this.radioCall.setPosition(pad + 6, pad - 2);
     this.radioText.setPosition(pad + 6, pad + 14);
     const h = this.radioText.height + pad * 2 + 14;
+    // Рисуется только при новой реплике, не каждый кадр
     this.radioBg
       .clear()
-      .fillStyle(0x0c100a, 0.78)
-      .fillRoundedRect(0, 0, w, h, 6)
+      .fillStyle(0x0c100a, 0.82)
+      .fillRect(0, 0, w, h)
+      .fillStyle(KHAKI, 0.55)
+      .fillRect(4, 0, w - 4, pad + 12) // полоса позывного — «шкала» рации
+      .lineStyle(1, BRASS, 0.7)
+      .strokeRect(0.5, 0.5, w - 1, h - 1)
       .fillStyle(accent.bar)
       .fillRect(0, 0, 4, h);
     // Под полоской босса, чтобы не перекрывать её на 5-й волне

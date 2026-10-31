@@ -3,10 +3,12 @@ import { t, getLang, initLang } from '../i18n/index.js';
 import { settings, saveSettings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
 import { onTap } from '../ui/tap.js';
+import { FONT, PAPER_DIM, INK, INK_SOFT, PEN, makeSheet, drawSheet } from '../ui/paper.js';
 
 const ROW_H = 58;
 const VOLUME_STEP = 0.1;
 
+// Оформление — бланк: лист бумаги, графы с машинописными подписями, значения «вписаны» ручкой.
 // Настройки поверх меню или паузы: звук, громкость, тряска экрана, язык.
 // Меняется сразу и сохраняется при закрытии. data: { onClose(langChanged) }
 export class SettingsScene extends Phaser.Scene {
@@ -18,9 +20,12 @@ export class SettingsScene extends Phaser.Scene {
     this.cb = data ?? {};
     this.startLang = getLang();
     this.overlay = this.add.rectangle(0, 0, 10, 10, 0x0e130c, 0.94).setOrigin(0).setInteractive();
+    this.sheet = makeSheet(this);
+    this.header = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '11px', color: INK_SOFT }).setOrigin(0, 0);
     this.title = this.add
-      .text(0, 0, t('settings'), { fontFamily: 'sans-serif', fontSize: '34px', color: '#e8f0d8', fontStyle: 'bold' })
-      .setOrigin(0.5, 0);
+      .text(0, 0, '', { fontFamily: FONT, fontSize: '32px', color: INK, fontStyle: 'bold' })
+      .setOrigin(0.5, 0)
+      .setLetterSpacing(2);
 
     this.rows = [
       this.row(() => t('sound'), () => t(settings.sound ? 'on' : 'off'), () => {
@@ -55,9 +60,10 @@ export class SettingsScene extends Phaser.Scene {
   // Строка: подпись слева, значение справа. toggle — тап по строке; step — кнопки «−» и «+»
   row(label, value, toggle, step) {
     const c = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 10, ROW_H - 8, 0x23282d, 0.96).setOrigin(0, 0.5);
-    const name = this.add.text(14, 0, '', { fontFamily: 'sans-serif', fontSize: '18px', color: '#ffffff' }).setOrigin(0, 0.5);
-    const val = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '18px', color: '#d8f040', fontStyle: 'bold' }).setOrigin(0.5);
+    // Графа бланка: чуть темнее листа, подпись машинкой, значение — синей ручкой
+    const bg = this.add.rectangle(0, 0, 10, ROW_H - 8, PAPER_DIM, 1).setOrigin(0, 0.5).setStrokeStyle(1, 0x8a7a5a, 0.6);
+    const name = this.add.text(14, 0, '', { fontFamily: FONT, fontSize: '17px', color: INK }).setOrigin(0, 0.5);
+    const val = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '18px', color: PEN, fontStyle: 'bold' }).setOrigin(0.5);
     c.add([bg, name, val]);
     Object.assign(c, { bg, name, val, label, value });
     if (toggle) {
@@ -77,7 +83,7 @@ export class SettingsScene extends Phaser.Scene {
 
   stepBtn(text, fn) {
     const b = this.add
-      .text(0, 0, text, { fontFamily: 'sans-serif', fontSize: '26px', color: '#ffffff', fontStyle: 'bold', backgroundColor: '#3a4148', padding: { x: 14, y: 2 } })
+      .text(0, 0, text, { fontFamily: 'sans-serif', fontSize: '26px', color: '#e6dcc0', fontStyle: 'bold', backgroundColor: '#3a4128', padding: { x: 14, y: 2 } })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     onTap(b, () => true, () => {
@@ -88,7 +94,8 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   refresh() {
-    this.title.setText(t('settings'));
+    this.title.setText(t('settings').toUpperCase());
+    this.header.setText(t('settingsHeader'));
     this.done.setText(t('done'));
     for (const r of this.rows) {
       r.name.setText(r.label());
@@ -120,6 +127,13 @@ export class SettingsScene extends Phaser.Scene {
       y += ROW_H;
     }
     this.done.setPosition(width / 2, y + 14);
+    // Лист — от заголовка до «Готово»; гриф сверху, если над заголовком есть место
+    const top = this.title.y;
+    const headRoom = top >= 26;
+    const sTop = headRoom ? top - 24 : Math.max(2, top - 8);
+    const sBottom = Math.min(height - 2, this.done.y + this.done.height + 10);
+    drawSheet(this.sheet, x0 - 8, sTop, w + 16, sBottom - sTop, { header: headRoom ? 20 : 0, rule: 0 });
+    this.header.setVisible(headRoom).setPosition(x0, sTop + 5);
   }
 
   close() {

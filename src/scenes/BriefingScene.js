@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { BRIEFING } from '../config.js';
 import { t } from '../i18n/index.js';
+import { FONT, INK, INK_SOFT, makeSheet, drawSheet, makeStamp } from '../ui/paper.js';
 
 // Телеграмма перед забегом. Текст «печатается»; первый тап допечатывает сразу,
 // следующий — запускает забег.
@@ -15,27 +16,19 @@ export class BriefingScene extends Phaser.Scene {
     this.ready = false;
     this.time.delayedCall(BRIEFING.inputDelay * 1000, () => (this.ready = true));
 
-    this.card = this.add.rectangle(0, 0, 10, 10, 0xe6dcc0).setStrokeStyle(2, 0x8a7a5a);
+    // Бланк телеграммы — тот же лист, что в меню: тень, красная черта под шапкой, линовка
+    this.sheet = makeSheet(this);
     this.header = this.add
-      .text(0, 0, t('telegramHeader'), { fontFamily: 'monospace', fontSize: '14px', color: '#5a4a32' })
+      .text(0, 0, t('telegramHeader'), { fontFamily: FONT, fontSize: '14px', color: INK_SOFT, fontStyle: 'bold' })
+      .setOrigin(0, 0)
+      .setLetterSpacing(2);
+    this.number = this.add
+      .text(0, 0, t('telegramNo'), { fontFamily: FONT, fontSize: '12px', color: INK_SOFT })
       .setOrigin(0, 0);
-    // Штамп «СЕКРЕТНО»: текст в рамке, повёрнутые вместе
-    const stampText = this.add
-      .text(0, 0, t('telegramStamp'), {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#b03024',
-        fontStyle: 'bold',
-        padding: { x: 6, y: 2 },
-      })
-      .setOrigin(1, 0);
-    const frame = this.add
-      .rectangle(0, 0, stampText.width, stampText.height)
-      .setOrigin(1, 0)
-      .setStrokeStyle(2, 0xb03024);
-    this.stamp = this.add.container(0, 0, [frame, stampText]).setAngle(-6);
+    // Штамп «СЕКРЕТНО» — как на карточке меню
+    this.stamp = makeStamp(this, t('telegramStamp'), 16, undefined, -6);
     this.bodyText = this.add
-      .text(0, 0, '', { fontFamily: 'monospace', fontSize: '16px', color: '#2a2418', lineSpacing: 6 })
+      .text(0, 0, '', { fontFamily: FONT, fontSize: '16px', color: INK, lineSpacing: 6 })
       .setOrigin(0, 0);
     this.hint = this.add
       .text(0, 0, t('tapToContinue'), { fontFamily: 'sans-serif', fontSize: '15px', color: '#9fb08f' })
@@ -70,9 +63,11 @@ export class BriefingScene extends Phaser.Scene {
     const cy = height * 0.45;
     const left = cx - cw / 2;
     const top = cy - ch / 2;
-    this.card.setPosition(cx, cy).setSize(cw, ch);
-    this.header.setPosition(left + pad, top + 14);
-    this.stamp.setPosition(left + cw - pad, top + 10);
+    drawSheet(this.sheet, left, top, cw, ch, { header: 38, rule: this.bodyText.style.fontSize === '14px' ? 23 : 25 });
+    this.header.setPosition(left + pad, top + 10);
+    // Номер — под шапкой мелко; штамп справа, центр штампа — где был правый верхний угол
+    this.number.setPosition(left + pad + this.header.width + 12, top + 12);
+    this.stamp.setPosition(left + cw - pad - this.stamp.label.width / 2, top + 10 + this.stamp.label.height / 2);
     this.bodyText.setPosition(left + pad, top + 48);
     this.hint.setPosition(cx, top + ch + 34);
   }

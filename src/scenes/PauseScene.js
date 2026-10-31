@@ -2,9 +2,11 @@ import * as Phaser from 'phaser';
 import { t } from '../i18n/index.js';
 import { onTap } from '../ui/tap.js';
 import { formatTime } from '../format.js';
+import { FONT, INK, INK_SOFT, BTN, makeSheet, drawSheet } from '../ui/paper.js';
 
 const INPUT_DELAY = 250; // мс — чтобы палец, нажавший «пауза», не нажал сразу кнопку под собой
 
+// Оформление — лист бортового журнала: бумага с грифом, машинописный заголовок, кнопки как в меню.
 // Пауза поверх приостановленной GameScene: продолжить, настройки, выйти; ниже — время, убитые
 // и взятые улучшения. data: { taken: ['Калибр 2', …], time, kills, onResume(), onQuit() }
 export class PauseScene extends Phaser.Scene {
@@ -19,14 +21,17 @@ export class PauseScene extends Phaser.Scene {
     this.time.delayedCall(INPUT_DELAY, () => (this.ready = true));
 
     this.overlay = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.6).setOrigin(0).setInteractive();
+    this.sheet = makeSheet(this);
+    this.header = this.add.text(0, 0, t('pauseHeader'), { fontFamily: FONT, fontSize: '11px', color: INK_SOFT }).setOrigin(0, 0);
     this.title = this.add
-      .text(0, 0, t('pause'), { fontFamily: 'sans-serif', fontSize: '40px', color: '#ffe066', fontStyle: 'bold' })
-      .setOrigin(0.5);
-    this.resumeBtn = this.button(t('resume'), 0x6b8f3a, 0xc8e08a, () => this.finish('onResume'));
-    this.settingsBtn = this.button(t('settings'), 0x3a4148, 0x8a949c, () => this.openSettings());
-    this.quitBtn = this.button(t('quitToMenu'), 0x3a3f36, 0x6a7060, () => this.finish('onQuit'));
+      .text(0, 0, t('pause').toUpperCase(), { fontFamily: FONT, fontSize: '40px', color: INK, fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+    this.resumeBtn = this.button(t('resume'), BTN.main.fill, BTN.main.stroke, () => this.finish('onResume'));
+    this.settingsBtn = this.button(t('settings'), BTN.plain.fill, BTN.plain.stroke, () => this.openSettings());
+    this.quitBtn = this.button(t('quitToMenu'), BTN.quiet.fill, BTN.quiet.stroke, () => this.finish('onQuit'));
     this.info = this.add
-      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '15px', color: '#b8c0c8', align: 'center', lineSpacing: 6 })
+      .text(0, 0, '', { fontFamily: FONT, fontSize: '14px', color: INK, align: 'center', lineSpacing: 6 })
       .setOrigin(0.5, 0);
     this.showInfo();
 
@@ -73,7 +78,14 @@ export class PauseScene extends Phaser.Scene {
       btn.bg.setSize(w, btnH);
       btn.bg.input.hitArea.setSize(w, btnH);
     });
-    this.info.setWordWrapWidth(width - 40).setPosition(width / 2, first + 2 * step + btnH / 2 + 10);
+    // Лист под всем блоком; лёжа шире кнопок, чтобы итоги не росли в высоту
+    const sw = low ? Math.min(width - 24, 560) : Math.min(width - 16, w + 40);
+    this.info.setWordWrapWidth(sw - 24).setPosition(width / 2, first + 2 * step + btnH / 2 + 10);
+    const headRoom = top >= 26; // гриф сверху — если есть место над заголовком
+    const sTop = headRoom ? top - 24 : Math.max(2, top - 6);
+    const sBottom = Math.min(height - 4, this.info.y + this.info.height + 12);
+    drawSheet(this.sheet, (width - sw) / 2, sTop, sw, sBottom - sTop, { header: headRoom ? 20 : 0, rule: 0 });
+    this.header.setVisible(headRoom).setPosition((width - sw) / 2 + 10, sTop + 5);
   }
 
   showInfo() {

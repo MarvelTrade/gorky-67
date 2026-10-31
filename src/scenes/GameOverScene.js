@@ -6,8 +6,14 @@ import { platform } from '../platform/platform.js';
 import { copyReport } from '../systems/Telemetry.js';
 import { onTap } from '../ui/tap.js';
 import { metaSnapshot } from '../meta.js';
+import {
+  FONT, INK, INK_SOFT, RED, RED_CSS, GREEN_INK, BTN, makeSheet, drawSheet, makeStamp,
+} from '../ui/paper.js';
 
 // Итоги забега и «Ещё раз». data: { win, time, kills, level }
+// Оформление — акт о вылете: лист с грифом, исход — штампом (выжил — зелёный, сбит / не успел — красный),
+// цифры машинкой. Кнопки — как в меню
+
 export class GameOverScene extends Phaser.Scene {
   constructor() {
     super('GameOverScene');
@@ -17,21 +23,21 @@ export class GameOverScene extends Phaser.Scene {
     this.ready = false;
     this.time.delayedCall(RUN.gameOverInputDelay * 1000, () => (this.ready = true));
 
-    const title = this.add
-      .text(0, 0, t(stats.win ? 'win' : stats.ending === 'nuke' ? 'loseNuke' : 'lose'), {
-        fontFamily: 'sans-serif',
-        fontSize: '46px',
-        color: stats.win ? '#ffe066' : '#ff6a5a',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5);
+    const sheet = makeSheet(this);
+    const header = this.add.text(0, 0, t('reportHeader'), { fontFamily: FONT, fontSize: '11px', color: INK_SOFT }).setOrigin(0, 0);
+    const caseNo = this.add.text(0, 0, t('reportCase'), { fontFamily: FONT, fontSize: '11px', color: INK_SOFT }).setOrigin(1, 0);
+    const divider = this.add.graphics(); // лёжа — черта между колонками акта
+    // Исход — штампом поперёк акта; title — надпись штампа (её высоту берёт раскладка)
+    const word = t(stats.win ? 'win' : stats.ending === 'nuke' ? 'loseNuke' : 'lose').toUpperCase();
+    const titleBox = makeStamp(this, word, 40, stats.win ? GREEN_INK : RED, -4);
+    const title = titleBox.label;
 
     // Концовка — строка по итогу забега и последнее слово «Черёмухи» — при любом исходе
     const ending = this.add
       .text(0, 0, `${t(`ending_${stats.ending}`)}\n\n${t('radioCallsign_cheryomukha')}: «${t('cher_end')}»`, {
-        fontFamily: 'monospace',
+        fontFamily: FONT,
         fontSize: '17px',
-        color: '#d8e0c8',
+        color: INK,
         align: 'center',
         lineSpacing: 4,
       })
@@ -53,21 +59,22 @@ export class GameOverScene extends Phaser.Scene {
     const bossLine = stats.bossSeen ? t(stats.bossKilled ? 'bossKilled' : 'bossAlive') : null;
     const statsText = this.add
       .text(0, 0, '', {
-        fontFamily: 'sans-serif',
-        fontSize: '24px',
-        color: '#e8f0d8',
+        fontFamily: FONT,
+        fontSize: '22px',
+        color: INK,
+        fontStyle: 'bold',
         align: 'center',
         lineSpacing: 8,
       })
       .setOrigin(0.5, 0);
 
     const bestText = this.add
-      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '20px', color: '#9fb08f' })
+      .text(0, 0, '', { fontFamily: FONT, fontSize: '20px', color: INK_SOFT })
       .setOrigin(0.5, 0);
     this.updateRecord(stats, bestText);
 
     const button = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 240, 72, 0x6b8f3a).setStrokeStyle(3, 0xc8e08a);
+    const bg = this.add.rectangle(0, 0, 240, 72, BTN.main.fill).setStrokeStyle(3, BTN.main.stroke);
     const label = this.add
       .text(0, 0, t('again'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5);
@@ -79,7 +86,8 @@ export class GameOverScene extends Phaser.Scene {
 
     // «Ангар» — потратить добычу между забегами
     const hangar = this.add
-      .text(0, 0, `${t('hangar')} →`, { fontFamily: 'sans-serif', fontSize: '20px', color: '#f2c94c', fontStyle: 'bold', padding: { x: 12, y: 8 } })
+      // Свой фон — читается и на тёмном, и на листе акта (лёжа кнопки лежат на нём)
+      .text(0, 0, `${t('hangar')} →`, { fontFamily: 'sans-serif', fontSize: '20px', color: '#f2c94c', fontStyle: 'bold', backgroundColor: '#3a4148', padding: { x: 12, y: 8 } })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     onTap(hangar, () => this.ready, () => this.scene.start('HangarScene', { from: 'GameOverScene' }));
@@ -90,7 +98,8 @@ export class GameOverScene extends Phaser.Scene {
       .text(0, 0, t('copyStats'), {
         fontFamily: 'sans-serif',
         fontSize: '15px',
-        color: '#9fb08f',
+        color: '#c8d0d8',
+        backgroundColor: '#3a4148',
         padding: { x: 10, y: 8 },
       })
       .setOrigin(0.5)
@@ -118,7 +127,7 @@ export class GameOverScene extends Phaser.Scene {
       const wide = short && width >= 640;
       const sep = short && !wide ? '  ·  ' : '\n';
       statsText.setText([causeLine, lines.join(sep), bossLine, heliUp].filter(Boolean).join('\n'));
-      statsText.setFontSize(wide ? 15 : short ? 20 : 24).setLineSpacing(wide ? 2 : 8);
+      statsText.setFontSize(wide ? 15 : short ? 18 : 22).setLineSpacing(wide ? 2 : 8);
       ending.setFontSize(wide ? 14 : 17);
       bestText.setFontSize(wide ? 14 : 20);
 
@@ -130,24 +139,36 @@ export class GameOverScene extends Phaser.Scene {
         ending.setWordWrapWidth(lw - 16);
         const leftH = title.height + 10 + ending.height;
         let y = Math.max(8, (height - leftH) / 2);
-        title.setPosition(lx, y + title.height / 2);
+        titleBox.setPosition(lx, y + title.height / 2);
         ending.setPosition(lx, y + title.height + 10);
+        // Лёжа акт — на весь экран, две колонки через черту; гриф — если над штампом есть место
+        drawSheet(sheet, 6, 4, width - 12, height - 8, { header: 0, rule: 0 });
+        header.setVisible(y >= 30).setPosition(16, 9);
+        caseNo.setVisible(false);
+        divider.clear().lineStyle(1, RED, 0.35).lineBetween(lw + 12, 14, lw + 12, height - 14);
         y = 10;
         statsText.setPosition(rx, y);
         y += statsText.height + 4;
         bestText.setPosition(rx, y);
         y += bestText.height + 8;
-        const by = Math.min(y + 30, height - 92);
+        // Кнопка — целиком под строкой рекорда (половина высоты кнопки — 36 px); места мало — кнопка ниже ростом
+        const room = height - 60 - y; // до «Ангара» и «Скопировать» снизу
+        const bh = Phaser.Math.Clamp(room - 8, 44, 72);
+        button.setScale(1, bh / 72);
+        button.list[1]?.setScale(1, 72 / bh); // надпись не сплющивается
+        const by = y + bh / 2 + 2;
         button.setPosition(rx, by);
-        hangar.setPosition(rx, by + 50);
-        copy.setPosition(rx, by + 80);
+        hangar.setPosition(rx, by + bh / 2 + 16);
+        copy.setPosition(rx, hangar.y + 30);
         return;
       }
 
-      statsText.setWordWrapWidth(width - 32);
-      ending.setWordWrapWidth(Math.min(480, width - 40));
+      const sw = Math.min(520, width - 16);
+      statsText.setWordWrapWidth(sw - 24);
+      ending.setWordWrapWidth(Math.min(480, sw - 24));
       let y = height * (short ? 0.06 : 0.12);
-      title.setPosition(width / 2, y + title.height / 2);
+      const sTop = y >= 36 ? y - 34 : Math.max(2, y - 10);
+      titleBox.setPosition(width / 2, y + title.height / 2);
       y += title.height + 12;
       ending.setPosition(width / 2, y);
       y += ending.height + (short ? 16 : 32);
@@ -156,10 +177,17 @@ export class GameOverScene extends Phaser.Scene {
       bestText.setPosition(width / 2, y);
       y += bestText.height + (short ? 20 : 48);
       const by = Math.min(y + 36, height - (short ? 104 : 130));
+      // Акт — от грифа до рекорда; кнопки под ним, на тёмном, как в меню
+      const sBottom = Math.min(bestText.y + bestText.height + 12, by - 36 - 8);
+      drawSheet(sheet, (width - sw) / 2, sTop, sw, sBottom - sTop, { header: y >= 36 ? 20 : 0, rule: 0 });
+      header.setVisible(y >= 36).setPosition((width - sw) / 2 + 10, sTop + 5);
+      caseNo.setVisible(y >= 36).setPosition((width + sw) / 2 - 10, sTop + 5);
+      divider.clear();
       button.setPosition(width / 2, by);
       hangar.setPosition(width / 2, by + 36 + (short ? 18 : 26));
       copy.setPosition(width / 2, hangar.y + (short ? 34 : 40));
     };
+    this.layoutFn = layout; // рекорд приходит позже — лист подгоняется под его строку
     layout();
     this.scale.on('resize', layout);
     this.events.once('shutdown', () => this.scale.off('resize', layout));
@@ -174,12 +202,14 @@ export class GameOverScene extends Phaser.Scene {
       await platform.saveProgress({ ...save, best: run, meta: metaSnapshot() });
       // Пока ждали сохранения, игрок мог уже нажать «Ещё раз» — экрана больше нет
       if (!text.scene) return;
-      text.setText(t('newBest')).setColor('#ffe066');
+      text.setText(t('newBest')).setColor(RED_CSS);
+      this.layoutFn?.();
     } else {
       await platform.saveProgress({ ...save, meta: metaSnapshot() });
       if (!text.scene) return;
       const boss = best.boss ? ` · ${t('bossShort')}` : '';
       text.setText(`${t('best')}: ${formatTime(best.time)} · ${best.kills}${boss}`);
+      this.layoutFn?.();
     }
   }
 

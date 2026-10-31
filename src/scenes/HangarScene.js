@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { HANGAR, HELI, LIVERIES, GEAR, LEVELUP } from '../config.js';
+import { HANGAR, HELI, LIVERIES, GEAR } from '../config.js';
 import { t } from '../i18n/index.js';
 import {
   meta, level, price, canBuy, buy, heliLevel, heliProgress, slots,
@@ -7,11 +7,16 @@ import {
 } from '../meta.js';
 import { sfx } from '../systems/Sfx.js';
 import { onTap } from '../ui/tap.js';
+import {
+  FONT, PAPER, PAPER_DIM, EDGE, INK, INK_SOFT, INK_FAINT, LIGHT, RED, RED_CSS, GREEN_INK, makeSheet, drawSheet,
+} from '../ui/paper.js';
 
 const ROW_H = 52;
 const MAX_W = 520;
 const TABS = ['upgrades', 'gear', 'livery'];
 
+// Оформление — журнал учёта техники: список на листе бумаги, вкладки — закладки-корешки,
+// «выбрано / максимум» — красным штампом, недоступное — бледной копиркой.
 // «Ангар»: сверху вертолёт в выбранной окраске, его уровень и полоска опыта; ниже — вкладки:
 // улучшения за рубли и запчасти, снаряжение в ячейки (как в DRG: Survivor), окраска.
 // data: { from } — откуда пришли: из итогов «Назад» значит «Ещё раз»
@@ -23,21 +28,27 @@ export class HangarScene extends Phaser.Scene {
   create(data) {
     this.from = data?.from ?? 'MenuScene';
     this.tab = data?.tab ?? 'upgrades';
-    const style = { fontFamily: 'sans-serif', color: '#ffffff' };
-    this.title = this.add.text(0, 0, t('hangar'), { ...style, fontSize: '30px', fontStyle: 'bold', color: '#e8f0d8' }).setOrigin(0.5, 0);
+    const style = { fontFamily: FONT, color: LIGHT };
+    this.title = this.add
+      .text(0, 0, t('hangar').toUpperCase(), { ...style, fontSize: '30px', fontStyle: 'bold' })
+      .setOrigin(0.5, 0)
+      .setLetterSpacing(3);
     this.wallet = this.add.text(0, 0, '', { ...style, fontSize: '18px', color: '#f2c94c', fontStyle: 'bold' }).setOrigin(0.5, 0);
 
     // Вертолёт на площадке: круг-подложка, корпус в окраске, винт крутится
     this.pad = this.add.graphics();
     this.heli = this.add.image(0, 0, 'heli').setAngle(-90);
     this.rotor = this.add.image(0, 0, 'rotor');
-    this.heliLv = this.add.text(0, 0, '', { ...style, fontSize: '18px', fontStyle: 'bold' }).setOrigin(0, 0.5);
+    // Уровень — рубленым: «Уровень 8 · максимум» машинкой не влезал справа от вертолёта на 375 px
+    this.heliLv = this.add.text(0, 0, '', { ...style, fontFamily: 'sans-serif', fontSize: '18px', fontStyle: 'bold' }).setOrigin(0, 0.5);
     this.heliName = this.add.text(0, 0, t('heliName'), { ...style, fontSize: '13px', color: '#9fb08f' }).setOrigin(0, 0.5);
     this.xpBar = this.add.graphics();
+    // Лист журнала под списком; вкладки создаются после — лежат поверх, как корешки
+    this.sheet = makeSheet(this);
 
     this.tabBtns = TABS.map((id) => {
       const b = this.add
-        .text(0, 0, t(`tab_${id}`), { ...style, fontSize: '16px', fontStyle: 'bold', padding: { x: 10, y: 8 } })
+        .text(0, 0, t(`tab_${id}`), { ...style, fontSize: '15px', fontStyle: 'bold', padding: { x: 8, y: 8 } })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
       onTap(b, () => true, () => {
@@ -48,7 +59,9 @@ export class HangarScene extends Phaser.Scene {
       b.tabId = id;
       return b;
     });
-    this.info = this.add.text(0, 0, '', { ...style, fontSize: '13px', color: '#9fb08f', align: 'center' }).setOrigin(0.5, 0);
+    this.info = this.add
+      .text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '13px', color: INK_SOFT, align: 'center' })
+      .setOrigin(0.5, 0);
 
     this.back = this.add
       .text(0, 0, '', { ...style, fontSize: '20px', color: '#c8d8b0', padding: { x: 14, y: 10 } })
@@ -61,7 +74,7 @@ export class HangarScene extends Phaser.Scene {
 
     const arrow = (txt, dir) => {
       const b = this.add
-        .text(0, 0, txt, { ...style, fontSize: '18px', color: '#c8d8b0', backgroundColor: '#2f363d', padding: { x: 14, y: 3 } })
+        .text(0, 0, txt, { ...style, fontSize: '18px', color: INK, backgroundColor: '#d2c7a6', padding: { x: 14, y: 3 } })
         .setOrigin(0.5, 0)
         .setInteractive({ useHandCursor: true })
         .setVisible(false);
@@ -102,13 +115,14 @@ export class HangarScene extends Phaser.Scene {
   makeRow(id) {
     const key = { upgrades: 'hangar', gear: 'gear', livery: 'livery' }[this.tab];
     const row = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 10, ROW_H - 6, LEVELUP.cardFill, 0.96).setOrigin(0, 0.5);
-    const name = this.add.text(0, -10, t(`${key}_${id}`), { fontFamily: 'sans-serif', fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0, 0.5);
-    const desc = this.add.text(0, 10, t(`${key}_${id}_desc`), { fontFamily: 'sans-serif', fontSize: '12px', color: '#b8c0c8' }).setOrigin(0, 0.5);
+    // Строка журнала: фон прозрачный (лист под ней), надетое снаряжение — подсвечено графой
+    const bg = this.add.rectangle(0, 0, 10, ROW_H - 6, PAPER_DIM, 0).setOrigin(0, 0.5);
+    const name = this.add.text(0, -10, t(`${key}_${id}`), { fontFamily: FONT, fontSize: '15px', color: INK, fontStyle: 'bold' }).setOrigin(0, 0.5);
+    const desc = this.add.text(0, 10, t(`${key}_${id}_desc`), { fontFamily: 'sans-serif', fontSize: '12px', color: INK_SOFT }).setOrigin(0, 0.5);
     const pips = this.add.graphics();
     const swatch = this.add.graphics(); // окраска: кружок цвета слева
     const btn = this.add.rectangle(0, 0, 120, ROW_H - 14, 0x6b8f3a).setOrigin(1, 0.5);
-    const cost = this.add.text(0, 0, '', { fontFamily: 'sans-serif', fontSize: '13px', color: '#ffffff', fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
+    const cost = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '13px', color: '#ffffff', fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
     row.add([bg, swatch, name, desc, pips, btn, cost]);
     Object.assign(row, { id, bg, name, desc, pips, swatch, btn, cost });
     btn.setInteractive({ useHandCursor: true });
@@ -132,7 +146,8 @@ export class HangarScene extends Phaser.Scene {
     this.heli.setTexture(liveryTexture(this));
     for (const b of this.tabBtns) {
       const on = b.tabId === this.tab;
-      b.setColor(on ? '#ffe066' : '#9fb08f').setBackgroundColor(on ? '#2f363d' : '#00000000');
+      // Открытая вкладка — того же цвета, что лист: корешок «приклеен» к журналу
+      b.setColor(on ? INK : '#c8bc9a').setBackgroundColor(on ? '#e6dcc0' : '#3a4128');
     }
     this.info.setText(this.tab === 'upgrades' ? t('hangarHint') : this.tab === 'gear' ? `${t('slotsUsed')}: ${meta.gear.length} / ${slots()}` : '');
 
@@ -156,10 +171,11 @@ export class HangarScene extends Phaser.Scene {
         else if (meta.livery === r.id) [label, state] = [t('chosen'), 'on'];
         else [label, state] = [t('choose'), 'ok'];
       }
-      r.cost.setText(label).setColor(state === 'off' ? '#8a949c' : '#ffffff');
-      r.btn.setFillStyle({ ok: 0x6b8f3a, on: 0x2f5a6b, off: 0x3a4148 }[state]);
-      r.btn.setStrokeStyle(2, { ok: 0xc8e08a, on: 0x7fe3ff, off: 0x59626a }[state]);
-      r.bg.setStrokeStyle(meta.gear.includes(r.id) && this.tab === 'gear' ? 2 : 0, 0x7fe3ff);
+      // Можно — зелёная кнопка, как «Играть»; выбрано — красный штамп; нельзя — бледная графа
+      r.cost.setText(label).setColor({ ok: '#ffffff', on: RED_CSS, off: INK_FAINT }[state]);
+      r.btn.setFillStyle({ ok: 0x6b8f3a, on: PAPER, off: PAPER_DIM }[state]);
+      r.btn.setStrokeStyle(2, { ok: 0x3d5a22, on: RED, off: EDGE }[state]);
+      r.bg.setFillStyle(PAPER_DIM, meta.gear.includes(r.id) && this.tab === 'gear' ? 0.8 : 0);
     }
     this.layout();
   }
@@ -273,6 +289,15 @@ export class HangarScene extends Phaser.Scene {
 
     // Стрелки листания — под списком
     const py = y + perPage * ROW_H + 2;
+    // Лист журнала: от подсказки до последней строки (или до стрелок), строки разделены линовкой
+    const shown = Math.min(perPage, this.rows.length - this.first);
+    const sTop = top - 6;
+    const sBottom = pages ? py + 32 : y + shown * ROW_H + 2;
+    drawSheet(this.sheet, x0 - 6, sTop, w + 12, sBottom - sTop, { header: 0, rule: 0 });
+    const g = this.sheet.lines;
+    if (this.info.text) g.lineStyle(1, RED, 0.4).lineBetween(x0, y - 3, x0 + w, y - 3);
+    g.lineStyle(1, EDGE, 0.35);
+    for (let k = 1; k < shown; k++) g.lineBetween(x0, y + k * ROW_H, x0 + w, y + k * ROW_H);
     this.pagerUp.setPosition(x0 + w / 2 - 40, py).setVisible(pages).setAlpha(this.first > 0 ? 1 : 0.3);
     this.pagerDown.setPosition(x0 + w / 2 + 40, py).setVisible(pages).setAlpha(this.first + perPage < this.rows.length ? 1 : 0.3);
   }
@@ -295,12 +320,12 @@ export class HangarScene extends Phaser.Scene {
       const lv = level(r.id);
       for (let k = 0; k < max; k++) {
         const x = right - (max - 1 - k) * 13;
-        if (k < lv) g.fillStyle(0x5fe08a, 1).fillCircle(x, 0, 4.5);
-        else g.lineStyle(1.5, 0x6c7680, 1).strokeCircle(x, 0, 4);
+        if (k < lv) g.fillStyle(GREEN_INK, 1).fillCircle(x, 0, 4.5);
+        else g.lineStyle(1.5, EDGE, 1).strokeCircle(x, 0, 4);
       }
     } else if (this.tab === 'livery') {
       // Маленький вертолёт в этой окраске — камуфляж видно сразу
-      r.swatch.fillStyle(0x1c211a, 1).fillCircle(20, 0, 15).lineStyle(1, 0xe8f0d8, 0.4).strokeCircle(20, 0, 15);
+      r.swatch.fillStyle(0x2a3326, 1).fillCircle(20, 0, 15).lineStyle(1, EDGE, 1).strokeCircle(20, 0, 15);
       if (!r.mini) {
         r.mini = this.add.image(20, 0, liveryTexture(this, r.id)).setScale(0.38).setAngle(-30);
         r.add(r.mini);
