@@ -165,6 +165,7 @@ export default {
   badgesShort: 'badges:',
   skip: 'Skip',
   levelUpKeys: 'A/D or ←/→ — choose · W/S — buttons · Space or Enter — take',
+  showFps: 'Show FPS',
   gaugeArmor: 'ARMOR',
   gaugeSpeed: 'SPEED',
   gaugeBoost: 'BOOST',

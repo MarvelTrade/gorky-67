@@ -6,6 +6,7 @@ import { lt } from '../levels.js';
 import { sfx } from '../systems/Sfx.js';
 import { FONT, KHAKI, BRASS } from '../ui/paper.js';
 import { WeaponBar } from '../ui/WeaponBar.js';
+import { settings } from '../settings.js';
 
 const PAD = 12;
 const XP_BAR_H = 10;
@@ -84,9 +85,14 @@ export class UIScene extends Phaser.Scene {
       .setVisible(false);
     // Нижняя панель оружия и шкалы брони и хода по бокам
     this.weaponBar = new WeaponBar(this);
-    this.fpsText = import.meta.env.DEV
-      ? this.add.text(0, 0, '', { ...style, fontSize: '12px', strokeThickness: 3 }).setOrigin(1, 0)
-      : null;
+    // Счётчик кадров: в dev-сборке всегда, у тестеров — по настройке «Показывать FPS».
+    // Текст обновляется дважды в секунду (перерисовка текста каждый кадр сама стоит кадров на телефоне):
+    // средний FPS за полсекунды и худший за последние 5 с
+    this.fpsText =
+      import.meta.env.DEV || (settings.showFps && import.meta.env.VITE_PLATFORM !== 'yandex')
+        ? this.add.text(0, 0, '', { ...style, fontSize: '12px', strokeThickness: 3 }).setOrigin(1, 0)
+        : null;
+    this.fpsAcc = { t: 0, frames: 0, worst: [] };
   }
 
   update(time, delta) {
@@ -187,9 +193,21 @@ export class UIScene extends Phaser.Scene {
       .setPosition(width - PAD - this.pauseBtn.width / 2, XP_BAR_H + 6 + this.pauseBtn.height / 2)
       .setVisible(!gs.ended && !gs.scene.isPaused() && p.alive);
 
-    if (this.fpsText) {
-      this.fpsText.setPosition(width - PAD, XP_BAR_H + 56).setText(`FPS ${Math.round(this.game.loop.actualFps)}`);
-    }
+    if (this.fpsText) this.updateFps(width, delta);
+  }
+
+  updateFps(width, delta) {
+    const a = this.fpsAcc;
+    a.t += delta;
+    a.frames++;
+    this.fpsText.setPosition(width - PAD, XP_BAR_H + 56);
+    if (a.t < 500) return;
+    const fps = Math.round((a.frames * 1000) / a.t);
+    a.worst.push(fps);
+    if (a.worst.length > 10) a.worst.shift();
+    this.fpsText.setText(`FPS ${fps}  min ${Math.min(...a.worst)}`);
+    a.t = 0;
+    a.frames = 0;
   }
 
   // Плавающий джойстик под пальцем: кольцо в точке касания и «шляпка», куда тянешь

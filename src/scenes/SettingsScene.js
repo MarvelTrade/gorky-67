@@ -44,6 +44,10 @@ export class SettingsScene extends Phaser.Scene {
         initLang(settings.lang);
       }),
     ];
+    // Тестерам: счётчик кадров в игре — замерить телефон без dev-сборки. На Яндексе строки нет
+    if (import.meta.env.VITE_PLATFORM !== 'yandex') {
+      this.rows.push(this.row(() => t('showFps'), () => t(settings.showFps ? 'on' : 'off'), () => (settings.showFps = !settings.showFps)));
+    }
 
     this.done = this.add
       .text(0, 0, t('done'), { fontFamily: 'sans-serif', fontSize: '22px', color: '#ffffff', fontStyle: 'bold', backgroundColor: '#6b8f3a', padding: { x: 28, y: 12 } })

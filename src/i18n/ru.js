@@ -167,6 +167,7 @@ export default {
   badgesShort: 'знаки:',
   skip: 'Пропустить',
   levelUpKeys: 'A/D или ←/→ — выбор · W/S — кнопки · Пробел или Enter — взять',
+  showFps: 'Показывать FPS',
   gaugeArmor: 'БРОНЯ',
   gaugeSpeed: 'ХОД',
   gaugeBoost: 'ФОРСАЖ',
