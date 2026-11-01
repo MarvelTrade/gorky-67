@@ -162,6 +162,7 @@ export default {
   badgeGot: 'Badge of honour!',
   badges: 'badges',
   ivan_crate: "Vova, a military crate! Fly over it and we'll grab it.",
+  badgesShort: 'badges:',
   gaugeArmor: 'ARMOR',
   gaugeSpeed: 'SPEED',
   gaugeBoost: 'BOOST',

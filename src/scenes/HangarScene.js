@@ -139,7 +139,8 @@ export class HangarScene extends Phaser.Scene {
   }
 
   refresh() {
-    this.wallet.setText(`₽ ${meta.money}   ⚙ ${meta.parts}`);
+    // Кошелёк и знаки отличия из военных ящиков
+    this.wallet.setText(`₽ ${meta.money}   ⚙ ${meta.parts}${meta.badges ? `   ${t('badgesShort')} ${meta.badges}` : ''}`);
     const lv = heliLevel();
     const max = lv >= HELI.levels.length;
     this.heliLv.setText(`${t('heliLevel')} ${lv}${max ? ` · ${t('heliMax')}` : ''}`);

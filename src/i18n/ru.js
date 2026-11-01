@@ -164,6 +164,7 @@ export default {
   badgeGot: 'Знак отличия!',
   badges: 'знаки отличия',
   ivan_crate: 'Вова, военный ящик! Пролетим над ним — подберём.',
+  badgesShort: 'знаки:',
   gaugeArmor: 'БРОНЯ',
   gaugeSpeed: 'ХОД',
   gaugeBoost: 'ФОРСАЖ',
