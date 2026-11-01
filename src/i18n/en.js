@@ -36,6 +36,9 @@ export default {
   l2_cher_exit: 'Get out!.. to the {dir}... along the road to the capital... strike in twenty seconds... go!..',
   l2_cher_lure: 'Vanechka... drag it into the field... let them cover it...',
   l2_cher_end: 'Boys... next is the station... and the capital... remember...',
+  l2_ending_convoy: 'Falcon left the district before the strike. What they built in the pit is destroyed. The train heads north.',
+  l2_ending_late: 'Falcon left the district before the strike. What came out of the pit, no one knows.',
+  l2_ending_lost: 'Falcon went silent. Olkhovka farm is closed until further notice.',
 
   // ── Level 3: Granitny quarry ──
   l3_telegram:
@@ -64,6 +67,9 @@ export default {
   l3_cher_lure: 'Vanechka... drag it onto the wasteland... let them cover it...',
   l3_cher_artillery: 'Vanya!.. Vova!.. get out of the square... they are about to shell it...',
   l3_cher_end: 'Boys... the capital is getting closer... remember...',
+  l3_ending_convoy: 'Falcon left the quarry before the strike. What they built on the pit floor is destroyed. The train heads north.',
+  l3_ending_late: 'Falcon left the quarry before the strike. What climbed out of the pit, no one knows.',
+  l3_ending_lost: 'Falcon went silent. Granitny quarry is closed until further notice.',
   l3_vova_train: "The train... past the yard, not slowing down. On to the capital.",
   vova_blasters: 'Berezka! What are they holding... is that TNT?!',
   beryoza_blasters: "TNT, Falcon. They've looted the quarry store. If they reach you, they blow. Hit them first.",

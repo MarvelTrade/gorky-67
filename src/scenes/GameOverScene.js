@@ -214,6 +214,9 @@ export class GameOverScene extends Phaser.Scene {
       { obj: hangar, activate: goHangar },
       ...(copy.visible ? [{ obj: copy, activate: copyStats }] : []),
     ]);
+    // Рамка выбора проявляется вместе с кнопками, а не висит над пустым местом
+    this.nav.ring.setAlpha(0);
+    this.tweens.add({ targets: this.nav.ring, alpha: 1, delay: RUN.gameOverInputDelay * 1000, duration: 200 });
     // Рекорд приходит позже — лист подгоняется под его строку; рамка выбора — следом за кнопками
     this.layoutFn = () => {
       layout();

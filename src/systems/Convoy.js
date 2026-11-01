@@ -1,6 +1,7 @@
 import { CONVOY } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { layout, lt } from '../levels.js';
+import { sfx } from './Sfx.js';
 
 // Автобусная колонна эвакуации (уровень 1): с запада по главному проспекту — БТР, жёлтые автобусы,
 // БТР замыкающий. Встаёт на проспекте, пока грузятся люди; БТР сопровождения сами отстреливают
@@ -130,6 +131,7 @@ export class Convoy {
     v.alive = false;
     v.img.setTint(0x3a3a3a);
     this.scene.explosionFx(x, y, 40, false); // дома вокруг не ломает
+    sfx.play('explosion');
     this.scene.events.emit('radio', lt('convoy_bus_lost'), 'cheryomukha', true);
   }
 
