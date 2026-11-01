@@ -59,7 +59,24 @@ export class MenuScene extends Phaser.Scene {
         },
       });
     });
-    this.input.keyboard.on('keydown-ENTER', () => !this.blocked && this.scene.start('MapScene'));
+    // Клавиатура одной рукой: ↑/↓ или W/S — выбор кнопки (латунная рамка), Enter или пробел — нажать
+    const btns = [play, hangar, opts];
+    let sel = 0;
+    const ring = this.add.graphics();
+    const showSel = () => {
+      const b = btns[sel];
+      ring.clear().lineStyle(3, 0xf2c94c, 1).strokeRect(b.x - BTN_W / 2 - 5, b.y - b.h / 2 - 5, BTN_W + 10, b.h + 10);
+      this.children.bringToTop(ring);
+    };
+    this.showSel = showSel;
+    this.input.keyboard.on('keydown', (e) => {
+      if (this.blocked) return;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') sel = (sel + 1) % btns.length;
+      else if (e.code === 'ArrowUp' || e.code === 'KeyW') sel = (sel + btns.length - 1) % btns.length;
+      else if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') return btns[sel].onClick();
+      else return;
+      showSel();
+    });
 
     const layout = () => {
       const { width, height } = this.scale;
@@ -99,9 +116,13 @@ export class MenuScene extends Phaser.Scene {
       sound.setPosition(width - 4, 4);
       langs.setPosition(8, 6);
     };
-    layout();
-    this.scale.on('resize', layout);
-    this.events.once('shutdown', () => this.scale.off('resize', layout));
+    const relayout = () => {
+      layout();
+      this.showSel();
+    };
+    relayout();
+    this.scale.on('resize', relayout);
+    this.events.once('shutdown', () => this.scale.off('resize', relayout));
 
     // Меню на экране — игрок может начинать (LoadingAPI.ready; повторные вызовы platform отбрасывает)
     platform.gameReady();
@@ -215,6 +236,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     c.add([bg, label]);
     c.h = h;
+    c.onClick = onClick; // для клавиатуры: Enter жмёт выбранную кнопку
     bg.setInteractive({ useHandCursor: true });
     bg.on('pointerover', () => c.setScale(1.03));
     bg.on('pointerout', () => c.setScale(1));

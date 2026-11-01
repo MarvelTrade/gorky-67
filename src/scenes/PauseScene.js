@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { t } from '../i18n/index.js';
 import { onTap } from '../ui/tap.js';
+import { KeyNav } from '../ui/keyNav.js';
 import { formatTime } from '../format.js';
 import { FONT, INK, INK_SOFT, BTN, makeSheet, drawSheet } from '../ui/paper.js';
 
@@ -39,6 +40,8 @@ export class PauseScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ESC', () => this.ready && !this.inSettings && this.finish('onResume'));
     this.input.keyboard.on('keydown-P', () => this.ready && !this.inSettings && this.finish('onResume'));
 
+    // Клавиатура: ↑/↓ или W/S — кнопка, Enter или пробел — нажать (Esc и P — как раньше, продолжить)
+    this.nav = new KeyNav(this, () => this.ready && !this.done && !this.inSettings);
     this.layout();
     this.scale.on('resize', this.layout, this);
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
@@ -52,6 +55,7 @@ export class PauseScene extends Phaser.Scene {
       .setOrigin(0.5);
     c.add([bg, label]);
     c.bg = bg;
+    c.onClick = onClick;
     bg.setInteractive({ useHandCursor: true });
     onTap(bg, () => this.ready && !this.done && !this.inSettings, onClick);
     return c;
@@ -86,6 +90,7 @@ export class PauseScene extends Phaser.Scene {
     const sBottom = Math.min(height - 4, this.info.y + this.info.height + 12);
     drawSheet(this.sheet, (width - sw) / 2, sTop, sw, sBottom - sTop, { header: headRoom ? 20 : 0, rule: 0 });
     this.header.setVisible(headRoom).setPosition((width - sw) / 2 + 10, sTop + 5);
+    this.nav?.setItems([this.resumeBtn, this.settingsBtn, this.quitBtn].map((b) => ({ obj: b, activate: b.onClick })));
   }
 
   showInfo() {

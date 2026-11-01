@@ -487,6 +487,13 @@ export class GameScene extends Phaser.Scene {
         this.rerolls--;
         return this.upgrades.roll(3);
       },
+      // Пропуск: без улучшения, рубли — в добычу забега (уйдут в кошелёк «Ангара» в итогах)
+      onSkip: (money) => {
+        this.depots.money += money;
+        this.fx.popup(this.player.x, this.player.y, `+${money} ₽`, '#f2c94c');
+        this.pendingLevels--;
+        this.scene.resume();
+      },
       onPick: (id) => {
         this.upgrades.apply(id);
         this.picks.push({ id, t: Math.round(this.spawner.elapsed) });

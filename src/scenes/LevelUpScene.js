@@ -56,11 +56,60 @@ export class LevelUpScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setInteractive({ useHandCursor: true });
     onTap(this.rerollBtn, () => this.ready && !this.picked, () => this.reroll());
+    // «Пропустить» — без улучшения, но с рублями в добычу забега (как золото за пропуск в Vampire Survivors)
+    this.skipBtn = this.add
+      .text(0, 0, `⏭ ${t('skip')} +${LEVELUP.skipMoney} ₽`, {
+        fontFamily: FONT,
+        fontSize: '16px',
+        color: '#f2c94c',
+        fontStyle: 'bold',
+        backgroundColor: '#3a4128',
+        padding: { x: 14, y: 8 },
+      })
+      .setOrigin(0.5, 0)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(!!data.onSkip);
+    onTap(this.skipBtn, () => this.ready && !this.picked, () => this.skip());
 
+    // Одной рукой с клавиатуры: A/D или ←/→ — по карточкам, W/S или ↑/↓ — к кнопкам внизу и обратно,
+    // пробел или Enter — взять; цифры 1–3 и R — как раньше. Выбранное — латунной рамкой
+    this.focus = 0; // 0..n-1 — карточки, n — «Перекрутить», n+1 — «Пропустить»
+    this.focusGfx = this.add.graphics();
+    this.keyHint = this.add
+      .text(0, 0, t('levelUpKeys'), { fontFamily: FONT, fontSize: '11px', color: '#c8c0a8', stroke: '#000000', strokeThickness: 3 })
+      .setOrigin(0.5, 0)
+      .setVisible(!this.sys.game.device.input.touch);
     this.input.keyboard.on('keydown', (e) => {
       const i = Number(e.key) - 1;
       if (i >= 0 && i < this.cards.length) this.pick(i);
-      if (e.code === 'KeyR') this.reroll();
+      const n = this.cards.length;
+      const bottom = this.focus >= n;
+      switch (e.code) {
+        case 'KeyR':
+          this.reroll();
+          break;
+        case 'KeyA':
+        case 'ArrowLeft':
+          this.setFocus(bottom ? n : Math.max(0, this.focus - 1));
+          break;
+        case 'KeyD':
+        case 'ArrowRight':
+          this.setFocus(bottom ? n + 1 : Math.min(n - 1, this.focus + 1));
+          break;
+        case 'KeyS':
+        case 'ArrowDown':
+          if (!bottom) this.setFocus(n);
+          break;
+        case 'KeyW':
+        case 'ArrowUp':
+          if (bottom) this.setFocus(Math.min(n - 1, 1));
+          break;
+        case 'Space':
+        case 'Enter':
+        case 'NumpadEnter':
+          this.activate();
+          break;
+      }
     });
 
     this.layout();
@@ -94,6 +143,7 @@ export class LevelUpScene extends Phaser.Scene {
     this.setChoice(card, choice);
 
     bg.setInteractive({ useHandCursor: true });
+    bg.on('pointerover', () => this.setFocus(index));
     bg.on('pointerover', () => this.ready && bg.setFillStyle(PAPER_HI, 1));
     bg.on('pointerout', () => this.ready && bg.setFillStyle(PAPER, 1));
     onTap(bg, () => this.ready && !this.picked, () => this.pick(index));
@@ -168,6 +218,7 @@ export class LevelUpScene extends Phaser.Scene {
     this.data_.choices = next;
     // Улучшений осталось меньше трёх — лишние окна убираем
     while (this.cards.length > next.length) this.cards.pop().destroy();
+    this.focus = 0; // карточек могло стать меньше — выбор с первой
     this.layout();
     this.spin();
   }
@@ -190,9 +241,14 @@ export class LevelUpScene extends Phaser.Scene {
     const btnH = 44;
     const top = Math.max(titleH + 14, (height - ch - btnH) / 2 + titleH / 2);
 
-    this.band.setPosition(0, top - titleH - 8).setSize(width, ch + titleH + btnH + 24);
+    const hintH = this.keyHint.visible ? 16 : 0;
+    this.band.setPosition(0, top - titleH - 8).setSize(width, ch + titleH + btnH + 24 + hintH);
     this.title.setPosition(width / 2, top - 6);
-    this.rerollBtn.setPosition(width / 2, top + ch + 10);
+    // Внизу две кнопки рядом: перекрутить и пропустить; нет пропуска — перекрут по центру
+    const pair = this.skipBtn.visible;
+    this.rerollBtn.setPosition(pair ? width / 2 - this.rerollBtn.width / 2 - 6 : width / 2, top + ch + 10);
+    this.skipBtn.setPosition(width / 2 + this.skipBtn.width / 2 + 6, top + ch + 10);
+    this.keyHint.setPosition(width / 2, top + ch + 10 + this.rerollBtn.height + 4);
 
     this.cards.forEach((card, i) => {
       card.setPosition((width - total) / 2 + cw / 2 + i * (cw + GAP), top + ch / 2);
@@ -204,6 +260,46 @@ export class LevelUpScene extends Phaser.Scene {
       drawDeco(card, card.cat.color, card.delta.visible ? 1 : 0.5);
       this.fitCard(card);
     });
+    this.drawFocus();
+  }
+
+  setFocus(i) {
+    const n = this.cards.length;
+    const last = this.skipBtn.visible ? n + 1 : n;
+    this.focus = Phaser.Math.Clamp(i, 0, last);
+    this.drawFocus();
+  }
+
+  // Латунная рамка вокруг выбранного: карточки или кнопки внизу
+  drawFocus() {
+    const g = this.focusGfx.clear();
+    const n = this.cards.length;
+    if (this.focus > n + 1 || (this.focus === n + 1 && !this.skipBtn.visible)) this.focus = n;
+    let b;
+    if (this.focus < n) {
+      const c = this.cards[this.focus];
+      b = { x: c.x - c.cw / 2, y: c.y - c.ch / 2, w: c.cw, h: c.ch };
+    } else {
+      const btn = this.focus === n ? this.rerollBtn : this.skipBtn;
+      b = { x: btn.x - btn.width / 2, y: btn.y, w: btn.width, h: btn.height };
+    }
+    g.lineStyle(3, 0xf2c94c, 1).strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
+    this.children.bringToTop(g);
+  }
+
+  // Пробел / Enter: взять выбранную карточку или нажать выбранную кнопку
+  activate() {
+    const n = this.cards.length;
+    if (this.focus < n) this.pick(this.focus);
+    else if (this.focus === n) this.reroll();
+    else this.skip();
+  }
+
+  skip() {
+    if (!this.ready || this.picked || !this.data_.onSkip) return;
+    this.picked = true;
+    this.scene.stop();
+    this.data_.onSkip(LEVELUP.skipMoney);
   }
 
   // Раскладка внутри карточки зависит от текста — пересчитываем после каждой смены

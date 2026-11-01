@@ -3,6 +3,7 @@ import { RUN } from '../config.js';
 import { t } from '../i18n/index.js';
 import { platform } from '../platform/platform.js';
 import { onTap } from '../ui/tap.js';
+import { KeyNav } from '../ui/keyNav.js';
 import { FONT, INK, BTN, RED, makeSheet, drawSheet, makeStamp } from '../ui/paper.js';
 
 // Экран смерти с предложением «Воскреснуть» за просмотр рекламы — один раз за забег.
@@ -34,6 +35,8 @@ export class ReviveScene extends Phaser.Scene {
       .text(0, 0, '', { fontFamily: FONT, fontSize: '14px', color: '#8a2a1e', align: 'center' })
       .setOrigin(0.5, 0);
 
+    // Клавиатура: ↑/↓ — «Реклама → воскреснуть» или «Завершить», Enter или пробел — нажать
+    this.nav = new KeyNav(this, () => this.ready && !this.busy);
     this.layout();
     this.scale.on('resize', this.layout, this);
     this.events.once('shutdown', () => this.scale.off('resize', this.layout, this));
@@ -73,6 +76,10 @@ export class ReviveScene extends Phaser.Scene {
       btn.bg.input.hitArea.setSize(w, 56);
       y += 56 + 14;
     }
+    this.nav?.setItems([
+      { obj: this.reviveBtn, activate: () => this.revive() },
+      { obj: this.giveUpBtn, activate: () => this.giveUp() },
+    ]);
   }
 
   async revive() {

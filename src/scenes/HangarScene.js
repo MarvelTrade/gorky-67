@@ -7,6 +7,7 @@ import {
 } from '../meta.js';
 import { sfx } from '../systems/Sfx.js';
 import { onTap } from '../ui/tap.js';
+import { KeyNav } from '../ui/keyNav.js';
 import {
   FONT, PAPER, PAPER_DIM, EDGE, INK, INK_SOFT, INK_FAINT, LIGHT, RED, RED_CSS, GREEN_INK, makeSheet, drawSheet,
 } from '../ui/paper.js';
@@ -51,11 +52,12 @@ export class HangarScene extends Phaser.Scene {
         .text(0, 0, t(`tab_${id}`), { ...style, fontSize: '15px', fontStyle: 'bold', padding: { x: 8, y: 8 } })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
-      onTap(b, () => true, () => {
+      b.open = () => {
         this.tab = id;
         this.first = 0;
         this.buildRows();
-      });
+      };
+      onTap(b, () => true, b.open);
       b.tabId = id;
       return b;
     });
@@ -69,7 +71,8 @@ export class HangarScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     // Из итогов — сразу следующий забег: потратил и полетел
     this.back.setText(this.from === 'GameOverScene' ? `${t('again')} →` : t('back'));
-    onTap(this.back, () => true, () => this.scene.start(this.from === 'GameOverScene' ? 'GameScene' : 'MenuScene'));
+    this.goBack = () => this.scene.start(this.from === 'GameOverScene' ? 'GameScene' : 'MenuScene');
+    onTap(this.back, () => true, this.goBack);
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
 
     const arrow = (txt, dir) => {
@@ -93,6 +96,8 @@ export class HangarScene extends Phaser.Scene {
       if (Math.abs(d) > 30) this.scrollBy(d < 0 ? 1 : -1);
     });
 
+    // Клавиатура: стрелки/WASD — вкладки, кнопки строк, листание, «Назад»; Enter или пробел — нажать
+    this.nav = new KeyNav(this);
     this.rows = [];
     this.buildRows();
     this.scale.on('resize', this.layout, this);
@@ -187,6 +192,13 @@ export class HangarScene extends Phaser.Scene {
     const wide = height < 560 && width >= 640;
     if (wide) this.layoutWide(width, height);
     else this.layoutTall(width, height);
+    this.nav?.setItems([
+      ...this.tabBtns.map((b) => ({ obj: b, activate: b.open })),
+      ...this.rows.map((r) => ({ obj: r.btn, activate: () => this.act(r.id, r) })),
+      { obj: this.pagerUp, activate: () => this.scrollBy(-1) },
+      { obj: this.pagerDown, activate: () => this.scrollBy(1) },
+      { obj: this.back, activate: this.goBack },
+    ]);
   }
 
   layoutTall(width, height) {

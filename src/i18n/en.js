@@ -163,6 +163,8 @@ export default {
   badges: 'badges',
   ivan_crate: "Vova, a military crate! Fly over it and we'll grab it.",
   badgesShort: 'badges:',
+  skip: 'Skip',
+  levelUpKeys: 'A/D or ←/→ — choose · W/S — buttons · Space or Enter — take',
   gaugeArmor: 'ARMOR',
   gaugeSpeed: 'SPEED',
   gaugeBoost: 'BOOST',

@@ -3,6 +3,7 @@ import { t, getLang, initLang } from '../i18n/index.js';
 import { settings, saveSettings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
 import { onTap } from '../ui/tap.js';
+import { KeyNav } from '../ui/keyNav.js';
 import { FONT, PAPER_DIM, INK, INK_SOFT, PEN, makeSheet, drawSheet } from '../ui/paper.js';
 
 const ROW_H = 58;
@@ -51,6 +52,8 @@ export class SettingsScene extends Phaser.Scene {
     onTap(this.done, () => true, () => this.close());
     this.input.keyboard.on('keydown-ESC', () => this.close());
 
+    // Клавиатура: строки (Enter — переключить), громкость — «−»/«+», «Готово»
+    this.nav = new KeyNav(this);
     this.refresh();
     this.layout();
     this.scale.on('resize', this.layout, this);
@@ -65,7 +68,7 @@ export class SettingsScene extends Phaser.Scene {
     const name = this.add.text(14, 0, '', { fontFamily: FONT, fontSize: '17px', color: INK }).setOrigin(0, 0.5);
     const val = this.add.text(0, 0, '', { fontFamily: FONT, fontSize: '18px', color: PEN, fontStyle: 'bold' }).setOrigin(0.5);
     c.add([bg, name, val]);
-    Object.assign(c, { bg, name, val, label, value });
+    Object.assign(c, { bg, name, val, label, value, toggle });
     if (toggle) {
       bg.setInteractive({ useHandCursor: true });
       onTap(bg, () => true, () => {
@@ -86,10 +89,11 @@ export class SettingsScene extends Phaser.Scene {
       .text(0, 0, text, { fontFamily: 'sans-serif', fontSize: '26px', color: '#e6dcc0', fontStyle: 'bold', backgroundColor: '#3a4128', padding: { x: 14, y: 2 } })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    onTap(b, () => true, () => {
+    b.press = () => {
       fn();
       this.refresh();
-    });
+    };
+    onTap(b, () => true, b.press);
     return b;
   }
 
@@ -134,6 +138,14 @@ export class SettingsScene extends Phaser.Scene {
     const sBottom = Math.min(height - 2, this.done.y + this.done.height + 10);
     drawSheet(this.sheet, x0 - 8, sTop, w + 16, sBottom - sTop, { header: headRoom ? 20 : 0, rule: 0 });
     this.header.setVisible(headRoom).setPosition(x0, sTop + 5);
+    this.nav?.setItems([
+      ...this.rows.flatMap((r) =>
+        r.toggle
+          ? [{ obj: r.bg, activate: () => (r.toggle(), this.refresh()) }]
+          : [{ obj: r.minus, activate: r.minus.press }, { obj: r.plus, activate: r.plus.press }]
+      ),
+      { obj: this.done, activate: () => this.close() },
+    ]);
   }
 
   close() {

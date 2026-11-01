@@ -6,6 +6,7 @@ import { lt } from '../levels.js';
 import { platform } from '../platform/platform.js';
 import { copyReport } from '../systems/Telemetry.js';
 import { onTap } from '../ui/tap.js';
+import { KeyNav } from '../ui/keyNav.js';
 import { metaSnapshot } from '../meta.js';
 import {
   FONT, INK, INK_SOFT, RED, RED_CSS, GREEN_INK, BTN, makeSheet, drawSheet, makeStamp,
@@ -91,8 +92,6 @@ export class GameOverScene extends Phaser.Scene {
     button.add([bg, label]);
     bg.setInteractive({ useHandCursor: true });
     onTap(bg, () => this.ready, () => this.restart());
-    this.input.keyboard.on('keydown-ENTER', () => this.restart());
-    this.input.keyboard.on('keydown-SPACE', () => this.restart());
 
     // «Ангар» — потратить добычу между забегами
     const hangar = this.add
@@ -100,7 +99,8 @@ export class GameOverScene extends Phaser.Scene {
       .text(0, 0, `${t('hangar')} →`, { fontFamily: 'sans-serif', fontSize: '20px', color: '#f2c94c', fontStyle: 'bold', backgroundColor: '#3a4148', padding: { x: 12, y: 8 } })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    onTap(hangar, () => this.ready, () => this.scene.start('HangarScene', { from: 'GameOverScene' }));
+    const goHangar = () => this.scene.start('HangarScene', { from: 'GameOverScene' });
+    onTap(hangar, () => this.ready, goHangar);
 
     // Для плейтестов: все замеры текстом в буфер обмена. В сборке для Яндекса кнопки нет —
     // игрокам каталога она ни к чему (рекомендация 6.7)
@@ -115,11 +115,12 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
     copy.setVisible(import.meta.env.VITE_PLATFORM !== 'yandex');
-    onTap(copy, () => this.ready, async () => {
+    const copyStats = async () => {
       const ok = await copyReport();
       copy.setText(t(ok ? 'copied' : 'copyFailed'));
       this.time.delayedCall(1500, () => copy.setText(t('copyStats')));
-    });
+    };
+    onTap(copy, () => this.ready, copyStats);
 
     // Кнопки появляются, когда их уже можно нажать
     button.setAlpha(0);
@@ -205,10 +206,22 @@ export class GameOverScene extends Phaser.Scene {
       hangar.setPosition(width / 2, by + 36 + (short ? 18 : 26));
       copy.setPosition(width / 2, hangar.y + (short ? 34 : 40));
     };
-    this.layoutFn = layout; // рекорд приходит позже — лист подгоняется под его строку
-    layout();
-    this.scale.on('resize', layout);
-    this.events.once('shutdown', () => this.scale.off('resize', layout));
+    // Клавиатура: стрелки/WASD — «Ещё раз», «Ангар», «Скопировать»; Enter или пробел — нажать.
+    // По умолчанию выбрано «Ещё раз» — как раньше, Enter сразу в новый забег
+    this.nav = new KeyNav(this, () => this.ready);
+    this.nav.setItems([
+      { obj: button, activate: () => this.restart() },
+      { obj: hangar, activate: goHangar },
+      ...(copy.visible ? [{ obj: copy, activate: copyStats }] : []),
+    ]);
+    // Рекорд приходит позже — лист подгоняется под его строку; рамка выбора — следом за кнопками
+    this.layoutFn = () => {
+      layout();
+      this.nav.refresh();
+    };
+    this.layoutFn();
+    this.scale.on('resize', this.layoutFn);
+    this.events.once('shutdown', () => this.scale.off('resize', this.layoutFn));
   }
 
   async updateRecord(stats, text) {

@@ -80,7 +80,16 @@ export class MapScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     onTap(this.back, () => true, () => this.scene.start('MenuScene'));
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
-    this.input.keyboard.on('keydown-ENTER', () => this.go(this.current()));
+    // Клавиатура одной рукой: ↑/→/W/D — следующая доступная станция (на север), ↓/←/S/A — предыдущая,
+    // Enter или пробел — вылет. Выбранная станция — в латунном кольце
+    this.sel = this.current();
+    this.selRing = this.add.graphics();
+    this.input.keyboard.on('keydown', (e) => {
+      const next = ['ArrowUp', 'ArrowRight', 'KeyW', 'KeyD'].includes(e.code);
+      const prev = ['ArrowDown', 'ArrowLeft', 'KeyS', 'KeyA'].includes(e.code);
+      if (next || prev) this.moveSel(next ? 1 : -1);
+      else if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') this.go(this.sel);
+    });
 
     this.layout();
     this.scale.on('resize', this.layout, this);
@@ -151,6 +160,26 @@ export class MapScene extends Phaser.Scene {
       if (st === 'next') this.tweens.add({ targets: ring, scale: { from: 1, to: 1.2 }, yoyo: true, repeat: -1, duration: 600 });
     }
     return c;
+  }
+
+  // Доступные станции — те, на которые можно нажать
+  playable() {
+    return this.nodes.filter((nd) => nd.st !== 'soon' && nd.st !== 'locked').map((nd) => nd.L.n);
+  }
+
+  moveSel(dir) {
+    const list = this.playable();
+    const i = list.indexOf(this.sel);
+    this.sel = list[Phaser.Math.Clamp((i < 0 ? 0 : i) + dir, 0, list.length - 1)] ?? this.sel;
+    this.drawSel();
+  }
+
+  drawSel() {
+    const node = this.nodes.find((nd) => nd.L.n === this.sel);
+    const g = this.selRing.clear();
+    if (!node) return;
+    g.lineStyle(3, 0xf2c94c, 1).strokeCircle(node.x, node.y, 21 * node.scaleX);
+    this.children.bringToTop(g);
   }
 
   go(n) {
@@ -225,6 +254,7 @@ export class MapScene extends Phaser.Scene {
         node.info.setOrigin(0, 0).setPosition(18, 2);
       }
     }
+    this.drawSel();
   }
 
   // Топографическая карта: бумага, сетка, рельеф горизонталями, леса, овраги, залив, железная дорога,

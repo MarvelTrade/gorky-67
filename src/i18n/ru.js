@@ -165,6 +165,8 @@ export default {
   badges: 'знаки отличия',
   ivan_crate: 'Вова, военный ящик! Пролетим над ним — подберём.',
   badgesShort: 'знаки:',
+  skip: 'Пропустить',
+  levelUpKeys: 'A/D или ←/→ — выбор · W/S — кнопки · Пробел или Enter — взять',
   gaugeArmor: 'БРОНЯ',
   gaugeSpeed: 'ХОД',
   gaugeBoost: 'ФОРСАЖ',
