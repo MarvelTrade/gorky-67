@@ -88,8 +88,9 @@ export class UIScene extends Phaser.Scene {
     // Счётчик кадров: в dev-сборке всегда, у тестеров — по настройке «Показывать FPS».
     // Текст обновляется дважды в секунду (перерисовка текста каждый кадр сама стоит кадров на телефоне):
     // средний FPS за полсекунды и худший за последние 5 с
+    // Создаётся всегда (кроме Яндекса), виден по настройке — включили в паузе, и он сразу появляется
     this.fpsText =
-      import.meta.env.DEV || (settings.showFps && import.meta.env.VITE_PLATFORM !== 'yandex')
+      import.meta.env.DEV || import.meta.env.VITE_PLATFORM !== 'yandex'
         ? this.add.text(0, 0, '', { ...style, fontSize: '12px', strokeThickness: 3 }).setOrigin(1, 0)
         : null;
     this.fpsAcc = { t: 0, frames: 0, worst: [] };
@@ -193,7 +194,11 @@ export class UIScene extends Phaser.Scene {
       .setPosition(width - PAD - this.pauseBtn.width / 2, XP_BAR_H + 6 + this.pauseBtn.height / 2)
       .setVisible(!gs.ended && !gs.scene.isPaused() && p.alive);
 
-    if (this.fpsText) this.updateFps(width, delta);
+    if (this.fpsText) {
+      const show = import.meta.env.DEV || settings.showFps;
+      if (this.fpsText.visible !== show) this.fpsText.setVisible(show);
+      if (show) this.updateFps(width, delta);
+    }
   }
 
   updateFps(width, delta) {
