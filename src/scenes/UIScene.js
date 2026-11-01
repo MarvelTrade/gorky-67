@@ -261,7 +261,7 @@ export class UIScene extends Phaser.Scene {
   // who — позывной: 'beryoza' (диспетчер) или 'cheryomukha' (агент, своя полоска цвета)
   queueRadio(line, who = 'beryoza', urgent = false) {
     if (urgent || this.radioLeft <= 0) this.showRadio(line, who);
-    else if (this.radioQueue.length < 3) this.radioQueue.push([line, who]);
+    else if (this.radioQueue.length < 5) this.radioQueue.push([line, who]); // начало уровня: подсказка, «Берёза», экипаж, поезд — пять строк
   }
 
   showRadio(line, who = 'beryoza') {

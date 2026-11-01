@@ -90,7 +90,9 @@ export class Artillery {
       spot = { x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d };
     }
     this.zones.push({ x: spot.x, y: spot.y, left: A.warn, salvo: A.salvo, shells: A.shells, hit: false });
-    if (!boss || this.lured) this.scene.events.emit('radio', lt('cher_artillery'), 'cheryomukha', true);
+    // Голосом — только первые разы: дальше обстрел виден по штриховке, а рация не заваливается одной фразой
+    this.warned = (this.warned ?? 0) + 1;
+    if ((!boss || this.lured) && this.warned <= 2) this.scene.events.emit('radio', lt('cher_artillery'), 'cheryomukha', true);
     this.scene.events.emit('alert', A.warn);
   }
 

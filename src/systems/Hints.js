@@ -20,10 +20,14 @@ export class Hints {
     this.t += dt;
     // Только когда рация молчит и последней была не подсказка — подсказки чередуются с репликами
     const ui = gs.scene.get('UIScene');
+    // «Как лететь» — в очередь сразу, следом за задачей от «Берёзы» и до разговоров о поезде: если ждать
+    // тишины, в начале уровня рация занята и подсказка приходила на второй минуте
+    if (this.step === 0) {
+      if (this.t >= HINTS.flyAt) this.say(gs.sys.game.device.input.touch ? 'hint_fly' : 'hint_fly_keys');
+      return;
+    }
     if (ui.radioLeft > 0 || ui.radioQueue?.length || ui.lastWho === 'hint') return;
-    if (this.step === 0 && this.t >= HINTS.flyAt) {
-      this.say(gs.sys.game.device.input.touch ? 'hint_fly' : 'hint_fly_keys');
-    } else if (this.step === 1 && gs.level > 1) {
+    if (this.step === 1 && gs.level > 1) {
       this.step = 2; // уровень уже взят — про кристаллы говорить незачем
     } else if (this.step === 1 && this.t >= HINTS.gemsAt && gs.gems.countActive() > 0) {
       this.say('hint_gems');
