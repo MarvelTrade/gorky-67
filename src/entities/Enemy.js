@@ -32,6 +32,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.speed = cfg.speed + Phaser.Math.FloatBetween(-cfg.speedJitter, cfg.speedJitter);
     this.flash = 0;
     this.horde = null; // RunEvents помечает заражённых из орды, чтобы потом убрать остатки
+    this.prey = null; // не вертолёт, а автобус колонны (Convoy): идёт к нему напрямую
     this.shotsLeft = 0; // пули текущей очереди вездехода
     this.shotTimer = 0;
     this.hopT = 0; // прыжок заражённого: оставшееся время
@@ -112,7 +113,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     switch (this.cfg.behavior) {
       case 'chase': {
-        const a = this.pathAngle(dx, dy);
+        // Отправлен на автобус колонны — к нему по прямой, пока автобус цел и стоит
+        const prey = this.prey?.alive && this.prey.img.visible ? this.prey.img : null;
+        if (!prey) this.prey = null;
+        const a = prey ? Math.atan2(prey.y - this.y, prey.x - this.x) : this.pathAngle(dx, dy);
         // В облаке «Нейтрализатора» — медленнее
         if (this.slowT > 0) this.slowT -= dt;
         const v = this.speed * (this.slowT > 0 ? ORDNANCE.slowMul : 1);

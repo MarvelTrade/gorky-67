@@ -33,6 +33,7 @@ export class Convoy {
     if (this.state === 'in' || this.state === 'stop') {
       this.state = 'out';
       this.scene.events.emit('radio', lt('convoy_leave'), 'beryoza', true);
+      for (const e of this.scene.enemies.getChildren()) e.prey = null;
       // Разворот: северная полоса, на запад
       for (const v of this.vehicles) v.img.setFlipX(true).y = this.y - CONVOY.lane * 2;
     }
@@ -49,6 +50,7 @@ export class Convoy {
     }
     if (this.state === 'gone') return;
     if (this.flashT > 0 && (this.flashT -= dt) <= 0) this.tracer.clear();
+    if (this.state === 'stop') this.sendRaiders(dt);
     let moving = false;
     for (const v of this.vehicles) {
       const img = v.img;
@@ -77,6 +79,39 @@ export class Convoy {
     if (this.state === 'out' && !moving) {
       this.state = 'gone';
       this.tracer.clear();
+    }
+  }
+
+  // Пока колонна стоит, часть толпы рядом идёт на автобусы, а не на вертолёт: колонну правда надо прикрывать
+  sendRaiders(dt) {
+    const C = CONVOY;
+    this.raidT = (this.raidT ?? 0) - dt;
+    if (this.raidT > 0) return;
+    this.raidT = C.raidEvery;
+    const buses = this.vehicles.filter((v) => v.bus && v.alive);
+    if (!buses.length) return;
+    let busy = 0;
+    const free = [];
+    const head = this.vehicles[0].img;
+    const r2 = C.raidRange * C.raidRange;
+    for (const e of this.scene.enemies.getChildren()) {
+      if (!e.active || e.cfg.behavior !== 'chase') continue;
+      if (e.prey) busy++;
+      else if ((e.x - head.x) ** 2 + (e.y - head.y) ** 2 < r2) free.push(e);
+    }
+    for (let i = 0; i < free.length && busy < C.raiders; i++, busy++) {
+      const e = free[i];
+      // Ближайший к заражённому живой автобус
+      let best = buses[0];
+      let bd = Infinity;
+      for (const b of buses) {
+        const d = (b.img.x - e.x) ** 2 + (b.img.y - e.y) ** 2;
+        if (d < bd) {
+          bd = d;
+          best = b;
+        }
+      }
+      e.prey = best;
     }
   }
 
