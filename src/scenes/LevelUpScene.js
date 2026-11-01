@@ -99,6 +99,7 @@ export class LevelUpScene extends Phaser.Scene {
         case 'KeyS':
         case 'ArrowDown':
           if (!bottom) this.setFocus(n);
+          else if (this.focus === n) this.setFocus(n + 1); // на узком экране «Пропустить» — под «Перекрутить»
           break;
         case 'KeyW':
         case 'ArrowUp':
@@ -241,14 +242,17 @@ export class LevelUpScene extends Phaser.Scene {
     const btnH = 44;
     const top = Math.max(titleH + 14, (height - ch - btnH) / 2 + titleH / 2);
 
-    const hintH = this.keyHint.visible ? 16 : 0;
-    this.band.setPosition(0, top - titleH - 8).setSize(width, ch + titleH + btnH + 24 + hintH);
-    this.title.setPosition(width / 2, top - 6);
-    // Внизу две кнопки рядом: перекрутить и пропустить; нет пропуска — перекрут по центру
+    // Внизу две кнопки: рядом, если влезают (телефон 375 px — нет), иначе одна под другой
     const pair = this.skipBtn.visible;
-    this.rerollBtn.setPosition(pair ? width / 2 - this.rerollBtn.width / 2 - 6 : width / 2, top + ch + 10);
-    this.skipBtn.setPosition(width / 2 + this.skipBtn.width / 2 + 6, top + ch + 10);
-    this.keyHint.setPosition(width / 2, top + ch + 10 + this.rerollBtn.height + 4);
+    const side = pair && this.rerollBtn.width + this.skipBtn.width + 12 <= width - 16;
+    const stackH = pair && !side ? this.skipBtn.height + 8 : 0;
+    const hintH = this.keyHint.visible ? 16 : 0;
+    this.band.setPosition(0, top - titleH - 8).setSize(width, ch + titleH + btnH + 24 + hintH + stackH);
+    this.title.setPosition(width / 2, top - 6);
+    const by = top + ch + 10;
+    this.rerollBtn.setPosition(side ? width / 2 - this.rerollBtn.width / 2 - 6 : width / 2, by);
+    this.skipBtn.setPosition(side ? width / 2 + this.skipBtn.width / 2 + 6 : width / 2, side ? by : by + this.rerollBtn.height + 8);
+    this.keyHint.setPosition(width / 2, by + this.rerollBtn.height + 4 + stackH);
 
     this.cards.forEach((card, i) => {
       card.setPosition((width - total) / 2 + cw / 2 + i * (cw + GAP), top + ch / 2);
