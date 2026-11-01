@@ -29,7 +29,7 @@ import { Hints } from '../systems/Hints.js';
 import { Culler } from '../systems/Culler.js';
 import { Train } from '../systems/Train.js';
 import { River } from '../systems/River.js';
-import { layout, setLevel, lt } from '../levels.js';
+import { layout, setLevel, lt, isBuilt } from '../levels.js';
 import { makeFarmTextures } from '../art/farm.js';
 import { makeQuarryTextures } from '../art/quarry.js';
 import { makeArmyTextures } from '../art/army.js';
@@ -351,7 +351,7 @@ export class GameScene extends Phaser.Scene {
     const n = this.levelDef.n;
     if (win && n + 1 > (meta.levelReached ?? 1)) {
       meta.levelReached = n + 1;
-      stats.unlocked = n + 1;
+      if (isBuilt(n + 1)) stats.unlocked = n + 1; // о недостроенном не объявляем — модерация не любит «скоро»
     }
     meta.money += this.depots.money;
     meta.parts += this.depots.parts;

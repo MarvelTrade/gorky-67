@@ -132,7 +132,8 @@ export class MapScene extends Phaser.Scene {
       name.setColor('#8a1e14');
     }
     const kind = t(`lvl_kind_${L.n}`);
-    const tail = st === 'soon' ? t('mapSoon') : st === 'cleared' ? t('mapCleared') : st === 'next' ? `${t('mapGo')} ←` : '';
+    // Недостроенные станции — просто бледное название на карте, без «не готово» (модерация: признаки незавершённости)
+    const tail = st === 'soon' ? '' : st === 'cleared' ? t('mapCleared') : st === 'next' ? `${t('mapGo')} ←` : '';
     const time = clock(hourOf(L.n));
     // Полная строка и короткая — для узкого экрана (без рода места)
     info.long = `${kind} · ${time}${tail ? ` · ${tail}` : ''}`;
