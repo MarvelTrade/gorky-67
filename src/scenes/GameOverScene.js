@@ -33,9 +33,15 @@ export class GameOverScene extends Phaser.Scene {
     const titleBox = makeStamp(this, word, 40, stats.win ? GREEN_INK : RED, -4);
     const title = titleBox.label;
 
-    // Концовка — строка по итогу забега и последнее слово «Черёмухи» — при любом исходе
+    // Концовка: исход забега. Ушли — награда уровня и вечный вопрос экипажа про премию; нет — «Черёмуха» зовёт
+    const head = lt(`ending_${stats.ending}`);
+    const medal = t(`medal_${stats.levelN}`);
+    const award = medal !== `medal_${stats.levelN}` ? `\n${t('medalGot')}: ${medal}` : '';
+    const endText = stats.win
+      ? `${head}${award}\n\n${t('radioCallsign_vova')}: «${t('bonusAsk')}»\n${t('radioCallsign_cheryomukha')}: «${t('bonusAnswer')}»`
+      : `${head}\n\n${t('radioCallsign_cheryomukha')}: «${t('cher_end_lose')}»`;
     const ending = this.add
-      .text(0, 0, `${lt(`ending_${stats.ending}`)}\n\n${t('radioCallsign_cheryomukha')}: «${lt('cher_end')}»`, {
+      .text(0, 0, endText, {
         fontFamily: FONT,
         fontSize: '17px',
         color: INK,
@@ -125,12 +131,20 @@ export class GameOverScene extends Phaser.Scene {
     // На низком экране (телефон лёжа) цифры в одну строку, иначе кнопка не влезает.
     const layout = () => {
       const { width, height } = this.scale;
-      const short = height < 500;
+      // Сколько займёт акт в один столбик крупным шрифтом: строк в итогах всё больше
+      // (ящики, колонна, открытый уровень) — не влезает, значит раскладка плотнее
+      statsText.setText([causeLine, lines.join('\n'), bossLine, heliUp].filter(Boolean).join('\n'));
+      statsText.setFontSize(22).setLineSpacing(8);
+      ending.setFontSize(17).setWordWrapWidth(Math.min(480, Math.min(520, width - 16) - 24));
+      const tallH = height * 0.12 + title.height + 12 + ending.height + 32 + statsText.height + 12 + bestText.height + 48 + 130;
+      const short = height < 500 || tallH > height;
       // Телефон лёжа: всё в один столбик не влезало — кнопка «Ещё раз» ложилась на цифры.
       // Две колонки: заголовок и концовка слева, цифры, рекорд и кнопки — справа
       const wide = short && width >= 640;
       const sep = short && !wide ? '  ·  ' : '\n';
-      statsText.setText([causeLine, lines.join(sep), bossLine, heliUp].filter(Boolean).join('\n'));
+      // В одну строку через точки — пробелы внутри пункта неразрывные: перенос только между пунктами
+      const items = sep === '\n' ? lines : lines.map((l) => l.replace(/ /g, ' '));
+      statsText.setText([causeLine, items.join(sep), bossLine, heliUp].filter(Boolean).join('\n'));
       statsText.setFontSize(wide ? 15 : short ? 18 : 22).setLineSpacing(wide ? 2 : 8);
       ending.setFontSize(wide ? 14 : 17);
       bestText.setFontSize(wide ? 14 : 20);

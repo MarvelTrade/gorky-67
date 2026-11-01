@@ -372,7 +372,7 @@ export class GameScene extends Phaser.Scene {
       bossKilled: this.bossKilled,
       // Концовка: ушёл из района — с «Объектом» или без; не успел до удара; погиб
       ending: !win ? (this.nuked ? 'nuke' : 'lost') : this.bossKilled ? 'convoy' : 'late',
-      level: this.levelDef.n,
+      levelN: this.levelDef.n, // уровень кампании (level — уровень вертолёта в забеге)
       money: this.depots.money,
       parts: this.depots.parts,
       ruined: this.buildings.list.filter((b) => b.state === 'ruined').length,

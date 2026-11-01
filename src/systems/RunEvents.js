@@ -53,7 +53,7 @@ export class RunEvents {
     // «Черёмуха»: город в коллапсе, берегись проводов и вышек
     this.said ??= new Set(); // не в конфиге — иначе второй забег прошёл бы молча
     // и разговоры экипажа (who — позывной из строки)
-    for (const line of [...RADIO.crew, RADIO.crew2, ...RADIO.cheryomukha]) {
+    for (const line of [...RADIO.crew, RADIO.crew2, ...RADIO.banter, ...RADIO.cheryomukha]) {
       if (!this.said.has(line.key) && elapsed >= line.at) {
         this.said.add(line.key);
         const text = lt(line.key); // crew_1 → l2_crew_1…; нет такого ключа ни у уровня, ни общего — молчим
