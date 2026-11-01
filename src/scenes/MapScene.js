@@ -84,6 +84,10 @@ export class MapScene extends Phaser.Scene {
     // Enter или пробел — вылет. Выбранная станция — в латунном кольце
     this.sel = this.current();
     this.selRing = this.add.graphics();
+    this.keyHint = this.add
+      .text(0, 0, t('mapKeys'), { fontFamily: 'sans-serif', fontSize: '12px', color: '#7a846a' })
+      .setOrigin(1, 1)
+      .setVisible(!this.sys.game.device.input.touch);
     this.input.keyboard.on('keydown', (e) => {
       const next = ['ArrowUp', 'ArrowRight', 'KeyW', 'KeyD'].includes(e.code);
       const prev = ['ArrowDown', 'ArrowLeft', 'KeyS', 'KeyA'].includes(e.code);
@@ -221,6 +225,9 @@ export class MapScene extends Phaser.Scene {
     const h = hourOf(n);
     this.clockText.setPosition(sx + sw - 10, sy + 10).setText(`${h < 17 ? '☀' : '☾'} ${clock(h)}`);
     this.back.setPosition(sx + 2, sy + sh + 2);
+    // Подсказка клавиш — только без сенсора и если не наезжает на «Назад»
+    this.keyHint.setPosition(sx + sw - 10, sy + sh - 8);
+    this.keyHint.setAlpha(this.keyHint.width + this.back.width + 30 < sw ? 1 : 0);
 
     this.drawMap(mx, my, mw, mh, n);
     const P = (p) => ({ x: mx + p.x * mw, y: my + p.y * mh });

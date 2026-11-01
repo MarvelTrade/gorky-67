@@ -117,8 +117,10 @@ export class WaveSpawner {
   hauled(sec) {
     if (this.bossSpawned) return;
     this.hauls++;
+    const was = this.bossAt;
     this.bossAt = Math.max(BOSS_SPAWN.minAt, this.bossAt - sec);
-    this.scene.events.emit('radio', t('beryoza_hauled'), 'beryoza', true);
+    // «Берёза» говорит о бочках только в первый раз — дальше без повторов, срок и так виден по таймеру
+    if (this.hauls === 1 && this.bossAt < was) this.scene.events.emit('radio', t('beryoza_hauled'), 'beryoza', true);
   }
 
   // Первая корова — Вова спрашивает «Берёзу», что с ними; первый трактор — Вова с Иваном
