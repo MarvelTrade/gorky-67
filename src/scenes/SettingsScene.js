@@ -93,8 +93,17 @@ export class SettingsScene extends Phaser.Scene {
       fn();
       this.refresh();
     };
+
     onTap(b, () => true, b.press);
     return b;
+  }
+
+  // Громкость по кругу с клавиатуры: +10 %, после 100 % — снова 0
+  cycleVolume() {
+    settings.volume = settings.volume >= 1 ? 0 : Math.min(1, Math.round((settings.volume + VOLUME_STEP) * 10) / 10);
+    sfx.setVolume(settings.volume);
+    sfx.play('pickup');
+    this.refresh();
   }
 
   refresh() {
@@ -142,7 +151,12 @@ export class SettingsScene extends Phaser.Scene {
       ...this.rows.flatMap((r) =>
         r.toggle
           ? [{ obj: r.bg, activate: () => (r.toggle(), this.refresh()) }]
-          : [{ obj: r.minus, activate: r.minus.press }, { obj: r.plus, activate: r.plus.press }]
+          : [
+              // Строка громкости сама тоже выбирается (↑/↓ по столбцу): Enter — +10 % по кругу; «−»/«+» — стрелками вбок
+              { obj: r.bg, activate: () => this.cycleVolume() },
+              { obj: r.minus, activate: r.minus.press },
+              { obj: r.plus, activate: r.plus.press },
+            ]
       ),
       { obj: this.done, activate: () => this.close() },
     ]);
