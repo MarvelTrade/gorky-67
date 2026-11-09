@@ -205,7 +205,10 @@ export class UIScene extends Phaser.Scene {
     const a = this.fpsAcc;
     a.t += delta;
     a.frames++;
-    this.fpsText.setPosition(width - PAD, XP_BAR_H + 56);
+    // На узком экране шкала забега идёт до края и счётчик лёг бы на неё — тогда он внизу, над панелью оружия
+    const narrow = width - 2 * PAD < TIMELINE.width + 2 * (this.fpsText.width + 8);
+    if (narrow && this.weaponBar.top) this.fpsText.setOrigin(1, 1).setPosition(width - PAD, this.weaponBar.top - 4);
+    else this.fpsText.setOrigin(1, 0).setPosition(width - PAD, XP_BAR_H + 56);
     if (a.t < 500) return;
     const fps = Math.round((a.frames * 1000) / a.t);
     a.worst.push(fps);

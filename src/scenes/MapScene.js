@@ -237,7 +237,11 @@ export class MapScene extends Phaser.Scene {
     CUT.forEach((c, i) => this.cutLabels[i].setPosition(P(c).x + 26, P(c).y));
     const a = P(CUT[0]);
     const b = P(CUT[1]);
-    this.cutNote.setPosition((a.x + b.x) / 2 + 30, (a.y + b.y) / 2 + 4);
+    // «Путь разрушен» — сбоку от полотна, не поверх креста: справа, а если не влезает — слева
+    const cy = (a.y + b.y) / 2 + 4;
+    const right = Math.max(a.x, b.x) + 12;
+    if (right + this.cutNote.width < mx + mw - 4) this.cutNote.setOrigin(0, 0.5).setPosition(right, cy);
+    else this.cutNote.setOrigin(1, 0.5).setPosition(Math.min(a.x, b.x) - 12, cy);
 
     const small = Math.min(mw, mh) < 330;
     const narrow = mw < 520;
