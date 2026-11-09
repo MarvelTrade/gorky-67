@@ -1,6 +1,7 @@
 // All English strings. Keys match ru.js.
 export default {
   title: 'GORKY-67',
+  tagline: 'HELICOPTER SURVIVAL',
   subtitle: '1983 · OBJECT 67',
   menuHeader: 'TOP SECRET · COPY No. 1',
   menuCase: 'FILE No. 67',

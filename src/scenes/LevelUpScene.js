@@ -3,6 +3,7 @@ import { drawIcon } from '../ui/icons.js';
 import { LEVELUP } from '../config.js';
 import { t } from '../i18n/index.js';
 import { onTap } from '../ui/tap.js';
+import { keysShown, markKeysUsed } from '../ui/keyNav.js';
 import { sfx } from '../systems/Sfx.js';
 import { CATEGORY } from '../systems/Upgrades.js';
 import { FONT, PAPER, PAPER_HI, PAPER_DIM, EDGE, INK, INK_SOFT, LIGHT, CAT_INK } from '../ui/paper.js';
@@ -80,6 +81,10 @@ export class LevelUpScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setVisible(!this.sys.game.device.input.touch);
     this.input.keyboard.on('keydown', (e) => {
+      if (!keysShown(this)) {
+        markKeysUsed();
+        this.drawFocus();
+      }
       const i = Number(e.key) - 1;
       if (i >= 0 && i < this.cards.length) this.pick(i);
       const n = this.cards.length;
@@ -279,6 +284,7 @@ export class LevelUpScene extends Phaser.Scene {
     const g = this.focusGfx.clear();
     const n = this.cards.length;
     if (this.focus > n + 1 || (this.focus === n + 1 && !this.skipBtn.visible)) this.focus = n;
+    if (!keysShown(this)) return;
     let b;
     if (this.focus < n) {
       const c = this.cards[this.focus];

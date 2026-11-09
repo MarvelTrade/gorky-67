@@ -4,6 +4,7 @@ import { platform } from '../platform/platform.js';
 import { settings, saveSettings } from '../settings.js';
 import { meta, liveryTexture } from '../meta.js';
 import { onTap } from '../ui/tap.js';
+import { keysShown, markKeysUsed } from '../ui/keyNav.js';
 
 const BTN_W = 260;
 const INK = '#2a2418';     // машинописный текст на бумаге
@@ -65,12 +66,15 @@ export class MenuScene extends Phaser.Scene {
     const ring = this.add.graphics();
     const showSel = () => {
       const b = btns[sel];
-      ring.clear().lineStyle(3, 0xf2c94c, 1).strokeRect(b.x - BTN_W / 2 - 5, b.y - b.h / 2 - 5, BTN_W + 10, b.h + 10);
+      ring.clear();
+      if (!keysShown(this)) return;
+      ring.lineStyle(3, 0xf2c94c, 1).strokeRect(b.x - BTN_W / 2 - 5, b.y - b.h / 2 - 5, BTN_W + 10, b.h + 10);
       this.children.bringToTop(ring);
     };
     this.showSel = showSel;
     this.input.keyboard.on('keydown', (e) => {
       if (this.blocked) return;
+      markKeysUsed();
       if (e.code === 'ArrowDown' || e.code === 'KeyS') sel = (sel + 1) % btns.length;
       else if (e.code === 'ArrowUp' || e.code === 'KeyW') sel = (sel + btns.length - 1) % btns.length;
       else if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') return btns[sel].onClick();
@@ -152,7 +156,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setLetterSpacing(3);
     this.tagline = this.add
-      .text(0, 0, 'HELICOPTER SURVIVAL', { fontFamily: 'sans-serif', fontSize: '17px', color: '#8c2a1e', fontStyle: 'bold' })
+      .text(0, 0, t('tagline'), { fontFamily: 'sans-serif', fontSize: '17px', color: '#8c2a1e', fontStyle: 'bold' })
       .setOrigin(0.5, 0)
       .setLetterSpacing(4);
     this.subtitle = this.add.text(0, 0, t('subtitle'), { fontFamily: 'monospace', fontSize: '13px', color: '#5a5040' }).setOrigin(0.5, 0);
@@ -189,6 +193,9 @@ export class MenuScene extends Phaser.Scene {
     this.titleText.setFontSize(Math.min(40, Math.floor(cw / 7.5)));
     this.titleText.setPosition(0, y);
     y += this.titleText.height;
+    // Подзаголовок по-русски длиннее — на узком телефоне шрифт и разрядка ужимаются под ширину листа
+    this.tagline.setFontSize(17).setLetterSpacing(4);
+    for (let fs = 16; this.tagline.width > cw - 24 && fs >= 11; fs--) this.tagline.setFontSize(fs).setLetterSpacing(fs < 14 ? 2 : 3);
     this.tagline.setPosition(0, y);
     y += this.tagline.height + 4;
     this.subtitle.setPosition(0, y);

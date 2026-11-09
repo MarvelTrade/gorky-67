@@ -8,6 +8,15 @@ const DIRS = {
   ArrowRight: [1, 0], KeyD: [1, 0],
 };
 
+// На телефоне клавиатуры нет — рамки выбора появляются только после первого нажатия клавиши (и дальше на всех экранах)
+let used = false;
+export function keysShown(scene) {
+  return used || !scene.sys.game.device.input.touch;
+}
+export function markKeysUsed() {
+  used = true;
+}
+
 export class KeyNav {
   // enabled() — можно ли сейчас управлять (экран не перекрыт другим, не идёт анимация)
   constructor(scene, enabled = () => true) {
@@ -18,6 +27,10 @@ export class KeyNav {
     this.ring = scene.add.graphics().setDepth(1000);
     this.onKey = (e) => {
       if (!this.enabled() || !this.items.length) return;
+      if (!keysShown(this.scene)) {
+        markKeysUsed();
+        this.refresh();
+      }
       const d = DIRS[e.code];
       if (d) {
         this.move(d[0], d[1]);
@@ -80,7 +93,7 @@ export class KeyNav {
   refresh() {
     const g = this.ring.clear();
     const cur = this.current();
-    if (!cur) return;
+    if (!cur || !keysShown(this.scene)) return;
     const { b } = this.center(cur);
     g.lineStyle(3, 0xf2c94c, 1).strokeRect(b.x - 4, b.y - 4, b.width + 8, b.height + 8);
     this.scene.children.bringToTop(g);
