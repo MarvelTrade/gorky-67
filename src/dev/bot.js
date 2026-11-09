@@ -8,6 +8,7 @@
 // Ускоренный режим, когда вкладка скрыта или нужен быстрый прогон:
 //   __startBot({ smart: true, manual: true }); __botRun(60)  — прокрутить 60 с игрового времени
 //   __botRun(60, { headless: true }) — то же без отрисовки, в разы быстрее (для замеров баланса)
+//   __botLevel(n) / __botLevel() — прогон уровня n кусками по 120 с (см. внизу файла)
 // Игра шагает вручную по 1/60 с, бот решает каждые 3 шага. __bot.log.frameMs — сколько
 // миллисекунд занимает кадр (логика + отрисовка) по минутам: до 16.7 мс — это 60 FPS.
 
@@ -34,6 +35,10 @@ export function installBot(game) {
 
     const tick = () => {
       const scenes = game.scene;
+      // Забег стартовал, пока загрузка ещё не закончилась, — меню успевает запуститься под игрой; убрать
+      if (scenes.isActive('MenuScene') && (scenes.isActive('GameScene') || scenes.isPaused('GameScene'))) scenes.stop('MenuScene');
+      // Сбили — бот рекламу не смотрит: «Завершить», забег засчитан как гибель (иначе прогон висит на этом экране)
+      if (scenes.isActive('ReviveScene')) scenes.getScene('ReviveScene').giveUp();
       if (!scenes.isActive('GameScene') && !scenes.isPaused('GameScene')) {
         if (scenes.isActive('GameOverScene') && !log.done) {
           log.done = true;
@@ -257,5 +262,21 @@ export function installBot(game) {
     const l = bot.log;
     if (l.done) game.loop.wake();
     return { done: l.done, end: l.end, last: l.samples.at(-1) };
+  };
+
+  // Прогон уровня по номеру для замеров баланса (скил /bot-run): «думающий» бот, без отрисовки.
+  //   __botLevel(2)      — начать уровень 2 и прокрутить первые 120 с
+  //   __botLevel()       — продолжить текущий забег ещё на 120 с (вызывать, пока done: false)
+  // Куски по 120 с — чтобы один вызов из инструмента браузера не обрывался по времени.
+  window.__botLevel = (n = null, seconds = 120) => {
+    if (n !== null) {
+      game.registry.set('level', n);
+      window.__startBot({ smart: true, manual: true });
+    }
+    const r = window.__botRun(seconds, { headless: true });
+    const e = r.end ?? {};
+    return r.done
+      ? { done: true, level: e.levelN, win: e.win, time: Math.round(e.time), cause: e.cause, ending: e.ending, boss: e.bossKilled, lvl: e.level, hp: r.last?.hp, weapons: e.weapons }
+      : { done: false, ...r.last };
   };
 }

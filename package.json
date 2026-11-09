@@ -9,7 +9,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "sh scripts/deploy.sh",
-    "build:yandex": "sh scripts/build-yandex.sh"
+    "build:yandex": "sh scripts/build-yandex.sh",
+    "build:bot": "sh scripts/build-bot.sh",
+    "check:release": "node scripts/check-release.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1"

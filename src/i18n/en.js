@@ -3,6 +3,7 @@ export default {
   title: 'GORKY-67',
   tagline: 'HELICOPTER SURVIVAL',
   subtitle: '1983 · OBJECT 67',
+  labSign: 'OBJECT 67',
   menuHeader: 'TOP SECRET · COPY No. 1',
   menuCase: 'FILE No. 67',
   play: 'Play',

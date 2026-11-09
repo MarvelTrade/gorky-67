@@ -3,6 +3,7 @@ import { LAB, CITY } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { sfx } from './Sfx.js';
 import { layout } from '../levels.js';
+import { t } from '../i18n/index.js';
 
 // Подземная лаборатория «Объекта 67»: бетонная площадка с люком на одной из площадей.
 // В 4:00 люк срывает, из-под земли выходит «Объект» — шар-вирус. Он катится к вертолёту,
@@ -18,7 +19,7 @@ export class Lab {
     this.label = this.pit
       ? null
       : scene.add
-          .text(this.pos.x, this.pos.y + LAB.size / 2 - 12, 'ОБЪЕКТ 67', { fontFamily: 'monospace', fontSize: '11px', color: '#2a2418', fontStyle: 'bold' })
+          .text(this.pos.x, this.pos.y + LAB.size / 2 - 12, t('labSign'), { fontFamily: 'monospace', fontSize: '11px', color: '#2a2418', fontStyle: 'bold' })
           .setOrigin(0.5)
           .setDepth(DEPTH.ground + 1.55);
     this.draw(false);

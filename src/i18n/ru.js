@@ -3,6 +3,7 @@ export default {
   title: 'ГОРЬКИЙ-67',
   tagline: 'ВЕРТОЛЁТ ПРОТИВ ЗАРАЖЁННЫХ',
   subtitle: '1983 · ОБЪЕКТ 67',
+  labSign: 'ОБЪЕКТ 67',
   menuHeader: 'СОВ. СЕКРЕТНО · ЭКЗ. № 1',
   menuCase: 'ДЕЛО № 67',
   play: 'Играть',
