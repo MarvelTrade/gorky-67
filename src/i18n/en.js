@@ -289,6 +289,7 @@ export default {
   level: 'Level',
   best: 'Best',
   newBest: 'New record!',
+  nextLevel: 'Next',
   again: 'Play again',
 
   copyStats: 'Copy stats',

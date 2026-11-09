@@ -28,6 +28,7 @@ export class HangarScene extends Phaser.Scene {
 
   create(data) {
     this.from = data?.from ?? 'MenuScene';
+    this.next = data?.next ?? null; // из итогов после победы — дальше, на следующий уровень
     this.tab = data?.tab ?? 'upgrades';
     const style = { fontFamily: FONT, color: LIGHT };
     this.title = this.add
@@ -69,9 +70,15 @@ export class HangarScene extends Phaser.Scene {
       .text(0, 0, '', { ...style, fontSize: '20px', color: '#c8d8b0', padding: { x: 14, y: 10 } })
       .setOrigin(0.5, 0)
       .setInteractive({ useHandCursor: true });
-    // Из итогов — сразу следующий забег: потратил и полетел
-    this.back.setText(this.from === 'GameOverScene' ? `${t('again')} →` : t('back'));
-    this.goBack = () => this.scene.start(this.from === 'GameOverScene' ? 'GameScene' : 'MenuScene');
+    // Из итогов — сразу следующий забег: потратил и полетел (после победы — на следующий уровень)
+    const fromRun = this.from === 'GameOverScene';
+    this.back.setText(fromRun ? `${t(this.next ? 'nextLevel' : 'again')} →` : t('back'));
+    this.goBack = () => {
+      if (fromRun && this.next) {
+        this.registry.set('level', this.next);
+        this.scene.start('BriefingScene');
+      } else this.scene.start(fromRun ? 'GameScene' : 'MenuScene');
+    };
     onTap(this.back, () => true, this.goBack);
     this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
 

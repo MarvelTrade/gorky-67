@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { RUN, TESTER_BUILD } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
-import { lt } from '../levels.js';
+import { lt, isBuilt } from '../levels.js';
 import { platform } from '../platform/platform.js';
 import { copyReport } from '../systems/Telemetry.js';
 import { onTap } from '../ui/tap.js';
@@ -84,10 +84,12 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
     this.updateRecord(stats, bestText);
 
+    // Ушёл из района и дальше по дороге есть построенный уровень — главная кнопка ведёт туда, а не на повтор
+    this.next = stats.win && isBuilt(stats.levelN + 1) ? stats.levelN + 1 : null;
     const button = this.add.container(0, 0);
     const bg = this.add.rectangle(0, 0, 240, 72, BTN.main.fill).setStrokeStyle(3, BTN.main.stroke);
     const label = this.add
-      .text(0, 0, t('again'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#ffffff', fontStyle: 'bold' })
+      .text(0, 0, this.next ? `${t('nextLevel')} →` : t('again'), { fontFamily: 'sans-serif', fontSize: '30px', color: '#ffffff', fontStyle: 'bold' })
       .setOrigin(0.5);
     button.add([bg, label]);
     bg.setInteractive({ useHandCursor: true });
@@ -99,7 +101,7 @@ export class GameOverScene extends Phaser.Scene {
       .text(0, 0, `${t('hangar')} →`, { fontFamily: 'sans-serif', fontSize: '20px', color: '#f2c94c', fontStyle: 'bold', backgroundColor: '#3a4148', padding: { x: 12, y: 8 } })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    const goHangar = () => this.scene.start('HangarScene', { from: 'GameOverScene' });
+    const goHangar = () => this.scene.start('HangarScene', { from: 'GameOverScene', next: this.next });
     onTap(hangar, () => this.ready, goHangar);
 
     // Для плейтестов: все замеры текстом в буфер обмена. В сборке для Яндекса кнопки нет —
@@ -250,9 +252,12 @@ export class GameOverScene extends Phaser.Scene {
   async restart() {
     if (!this.ready) return;
     this.ready = false;
-    // Сейчас заглушка; на Яндекс Играх тут будет межстраничная реклама
+    // Межстраничная реклама между забегами (на площадках с SDK)
     await platform.showFullscreenAd();
-    this.scene.start('GameScene');
+    if (this.next) {
+      this.registry.set('level', this.next);
+      this.scene.start('BriefingScene');
+    } else this.scene.start('GameScene');
   }
 }
 

@@ -296,6 +296,7 @@ export default {
   level: 'Уровень',
   best: 'Рекорд',
   newBest: 'Новый рекорд!',
+  nextLevel: 'Дальше',
   again: 'Ещё раз',
 
   // Замеры
