@@ -240,7 +240,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Начало уровня: вертолёт прилетает по путям — появляется у хвоста эшелона, идёт над рельсами на север
-  // мимо состава и сворачивает в центр карты (ARRIVAL). Камера с ним — поезд виден по дороге
+  // вдоль состава и плавно встаёт у его головы (ARRIVAL). Камера с ним — поезд виден по дороге
   trainIntro() {
     if (!this.train) return;
     const p = this.player;
@@ -249,10 +249,7 @@ export class GameScene extends Phaser.Scene {
     p.sprite.setPosition(x, y).setRotation(-Math.PI / 2);
     p.body.reset(x, y);
     p.lastRot = p.sprite.rotation;
-    p.fly([
-      { x, y: Math.max(120, this.train.y - ARRIVAL.past) },
-      { x: WORLD.width / 2, y: WORLD.height / 2 },
-    ]);
+    p.fly([{ x, y: this.train.y }]);
     this.cameras.main.centerOn(x, y);
     // Рация (UIScene) ещё не запущена — реплика чуть позже
     this.time.delayedCall(1200, () => this.events.emit('radio', lt('vova_train'), 'vova'));

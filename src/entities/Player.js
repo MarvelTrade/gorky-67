@@ -209,7 +209,7 @@ export class Player {
         if (ap.i >= ap.points.length) this.autopilot = null;
       } else {
         const fast = this.maxSpeed * ARRIVAL.speedMul;
-        const speed = last ? fast * Math.min(1, dist / (PLAYER.arriveRadius * 4)) : fast;
+        const speed = last ? fast * Math.min(1, dist / ARRIVAL.brake) : fast;
         desired.set(dx / dist, dy / dist).scale(speed);
       }
     } else if (key.x || key.y) {
