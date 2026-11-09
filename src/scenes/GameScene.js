@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN, ENEMIES, RAIL } from '../config.js';
+import { WORLD, SPAWN, POOLS, XP, RUN, VIEW, CITY, FX, ADS, EXTRACT, LEVELUP, DEPOT, RUINS, SPIN, ENEMIES, RAIL, ARRIVAL } from '../config.js';
 import { DEPTH } from '../depth.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
@@ -239,23 +239,25 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setZoom(Math.min(1, Math.min(width, height) / VIEW.minShortSide));
   }
 
-  // Начало уровня: камера к эвакуационному поезду — трогается (город) или идёт мимо (деревня) — и назад
+  // Начало уровня: вертолёт прилетает по путям — появляется у хвоста эшелона, идёт над рельсами на север
+  // мимо состава и сворачивает в центр карты (ARRIVAL). Камера с ним — поезд виден по дороге
   trainIntro() {
     if (!this.train) return;
-    const cam = this.cameras.main;
-    const R = RAIL;
-    cam.stopFollow();
-    cam.pan(this.train.x, this.train.y, R.introPan * 1000, 'Sine.easeInOut');
+    const p = this.player;
+    const x = this.railX - ARRIVAL.side;
+    const y = Math.min(WORLD.height - 120, this.train.y + ARRIVAL.behind);
+    p.sprite.setPosition(x, y).setRotation(-Math.PI / 2);
+    p.body.reset(x, y);
+    p.lastRot = p.sprite.rotation;
+    p.fly([
+      { x, y: Math.max(120, this.train.y - ARRIVAL.past) },
+      { x: WORLD.width / 2, y: WORLD.height / 2 },
+    ]);
+    this.cameras.main.centerOn(x, y);
     // Рация (UIScene) ещё не запущена — реплика чуть позже
     this.time.delayedCall(1200, () => this.events.emit('radio', lt('vova_train'), 'vova'));
     // Черёмуха просит беречь эшелон: там едет «её дорогой» (кто он — выяснится позже, docs/story.md)
     this.time.delayedCall(1300, () => this.events.emit('radio', lt('cher_train'), 'cheryomukha'));
-    this.time.delayedCall((R.introPan + R.introHold) * 1000, () => {
-      if (this.ended) return;
-      cam.pan(this.player.sprite.x, this.player.sprite.y, R.introBack * 1000, 'Sine.easeInOut', true, (_, k) => {
-        if (k === 1) cam.startFollow(this.player.sprite, true, 0.12, 0.12);
-      });
-    });
   }
 
   // Лопнула раздутая скотина: газовое облако бьёт врагов вокруг (стадо рвётся цепочкой) и вертолёт,

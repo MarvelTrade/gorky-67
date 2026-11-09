@@ -275,8 +275,10 @@ export function installBot(game) {
     }
     const r = window.__botRun(seconds, { headless: true });
     const e = r.end ?? {};
+    // Сколько осталось скрытого запаса брони по зонам (LAST_STAND): 1 и 0.15 — не тронут, 0 — истрачен
+    const reserve = game.scene.getScene('GameScene').player?.reserve.map((v) => +v.toFixed(2));
     return r.done
-      ? { done: true, level: e.levelN, win: e.win, time: Math.round(e.time), cause: e.cause, ending: e.ending, boss: e.bossKilled, lvl: e.level, hp: r.last?.hp, weapons: e.weapons }
+      ? { done: true, level: e.levelN, win: e.win, time: Math.round(e.time), cause: e.cause, ending: e.ending, boss: e.bossKilled, lvl: e.level, hp: r.last?.hp, reserve, weapons: e.weapons }
       : { done: false, ...r.last };
   };
 }

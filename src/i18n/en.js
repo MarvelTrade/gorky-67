@@ -225,6 +225,8 @@ export default {
   dir_s: 'south',
   dir_w: 'west',
   dir_e: 'east',
+  exitLabel: 'EXIT',
+  meters: 'm',
   strikeIn: 'Strike in',
   cher_artillery: "Vanya!.. Vova!.. get out of the square... they're about to shell it...",
   cher_lure: 'Vanechka... drag it onto the square... let them hit it... let them...',

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { HUD_GAUGES, PLAYER, CONTROLS, FX, SPIN } from '../config.js';
+import { HUD_GAUGES, PLAYER, CONTROLS, FX, SPIN, ARRIVAL, LAST_STAND } from '../config.js';
 import { sfx } from '../systems/Sfx.js';
 import { DEPTH } from '../depth.js';
 
@@ -36,6 +36,9 @@ export class Player {
     this.maxHp = PLAYER.maxHp;
     this.hp = this.maxHp;
     this.invuln = 0;
+    this.reserve = LAST_STAND.zones.map((z) => z.pool); // скрытый запас по зонам, доли maxHp (см. LAST_STAND)
+    this.stillT = 0; // сколько секунд висит на месте
+    this.autopilot = null; // прилёт в начале уровня: { points, i }
 
     this.target = null; // точка под мышью, в экранных координатах
     this.stick = null; // { id, ax, ay, x, y } — джойстик пальца, тоже в экранных координатах
@@ -88,8 +91,14 @@ export class Player {
   }
 
   // «Воскреснуть»: снова виден, часть брони и временная неуязвимость
+  // Прилёт: точки маршрута в координатах мира (см. ARRIVAL). Без урона; ввод игрока — сразу его управление
+  fly(points) {
+    this.autopilot = { points, i: 0 };
+  }
+
   revive(hpFraction, invulnTime) {
     this.hp = Math.ceil(this.maxHp * hpFraction);
+    this.reserve = LAST_STAND.zones.map((z) => z.pool);
     this.invuln = invulnTime;
     this.crashing = false; // после «карусели» — снова в воздухе
     this.spin = 0;
@@ -123,14 +132,51 @@ export class Player {
   // Урон с неуязвимостью после попадания, чтобы толпа не сжигала HP за кадр
   // cause — кто ударил (для замеров причины смерти)
   takeDamage(amount, cause) {
-    if (this.invuln > 0 || !this.alive) return;
-    this.hp = Math.max(0, this.hp - amount);
+    if (this.invuln > 0 || this.autopilot || !this.alive) return;
+    this.hp = Math.max(0, this.hp - this.shownDamage(amount));
     this.invuln = PLAYER.invulnTime;
     this.scene.events.emit('player-hurt', amount);
     const shake = cause === 'infantry' ? FX.infectedShake : FX.hitShake;
     this.scene.cameras.main.shake(shake.duration, shake.intensity);
     sfx.play('hit');
     if (!this.alive) this.scene.events.emit('player-died', cause);
+  }
+
+  // Сколько урона дойдёт до полоски брони (см. LAST_STAND). Каждая зона — свой отрезок полоски: от
+  // своего порога до порога следующей (25% → 3%, 3% → 0). В отрезке на полоску идёт доля
+  // отрезок/(отрезок + запас), остальное забирает скрытый запас, пока он не кончится. Выше порогов —
+  // честный урон. Висит на месте дольше stillFor — тоже честный
+  shownDamage(amount) {
+    if (this.stillT >= LAST_STAND.stillFor) return amount;
+    const max = this.maxHp;
+    let hp = this.hp;
+    let left = amount;
+    LAST_STAND.zones.forEach((z, i) => {
+      const line = z.at * max;
+      const floor = (LAST_STAND.zones[i + 1]?.at ?? 0) * max;
+      // Выше отрезка — без скидки
+      if (hp > line) {
+        const d = Math.min(left, hp - line);
+        hp -= d;
+        left -= d;
+      }
+      if (left <= 0 || hp <= floor) return;
+      if (this.reserve[i] > 0) {
+        const band = line - floor;
+        const share = band / (band + z.pool * max);
+        // Сколько «сырого» урона уйдёт в этот отрезок: до нижнего порога или пока не кончится запас
+        const raw = Math.min(left, (hp - floor) / share, (this.reserve[i] * max) / (1 - share));
+        hp -= raw * share;
+        this.reserve[i] -= (raw * (1 - share)) / max;
+        left -= raw;
+      }
+      // Запас кончился посреди отрезка — дальше по нему честно
+      const d = Math.min(left, Math.max(0, hp - floor));
+      hp -= d;
+      left -= d;
+    });
+    hp -= left;
+    return this.hp - Math.max(0, hp);
   }
 
   readKeyboard() {
@@ -148,8 +194,25 @@ export class Player {
     }
     const desired = this.desired.set(0, 0);
     const key = this.readKeyboard();
+    // Игрок взялся за управление — автопилот прилёта отдаёт его сразу
+    if (this.autopilot && (key.x || key.y || this.stick || this.target)) this.autopilot = null;
 
-    if (key.x || key.y) {
+    if (this.autopilot) {
+      const ap = this.autopilot;
+      const pt = ap.points[ap.i];
+      const dx = pt.x - s.x;
+      const dy = pt.y - s.y;
+      const dist = Math.hypot(dx, dy);
+      const last = ap.i === ap.points.length - 1;
+      if (dist < (last ? PLAYER.stopRadius * 4 : ARRIVAL.reach)) {
+        ap.i++;
+        if (ap.i >= ap.points.length) this.autopilot = null;
+      } else {
+        const fast = this.maxSpeed * ARRIVAL.speedMul;
+        const speed = last ? fast * Math.min(1, dist / (PLAYER.arriveRadius * 4)) : fast;
+        desired.set(dx / dist, dy / dist).scale(speed);
+      }
+    } else if (key.x || key.y) {
       desired.set(key.x, key.y).normalize().scale(this.maxSpeed);
     } else if (this.stick) {
       const dx = this.stick.x - this.stick.ax;
@@ -177,6 +240,8 @@ export class Player {
 
     // Нос — в сторону движения
     const speed = this.body.velocity.length();
+    // Висит на месте — копится; полетел — сброс (см. LAST_STAND)
+    this.stillT = speed < LAST_STAND.stillSpeed ? this.stillT + dt : 0;
     if (speed > 20) {
       const aim = Math.atan2(this.body.velocity.y, this.body.velocity.x);
       s.rotation = Phaser.Math.Angle.RotateTo(s.rotation, aim, this.stats.turnSpeed * dt);

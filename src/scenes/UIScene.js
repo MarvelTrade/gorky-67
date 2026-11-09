@@ -83,6 +83,11 @@ export class UIScene extends Phaser.Scene {
       .text(0, 0, t('boss'), { ...style, fontSize: '14px', strokeThickness: 3, color: '#ffb0a0' })
       .setOrigin(0.5, 1)
       .setVisible(false);
+    // Уход из района: подпись у стрелки на краю экрана — «ВЫХОД · 420 м»
+    this.exitText = this.add
+      .text(0, 0, '', { ...style, fontSize: '15px', strokeThickness: 4, color: '#9dffb4', fontStyle: 'bold' })
+      .setOrigin(0.5)
+      .setVisible(false);
     // Нижняя панель оружия и шкалы брони и хода по бокам
     this.weaponBar = new WeaponBar(this);
     // Счётчик кадров: в dev-сборке всегда, у тестеров — по настройке «Показывать FPS».
@@ -181,10 +186,7 @@ export class UIScene extends Phaser.Scene {
     this.drawSupplyArrows(gs, g);
     // «Объект» за кадром — красная стрелка: видно, откуда катится
     if (gs.boss?.active) this.drawEdgeArrow(gs, g, gs.boss.x, gs.boss.y, 0xff5a4a, 1.2);
-    if (ex.active) {
-      const p2 = ex.target();
-      this.drawEdgeArrow(gs, g, p2.x, p2.y, EXTRACT.color, 1.4);
-    }
+    this.drawExitGuide(gs, g, ex);
 
     // Под экраном паузы радио не показываем — иначе тексты наложатся
     this.radio.setVisible(!this.scene.isActive('PauseScene'));
@@ -291,6 +293,7 @@ export class UIScene extends Phaser.Scene {
       .fillRect(0, 0, 4, h);
     // Под полоской босса, чтобы не перекрывать её на 5-й волне
     this.radio.setPosition((width - w) / 2, XP_BAR_H + 100);
+    this.radioH = h; // стрелки на краю обходят плашку снизу
     // Длинные реплики (с паузами «...») держим дольше — успеть прочитать на ходу
     this.radioTotal = (line.length > RADIO.longChars ? RADIO.duration_long : RADIO.duration) + RADIO.fade * 2;
     this.radioLeft = this.radioTotal;
@@ -358,19 +361,72 @@ export class UIScene extends Phaser.Scene {
   }
 
   // Стрелка у края экрана к точке мира за кадром: ящик, коридор ухода из района
+  // Куда уходить из района — так, чтобы не промахнуться глазами на телефоне:
+  // у самого вертолёта бегут три зелёных шеврона в сторону выхода, а на краю экрана — крупная стрелка
+  // с подписью «ВЫХОД · 420 м». Коридор у края карты виден — стрелки на краю нет, шевроны остаются
+  drawExitGuide(gs, g, ex) {
+    if (!ex.active || !gs.player.alive) {
+      if (this.exitText.visible) this.exitText.setVisible(false);
+      return;
+    }
+    const cam = gs.cameras.main;
+    const view = cam.worldView;
+    const p = gs.player;
+    const tg = ex.target();
+    const px = (p.x - view.x) * cam.zoom;
+    const py = (p.y - view.y) * cam.zoom;
+    const a = Math.atan2(tg.y - p.y, tg.x - p.x);
+    const c = Math.cos(a);
+    const sn = Math.sin(a);
+    // Шевроны: зажигаются по очереди от вертолёта наружу — «туда, туда»
+    const phase = (this.time.now / 1000) * EXTRACT.chevronSpeed;
+    for (let i = 0; i < 3; i++) {
+      const d = 50 + i * 20;
+      const k = 1 - ((phase - i) % 3 + 3) % 3 / 3;
+      const x = px + c * d;
+      const y = py + sn * d;
+      const w = 11;
+      const back = { x: x - c * 7, y: y - sn * 7 };
+      const l = { x: back.x - sn * w, y: back.y + c * w };
+      const r = { x: back.x + sn * w, y: back.y - c * w };
+      const tip = { x: x + c * 4, y: y + sn * 4 };
+      g.lineStyle(7, 0x0b2a14, 0.55 * (0.4 + 0.6 * k));
+      g.lineBetween(l.x, l.y, tip.x, tip.y).lineBetween(r.x, r.y, tip.x, tip.y);
+      g.lineStyle(4, EXTRACT.color, 0.35 + 0.65 * k);
+      g.lineBetween(l.x, l.y, tip.x, tip.y).lineBetween(r.x, r.y, tip.x, tip.y);
+    }
+    // Стрелка на краю и подпись — пока коридор за кадром
+    const edge = view.contains(tg.x, tg.y) ? null : this.drawEdgeArrow(gs, g, tg.x, tg.y, EXTRACT.color, 2);
+    this.exitText.setVisible(!!edge);
+    if (edge) {
+      const m = Math.round(Phaser.Math.Distance.Between(p.x, p.y, tg.x, tg.y) * EXTRACT.meters);
+      this.exitText.setText(`${t('exitLabel')} · ${m} ${t('meters')}`);
+      // Подпись — от стрелки внутрь экрана, чтобы не обрезалась краем
+      const ix = edge.x - Math.cos(edge.a) * (36 + this.exitText.width / 2);
+      const iy = edge.y - Math.sin(edge.a) * 40;
+      const hw = this.exitText.width / 2 + 6;
+      this.exitText.setPosition(Phaser.Math.Clamp(ix, hw, this.scale.width - hw), iy);
+    }
+  }
+
   drawEdgeArrow(gs, g, wx, wy, color, scale = 1) {
     const cam = gs.cameras.main;
     const view = cam.worldView;
     if (view.contains(wx, wy)) return;
     const { width, height } = this.scale;
     const m = 26 * scale; // отступ от края
+    // Стрелки — в поле игры: ниже шкалы забега и выше панели оружия, иначе ложатся на таймер и кнопки
+    // Плашка рации на экране — и ниже неё: при уходе из района «Черёмуха» говорит как раз над стрелкой
+    const radioOn = this.radio.visible && this.radio.alpha > 0.05 && this.radioH;
+    const top = Math.max(XP_BAR_H + TIMELINE.y + 14, radioOn ? this.radio.y + this.radioH + 6 : 0) + m;
+    const bottom = height - (this.weaponBar.top ? height - this.weaponBar.top + 6 : 0) - m;
     const sx = (wx - view.x) * cam.zoom;
     const sy = (wy - view.y) * cam.zoom;
     const cx = width / 2;
-    const cy = height / 2;
+    const cy = (top + bottom) / 2;
     const a = Math.atan2(sy - cy, sx - cx);
-    // Точка на краю экрана по направлению к цели
-    const k = Math.min((width / 2 - m) / Math.abs(Math.cos(a) || 1e-6), (height / 2 - m) / Math.abs(Math.sin(a) || 1e-6));
+    // Точка на краю поля по направлению к цели
+    const k = Math.min((width / 2 - m) / Math.abs(Math.cos(a) || 1e-6), ((bottom - top) / 2) / Math.abs(Math.sin(a) || 1e-6));
     const x = cx + Math.cos(a) * k;
     const y = cy + Math.sin(a) * k;
     const tip = 14 * scale;
@@ -386,6 +442,7 @@ export class UIScene extends Phaser.Scene {
       x + Math.cos(a - 2.5) * back,
       y + Math.sin(a - 2.5) * back
     );
+    return { x, y, a };
   }
 
   // Брони ≤ LOW_HP.crackAt: жёлтая кромка по краям (медленно дышит), надпись и трещины по углам стекла.
