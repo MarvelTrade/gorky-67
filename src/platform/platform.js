@@ -1,17 +1,21 @@
 import { ADS } from '../config.js';
 
-// Обёртка над SDK Яндекс Игр. Игра обращается к платформе только через этот модуль.
+// Обёртка над SDK площадок. Игра обращается к платформе только через этот модуль.
 //
-// SDK подключается только в сборке для Яндекса (npm run build:yandex, VITE_PLATFORM=yandex):
-// динамической загрузкой /sdk.js по относительному пути, как требует документация для архива
-// из Консоли разработчика. Во всех остальных сборках и если SDK не загрузился — заглушки:
+// Яндекс Игры (npm run build:yandex, VITE_PLATFORM=yandex): SDK — динамической загрузкой /sdk.js по
+// относительному пути, как требует документация для архива из Консоли разработчика.
+// VK Игры (npm run build:vk, VITE_PLATFORM=vk): VK Bridge — VKWebAppInit сразу при старте (платформа
+// ждёт его не дольше 30 с), реклама VKWebAppShowNativeAds, сохранения VKWebAppStorage, пауза —
+// VKWebAppViewHide/Restore. Во всех остальных сборках и если SDK не загрузился — заглушки:
 // игра работает так же, просто без рекламы и облачных сохранений.
 
 const SAVE_KEY = 'gorky-67-save';
 const SDK_SRC = '/sdk.js';
 const IS_YANDEX_BUILD = import.meta.env.VITE_PLATFORM === 'yandex';
+const IS_VK_BUILD = import.meta.env.VITE_PLATFORM === 'vk';
 
 let ysdk = null;
+let vk = null; // VK Bridge в сборке для VK Игр
 let player = null;
 let playing = false; // уже сообщили GameplayAPI.start() — не дублируем вызовы
 let readySent = false;
@@ -54,10 +58,11 @@ const RU_LANGS = ['ru', 'be', 'kk', 'uk', 'uz'];
 
 export const platform = {
   get hasSdk() {
-    return ysdk !== null;
+    return ysdk !== null || vk !== null;
   },
 
   async init() {
+    if (IS_VK_BUILD) return initVk();
     if (!IS_YANDEX_BUILD) return;
     try {
       await loadScript(SDK_SRC);
@@ -107,8 +112,9 @@ export const platform = {
   // Межстраничная реклама между забегами. Не чаще ADS.fullscreenMinInterval —
   // платформа ограничивает частоту и сама, но лишний раз не дёргаем.
   showFullscreenAd() {
-    if (!ysdk) return Promise.resolve();
     if (performance.now() - lastFullscreenAt < ADS.fullscreenMinInterval * 1000) return Promise.resolve();
+    if (vk) return vkAd('interstitial').then((shown) => shown && (lastFullscreenAt = performance.now()));
+    if (!ysdk) return Promise.resolve();
     return new Promise((resolve) => {
       ysdk.adv.showFullscreenAdv({
         callbacks: {
@@ -130,11 +136,12 @@ export const platform = {
   // Можно ли предложить «Воскреснуть». В dev без SDK — да, с имитацией рекламы,
   // чтобы кнопку можно было проверить; в обычной сборке без SDK — нет.
   canShowRewarded() {
-    return ysdk !== null || import.meta.env.DEV;
+    return ysdk !== null || vk !== null || import.meta.env.DEV;
   },
 
   // Резолвится true, если игрок досмотрел и заслужил награду
   showRewardedAd() {
+    if (vk) return vkAd('reward');
     if (!ysdk) {
       return new Promise((resolve) => setTimeout(() => resolve(import.meta.env.DEV), 600));
     }
@@ -160,6 +167,14 @@ export const platform = {
   // Рекорд и настройки: облако Яндекса, если есть игрок, и всегда localStorage как запасной вариант
   async saveProgress(data) {
     writeLocal(data);
+    if (vk) {
+      try {
+        await vk.send('VKWebAppStorageSet', { key: SAVE_KEY, value: JSON.stringify(data) });
+      } catch {
+        // нет сети или запрос отклонён — останется локальная копия
+      }
+      return;
+    }
     if (!player) return;
     try {
       await player.setData(data, true);
@@ -170,6 +185,15 @@ export const platform = {
 
   async loadProgress() {
     const local = readLocal();
+    if (vk) {
+      try {
+        const res = await vk.send('VKWebAppStorageGet', { keys: [SAVE_KEY] });
+        const value = res.keys?.[0]?.value;
+        return value ? JSON.parse(value) : local;
+      } catch {
+        return local;
+      }
+    }
     if (!player) return local;
     try {
       const cloud = await player.getData();
@@ -180,7 +204,50 @@ export const platform = {
   },
 
   getLang() {
-    const lang = ysdk?.environment.i18n.lang ?? (navigator.language || 'ru').slice(0, 2);
+    // VK передаёт язык пользователя в параметрах запуска: ?vk_language=ru
+    const vkLang = vk ? new URLSearchParams(location.search).get('vk_language') : null;
+    const lang = ysdk?.environment.i18n.lang ?? vkLang ?? (navigator.language || 'ru').slice(0, 2);
     return RU_LANGS.includes(lang) ? 'ru' : 'en';
   },
 };
+
+// VK Игры: VKWebAppInit — первым сообщением, до загрузки ресурсов. Свернули игру (мобильное приложение VK) —
+// пауза и тишина, как от SDK Яндекса
+async function initVk() {
+  try {
+    const { default: bridge } = await import('@vkontakte/vk-bridge');
+    // Вне VK (открыли сборку напрямую) ответа может не быть вовсе — не ждём дольше 3 с, играем на заглушках
+    let timer;
+    const timeout = new Promise((_, reject) => (timer = setTimeout(() => reject(new Error('VK Bridge timeout')), 3000)));
+    try {
+      await Promise.race([bridge.send('VKWebAppInit'), timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
+    vk = bridge;
+  } catch {
+    console.warn('VK Bridge недоступен — работаем на заглушках');
+    vk = null;
+    return;
+  }
+  vk.subscribe(({ detail }) => {
+    if (detail?.type === 'VKWebAppViewHide') emit('pause');
+    if (detail?.type === 'VKWebAppViewRestore') emit('resume');
+  });
+}
+
+// Реклама VK: format — 'reward' (за награду) или 'interstitial' (между забегами). Сначала спрашиваем,
+// есть ли объявление; на время показа — пауза и тишина. Резолвится true, если показали (и наградили)
+async function vkAd(format) {
+  try {
+    const check = await vk.send('VKWebAppCheckNativeAds', { ad_format: format });
+    if (!check.result) return false;
+    emit('pause');
+    const res = await vk.send('VKWebAppShowNativeAds', { ad_format: format });
+    return !!res.result;
+  } catch {
+    return false;
+  } finally {
+    emit('resume');
+  }
+}
