@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT, LOW_HP } from '../config.js';
+import { RUN, CONTROLS, RADIO, EVENTS, BOSS_SPAWN, TIMELINE, EXTRACT, LOW_HP, TESTER_BUILD } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { lt } from '../levels.js';
@@ -93,9 +93,9 @@ export class UIScene extends Phaser.Scene {
     // Счётчик кадров: в dev-сборке всегда, у тестеров — по настройке «Показывать FPS».
     // Текст обновляется дважды в секунду (перерисовка текста каждый кадр сама стоит кадров на телефоне):
     // средний FPS за полсекунды и худший за последние 5 с
-    // Создаётся всегда (кроме Яндекса), виден по настройке — включили в паузе, и он сразу появляется
+    // Создаётся в dev и у тестеров, виден по настройке — включили в паузе, и он сразу появляется
     this.fpsText =
-      import.meta.env.DEV || import.meta.env.VITE_PLATFORM !== 'yandex'
+      import.meta.env.DEV || TESTER_BUILD
         ? this.add.text(0, 0, '', { ...style, fontSize: '12px', strokeThickness: 3 }).setOrigin(1, 0)
         : null;
     this.fpsAcc = { t: 0, frames: 0, worst: [] };

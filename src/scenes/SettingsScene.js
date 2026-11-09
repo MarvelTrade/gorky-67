@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { TESTER_BUILD } from '../config.js';
 import { t, getLang, initLang } from '../i18n/index.js';
 import { settings, saveSettings } from '../settings.js';
 import { sfx } from '../systems/Sfx.js';
@@ -44,8 +45,8 @@ export class SettingsScene extends Phaser.Scene {
         initLang(settings.lang);
       }),
     ];
-    // Тестерам: счётчик кадров в игре — замерить телефон без dev-сборки. На Яндексе строки нет
-    if (import.meta.env.VITE_PLATFORM !== 'yandex') {
+    // Тестерам: счётчик кадров в игре — замерить телефон без dev-сборки. В публичных сборках строки нет
+    if (TESTER_BUILD) {
       this.rows.push(this.row(() => t('showFps'), () => t(settings.showFps ? 'on' : 'off'), () => (settings.showFps = !settings.showFps)));
     }
 

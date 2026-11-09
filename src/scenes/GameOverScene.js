@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { RUN } from '../config.js';
+import { RUN, TESTER_BUILD } from '../config.js';
 import { formatTime } from '../format.js';
 import { t } from '../i18n/index.js';
 import { lt } from '../levels.js';
@@ -114,7 +114,7 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    copy.setVisible(import.meta.env.VITE_PLATFORM !== 'yandex');
+    copy.setVisible(TESTER_BUILD);
     const copyStats = async () => {
       const ok = await copyReport();
       copy.setText(t(ok ? 'copied' : 'copyFailed'));

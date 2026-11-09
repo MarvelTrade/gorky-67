@@ -11,7 +11,8 @@
     "deploy": "sh scripts/deploy.sh",
     "build:yandex": "sh scripts/build-yandex.sh",
     "build:bot": "sh scripts/build-bot.sh",
-    "check:release": "node scripts/check-release.mjs"
+    "check:release": "node scripts/check-release.mjs",
+    "build:web": "sh scripts/build-web.sh"
   },
   "dependencies": {
     "phaser": "^4.2.1"
